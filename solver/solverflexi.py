@@ -1,4 +1,4 @@
-from solver import Solver
+from .solver import Solver
 
 @Solver.RegisterSubclass('flexi')
 class SolverFlexi(Solver):

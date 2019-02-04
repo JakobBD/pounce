@@ -1,6 +1,8 @@
 from helpers.baseclass import BaseClass
 
 class UqMethod(BaseClass): 
-   pass
+
+   def RunSimulation(self,machine,solver):
+      pass
 
 from . import *

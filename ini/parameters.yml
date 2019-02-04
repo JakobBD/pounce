@@ -1,0 +1,6 @@
+uqMethod: mlmc
+
+machine: cray
+
+solver: flexi
+

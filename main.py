@@ -1,10 +1,6 @@
 # global imports
 import sys,os
 import argparse
-# for subdir in os.walk(os.path.dirname(__file__)):
-   # if 'solver' in subdir: 
-      # continue
-   # sys.path.append ( os.path.join (os.path.dirname(__file__), subdir[0] ) )
 
 # local imports
 from helpers import init

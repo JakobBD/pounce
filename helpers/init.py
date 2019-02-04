@@ -1,8 +1,7 @@
 import yaml
-import uqmethod as uqm
-import machine as mac
-import solver as sol
-
+import uqmethod.uqmethod as uqm
+import machine.machine as mac
+import solver.solver as sol
 
 def Init(prmfile): 
    with open(prmfile, 'r') as f:

@@ -1,13 +1,9 @@
-from baseclass import BaseClass
+from helpers.baseclass import BaseClass
+import sys,os
 
 
 class Solver(BaseClass): 
    pass
 
-@Solver.RegisterSubclass('internal')
-class InternalSolver(Solver):
-   pass
+from . import *
 
-@Solver.RegisterSubclass('flexi')
-class FlexiSolver(Solver):
-   pass

@@ -1,6 +1,11 @@
-uqMethod: mlmc
+uqMethod:
+  type: mlmc
+  nLevels: 4
+  nMaxIter: 4
 
-machine: cray
+machine: 
+  type: cray
 
-solver: flexi
+solver: 
+  type: flexi
 

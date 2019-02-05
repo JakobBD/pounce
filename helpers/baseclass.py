@@ -22,8 +22,8 @@ class BaseClass():
 
    @classmethod
    def Create(cls,classDict):
-      subclassKey=classDict["name"]
-      del classDict["name"]
+      subclassKey=classDict["type"]
+      del classDict["type"]
       if subclassKey not in cls.subclasses:
          raise ValueError("'{}' is not a valid {}".format(subclassKey,cls.__name__))
       return cls.subclasses[subclassKey](classDict)

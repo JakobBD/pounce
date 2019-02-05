@@ -1,14 +1,15 @@
 general: 
   outputLevel: debug #options: none, standard, debug
+  #rubbish: valid
 
 uqMethod:
-  type: mlmc
+  _type: mlmc
   nLevels: 4
   nMaxIter: 4
 
 machine: 
-  type: cray
+  _type: cray
 
 solver: 
-  type: flexi
+  _type: flexi
 

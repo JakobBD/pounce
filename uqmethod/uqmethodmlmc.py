@@ -2,6 +2,9 @@ from .uqmethod import UqMethod
 
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
-   pass
+   subclassDefaults={
+         "nLevels" : "NODEFAULT",
+         "nMaxIter" : "NODEFAULT"
+         }
 
 

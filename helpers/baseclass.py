@@ -1,6 +1,8 @@
+import sys
 
 class BaseClass():
-   subclasses = {}
+   classDefaults={}
+   subclassDefaults={}
 
    def __init__(self,classDict): 
       self.ReadPrms(classDict)
@@ -10,8 +12,18 @@ class BaseClass():
       pass
 
    def ReadPrms(self,classDict):
+      attrDict=self.classDefaults
+      attrDict.update(self.subclassDefaults)
       for key,value in classDict.items(): 
+         if key in attrDict:
+            attrDict[key]=value
+         else:
+            sys.exit(key+" is not a valid input parameter name!")
+      for key,value in attrDict.items(): 
+         if value is "NODEFAULT": 
+            sys.exit(key+" is not set in parameter file and has no default value!")
          setattr(self,key,value)
+      # TODO: check if there are still prms with NODEFAULT
 
    @classmethod
    def RegisterSubclass(cls, subclassKey):
@@ -22,8 +34,8 @@ class BaseClass():
 
    @classmethod
    def Create(cls,classDict):
-      subclassKey=classDict["type"]
-      del classDict["type"]
+      subclassKey=classDict["_type"]
+      del classDict["_type"]
       if subclassKey not in cls.subclasses:
          raise ValueError("'{}' is not a valid {}".format(subclassKey,cls.__name__))
       return cls.subclasses[subclassKey](classDict)

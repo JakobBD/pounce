@@ -1,3 +1,6 @@
+general: 
+  outputLevel: debug #options: none, standard, debug
+
 uqMethod:
   type: mlmc
   nMaxIter : 5

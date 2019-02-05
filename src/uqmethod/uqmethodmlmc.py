@@ -1,7 +1,5 @@
 import numpy as np
 from .uqmethod import UqMethod
-from .stochparameters import StochParameters
-
 
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):

@@ -15,7 +15,8 @@ class UqMethod(BaseClass):
      """
      iteration=0
      while True:
-       # nSamples=machine.allocateRessources(solver.dofsPerCore)
+        # nSamples=machine.allocateRessources(solver.dofsPerCore)
+        nSamples= [20,4]
         samples, weight=self.GetNodesAndWeights(nSamples)
         iteration+=1
         if(iteration==self.nMaxIter):

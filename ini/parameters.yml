@@ -1,26 +1,25 @@
-general: 
+general:
   outputLevel: debug #options: none, standard, debug
 
 uqMethod:
   type: mlmc
-  nMaxIter : 5
+  nMaxIter : 1
   nStochDim: 2
   distribution:
      - uniform: [-1.,1.]
      - normal : [0.,1.]
-  nLevels: 4
+  nLevels: 2
+  levels:
   # level 1
-  levels:
-     -nSamples: 100
-      currentSamples: 0
-      procsPerSample: 1
-      avgWalltime: 0
+     - nSamples: 100
+       currentSamples: 0
+       procsPerSample: 1
+       avgWalltime: 0
   # level 2
-  levels:
-     -nSamples: 20
-     currentSamples: 0
-      procsPerSample: 2
-      avgWalltime: 0
+     - nSamples: 20
+       currentSamples: 0
+       procsPerSample: 2
+       avgWalltime: 0
 
 machine:
   type: cray

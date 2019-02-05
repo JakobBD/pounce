@@ -1,4 +1,5 @@
 import operator
+import logging
 
 class Time(): 
    """
@@ -78,3 +79,14 @@ class Time():
       return float(other.sec_attr)/self.sec_attr
    def __pow__(self, other):
       return Time(self.sec_attr**other)
+
+
+
+def Log(msg):
+   log = logging.getLogger('logger')
+   log.info(msg)
+      
+def Debug(msg):
+   log = logging.getLogger('logger')
+   log.debug(msg)
+      

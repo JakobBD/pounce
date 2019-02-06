@@ -1,6 +1,6 @@
 from helpers.baseclass import BaseClass
 
 class Machine(BaseClass): 
-   pass
+   subclasses = {}
 
 from . import *

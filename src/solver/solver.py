@@ -3,7 +3,7 @@ import sys,os
 
 
 class Solver(BaseClass): 
-   pass
+   subclasses = {}
 
 from . import *
 

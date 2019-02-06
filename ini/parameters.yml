@@ -2,7 +2,7 @@ general:
   outputLevel: debug #options: none, standard, debug
 
 uqMethod:
-  type: mlmc
+  _type: mlmc
   nMaxIter : 1
   nStochDim: 2
   distribution:
@@ -18,7 +18,8 @@ uqMethod:
         nCoresPerSample: 48
 
 machine:
-  type: cray
+  _type: cray
 
 solver:
-  type: flexi
+  _type: flexi
+

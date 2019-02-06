@@ -5,6 +5,22 @@ from .uqmethod import UqMethod
 
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
+   subclassDefaults={
+      "stochVars" : 
+         {1:
+            {"distribution": "NODEFAULT",
+             "parameters": "NODEFAULT",
+             "name": "NODEFAULT"
+            }
+         },
+      "levels" : 
+         {1:
+            {"nSamples": "NODEFAULT",
+             "nCoresPerSample": "NODEFAULT"
+             }
+         },
+      "nMaxIter" : "NODEFAULT"
+      }
    def GetNodesAndWeights(self,nSamples):
        """Draws random samples for uncertain input
 

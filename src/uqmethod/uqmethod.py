@@ -1,6 +1,8 @@
 from helpers.baseclass import BaseClass
 
 class UqMethod(BaseClass):
+  subclasses = {}
+  
   def RunSimulation(self,machine,solver):
      """Main Loop for UQMethod.
           General procedure:

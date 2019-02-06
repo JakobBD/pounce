@@ -1,32 +1,29 @@
 # ---------- external imports ----------
+import sys
 import yaml
 import logging
 # ---------- local imports -------------
-import uqmethod.uqmethod as uqm
-import machine.machine as mac
-import solver.solver as sol
+from uqmethod.uqmethod import UqMethod
+from machine.machine import Machine
+from solver.solver import Solver
 from .baseclass import BaseClass
 from .helpers import Log,Debug
 
+
 def Config(prmfile): 
    with open(prmfile, 'r') as f:
-      prmdict = yaml.safe_load(f)
+      prms = yaml.safe_load(f)
 
-   GeneralConfig(prmdict["general"])  
-   log = logging.getLogger('logger')
-   Log("testLog")
-   Debug("testDebug")
+   GeneralConfig(prms["general"])  
 
-   uqMethod = uqm.UqMethod.Create(prmdict["uqMethod"])
-   machine  = mac.Machine.Create(prmdict["machine"])
-   solver   = sol.Solver.Create(prmdict["solver"])
+   return UqMethod.Create(prms["uqMethod"]), Machine.Create(prms["machine"]), Solver.Create(prms["solver"])
 
-   return uqMethod,machine,solver
 
 class GeneralConfig(BaseClass): 
    """This class consists mainly of attributes. 
    Its purpose is to ease general parameter readin and default value handling.
    """
+   classDefaults={"outputLevel" : "standard"}
 
    def InitLoc(self):
       self.SetupLogger()
@@ -61,3 +58,36 @@ class GeneralConfig(BaseClass):
 
       logger.addHandler(handler)
       return logger
+
+
+def PrintDefaultYMLFile(): 
+   print("\nPrint default YML File\n"+"-"*132+"\nConfig:\n")
+   allDefaults={}
+
+   parentClasses={"uqMethod": UqMethod,
+                  "machine": Machine,
+                  "solver": Solver }
+
+   for key,parentClass in parentClasses.items(): 
+      subclassName, classDefaults, subclassDefaults = InquireSubclass(key,parentClass)
+      allDefaults.update({key : {"_type" : subclassName}})
+      allDefaults[key].update(classDefaults)
+      allDefaults[key].update(subclassDefaults)
+
+   allDefaults.update({"general" : GeneralConfig.classDefaults})
+
+   print("\nDefault YML File:\n"+"-"*132+"\n")
+   print(yaml.dump(allDefaults, default_flow_style=False))
+   sys.exit()
+
+
+def InquireSubclass(parentClassName,parentClass): 
+   msg = "Available types for "+parentClassName+" (please choose): " 
+   for subclassName in parentClass.subclasses:
+      msg += subclassName + ", "
+   while True:
+      subclassName=input(msg[:-2]+"\n")
+      if subclassName in parentClass.subclasses:
+         return subclassName, parentClass.classDefaults, parentClass.subclasses[subclassName].subclassDefaults
+      else: 
+         print("Wrong input. Repeat.")

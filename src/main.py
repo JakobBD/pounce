@@ -1,17 +1,17 @@
 # global imports
 import sys,os
-import argparse
 
 # local imports
 from helpers import config
 
 # parse commmand line arguments
-parser = argparse.ArgumentParser(description='Python Propagation of Uncertainties')
-parser.add_argument('prmfile',help='YAML input file')
-args = parser.parse_args()
+if len(sys.argv) is 2 and sys.argv[1] in ['-h','--help']:
+   config.PrintDefaultYMLFile()
+if not (len(sys.argv) is 2 and sys.argv[1].endswith('ml')):
+   sys.exit("\nUsage: <python3 main.py parameter.yml> OR <python3 main.py --help>\n")
 
 # read input 
-uqMethod,machine,solver = config.Config(args.prmfile)
+uqMethod,machine,solver = config.Config(sys.argv[1])
 
 # run simulation
 uqMethod.RunSimulation(machine,solver)

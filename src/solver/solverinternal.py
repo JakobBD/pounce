@@ -10,7 +10,7 @@ class SolverInternal(Solver):
 
 
    def PrepareSimulation(self,prepSimuDict):
-      print prepSimuDict
+      print(prepSimuDict)
       self.WriteHdf5(prepSimuDict)
       # generateRunCommand(self)
 
@@ -22,6 +22,7 @@ class SolverInternal(Solver):
       h5f.create_dataset('Samples', data=np.transpose(prepSimuDict["samples"][:]))
       h5f.create_dataset('Weights', data=prepSimuDict["weights"])
       h5f.attrs.create('StochVars', prepSimuDict["varnames"], (len(prepSimuDict["varnames"]),))
+      h5f.attrs['Projectname']    = self.projectname
       h5f.attrs['Level']    = prepSimuDict["level"]
-      h5f.attrs['SubLevel'] = prepSimuDict["sublevel"]
+      h5f.attrs['SubLevel'] = prepSimuDict["sublevel"][0]
       h5f.close()

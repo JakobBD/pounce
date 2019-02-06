@@ -18,7 +18,7 @@ class UqMethod(BaseClass):
      # main loop
      while True:
         # nSamples=machine.allocateRessources(solver.dofsPerCore)
-        nSamples= [20,4]
+        nSamples= [2,2]
         samples, weights=self.GetNodesAndWeights(nSamples)
         self.PrepareSimulation(samples,weights,solver)
         # machine.runBatch(solver)

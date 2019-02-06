@@ -41,7 +41,7 @@ class Mlmc(UqMethod):
              prepSimuDict={'level'    : idx,
                            'sublevel': sublevel,
                            'varnames': varnames,
-                           'samples' : samples,
-                           'weights' : weights  }
+                           'samples' : samples[idx-1],
+                           'weights' : weights[idx-1]  }
              solver.PrepareSimulation(prepSimuDict)
        return(prepSimuDict)

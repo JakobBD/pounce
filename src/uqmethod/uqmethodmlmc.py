@@ -30,3 +30,18 @@ class Mlmc(UqMethod):
           samples.append(localSamples)
           weights.append(np.ones(nSamples[idx-1])/nSamples[idx-1])
        return samples,weights
+
+   def PrepareSimulation(self,samples,weights,solver):
+       varnames = []
+       for key in self.stochvar.items():
+          dist = self.stochvar[key[0]]
+          varnames.append(dist['name'])
+       for idx,level in self.levels.items():
+          for sublevel in ['c','f']:
+             prepSimuDict={'level'    : level,
+                           'sublevel': sublevel,
+                           'varnames': varnames,
+                           'samples' : samples,
+                           'weights' : weights  }
+             # solver.PrepareSimulation(prepSimuDict)
+       return(prepSimuDict)

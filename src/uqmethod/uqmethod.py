@@ -14,10 +14,14 @@ class UqMethod(BaseClass):
 
      """
      iteration=0
+     # main loop
      while True:
         # nSamples=machine.allocateRessources(solver.dofsPerCore)
         nSamples= [20,4]
-        samples, weight=self.GetNodesAndWeights(nSamples)
+        samples, weights=self.GetNodesAndWeights(nSamples)
+        solver.PrepareSimulation(samples,weights)
+        machine.runBatch(solver)
+        machine.runBatch(postprocSolver)
         iteration+=1
         if(iteration==self.nMaxIter):
            break

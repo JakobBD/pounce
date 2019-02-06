@@ -1,31 +1,44 @@
 import argparse
 import numpy as np
+import h5py
 
-def Function1(slope,offset,spacing):
-   return slope*spacing+offset
+def Function(func,spacing,sample,n):
+   for ind,sp in enumerate(sample):
+      func[ind]=func[ind]+sp*spacing**n
+   return func
 
-def Function2(slope,offset,spacing):
-   return slope*spacing**2+offset
+def WriteHdf5(integral,projectname,level,sublevel):
+   h5f = h5py.File(projectname+'_'+str(level)+sublevel+'_PostProc.h5', 'w')
+   h5f.create_dataset('Integral', data=integral)
+   h5f.attrs['Projectname'] = projectname
+   h5f.attrs['Level']       = level
+   h5f.attrs['SubLevel']    = sublevel
+   h5f.close()
 
 parser = argparse.ArgumentParser(description='Integration of function with two input parameters')
-parser.add_argument('-s','--slope'   ,help='Enter slope of function.')
-parser.add_argument('-o','--offset'  ,help='Enter y-axis offset.')
-parser.add_argument('-l','--level'   ,help='Enter discretization level.')
-parser.add_argument('-cf','--coarsefine'  ,help='Enter discretization level.')
-parser.add_argument('-p','--projectname',help='Enter projectname.')
+parser.add_argument('-f','--file'   ,help='Stochastic Input h5 File')
 
 args = parser.parse_args()
-slope = float(args.slope)
-offset= float(args.offset)
-level = int(args.level)
-spacing  = np.linspace(0.,10.,level*10)
+
+h5f = h5py.File(args.file, 'r')
+projectname = h5f.attrs['Projectname']    
+level    = h5f.attrs['Level']    
+nPoints  = h5f.attrs['nPoints']    
+sublevel = h5f.attrs['SubLevel'] 
+varnames = h5f.attrs['StochVars']
+sample   = np.transpose(np.array(h5f['Samples']))
+
+spacing  = np.linspace(0.,10.,nPoints)
 cells    = len(spacing)-1
-function = Function2(slope,offset,spacing)
+function = np.zeros((len(sample[0]),len(spacing)))
+for i in range(len(varnames)):
+   function=Function(function,spacing,sample[i],i)
 
-integral =0.
+   
+integral = np.zeros(len(sample[0]))
 for i in range(cells):
-   integral = integral + (function[i+1]+function[i])/2.*(spacing[1]-spacing[0])
+   integral = integral + (np.transpose(function)[i+1]+np.transpose(function)[i])/2.*(spacing[1]-spacing[0])
 
-output = 'Integral: '+str(float(integral))
-with open(args.projectname+'_l%d'%(level)+args.coarsefine+'.yml', 'w') as yamlFile:
-   yamlFile.write(output)
+WriteHdf5(integral,projectname,level,sublevel)
+
+

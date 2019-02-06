@@ -3,17 +3,17 @@ general:
 
 uqMethod:
    _type: mlmc
-   nMaxIter : 1
+   nMaxIter: 1
 
 levels:
    - nSamples: 10
      nCoresPerSample: 24
      solverPrms:
-        MyPrm: 1
+        nPoints: 1
    - nSamples: 4
      nCoresPerSample: 48
      solverPrms:
-        MyPrm: 2
+        nPoints: 2
  
 stochVars:
    - _type: uniform

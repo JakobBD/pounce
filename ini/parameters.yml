@@ -26,7 +26,8 @@ uqMethod:
         nCoresPerSample: 48
 
 machine:
-  type: cray
+   type: cray
 
 solver:
-  type: flexi
+   projectname: Integration
+   type: internal

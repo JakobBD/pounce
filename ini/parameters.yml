@@ -1,14 +1,32 @@
-general: 
+general:
   outputLevel: debug #options: none, standard, debug
 
 uqMethod:
   type: mlmc
-  nLevels: 4
-  nMaxIter: 4
+  nMaxIter : 1
+  nStochDim: 2
+  distribution:
+     - uniform: [-1.,1.]
+     - normal : [0.,1.]
+  stochvar:
+     1:
+        distribution: "uniform"
+        uniform: [-1.,1.]
+        name: a
+     2:
+        distribution: "normal"
+        normal: [0.,1.]
+        name: b
+  levels:
+     1:
+        nSamples: 10
+        nCoresPerSample: 24
+     2:
+        nSamples: 4
+        nCoresPerSample: 48
 
-machine: 
+machine:
   type: cray
 
-solver: 
+solver:
   type: flexi
-

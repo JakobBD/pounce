@@ -1,4 +1,6 @@
 import numpy as np
+import os
+
 from .uqmethod import UqMethod
 
 @UqMethod.RegisterSubclass('mlmc')
@@ -14,15 +16,18 @@ class Mlmc(UqMethod):
        """
        samples=[]
        weights=[]
-       for idx,level in enumerate(self.levels):
+       levels=self.levels
+       for idx,level in levels.items():
           localSamples=[]
-          localweights=[]
           for dist in self.distribution:
              for key in dist:
                 if(key=="uniform"):
-                   localSamples.append(np.random.uniform(dist[key][0],dist[key][1],nSamples[idx]))
-                if(key=="normal"):
-                   localSamples.append(np.random.normal(dist[key][0],dist[key][1],nSamples[idx]))
+                   localSamples.append(np.random.uniform(dist[key][0],dist[key][1],nSamples[idx-1]))
+                elif(key=="normal"):
+                   localSamples.append(np.random.normal(dist[key][0],dist[key][1],nSamples[idx-1]))
+                else:
+                   sys.exit('Distribution {} not implemented'.format(key))
+
           samples.append(localSamples)
-          weights.append(localweights)
+          weights.append(np.ones(nSamples[idx-1])/nSamples[idx-1])
        return samples,weights

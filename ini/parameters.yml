@@ -10,16 +10,12 @@ uqMethod:
      - normal : [0.,1.]
   nLevels: 2
   levels:
-  # level 1
-     - nSamples: 100
-       currentSamples: 0
-       procsPerSample: 1
-       avgWalltime: 0
-  # level 2
-     - nSamples: 20
-       currentSamples: 0
-       procsPerSample: 2
-       avgWalltime: 0
+     1:
+        nSamples: 10
+        nCoresPerSample: 24
+     2:
+        nSamples: 4
+        nCoresPerSample: 48
 
 machine:
   type: cray

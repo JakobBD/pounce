@@ -1,25 +1,33 @@
 general:
-  outputLevel: debug #options: none, standard, debug
+   outputLevel: debug #options: none, standard, debug
 
 uqMethod:
-  _type: mlmc
-  nMaxIter : 1
-  nStochDim: 2
-  distribution:
-     - uniform: [-1.,1.]
-     - normal : [0.,1.]
-  nLevels: 2
-  levels:
-     1:
-        nSamples: 10
-        nCoresPerSample: 24
-     2:
-        nSamples: 4
-        nCoresPerSample: 48
+   _type: mlmc
+   nMaxIter : 1
+
+levels:
+   - nSamples: 10
+     nCoresPerSample: 24
+     solverPrms:
+        MyPrm: 1
+   - nSamples: 4
+     nCoresPerSample: 48
+     solverPrms:
+        MyPrm: 2
+ 
+stochVars:
+   - _type: uniform
+     bounds: [-1.,1.]
+     name: a
+   - _type: normal
+     mean: 1.
+     standardDeviation: 0.1
+     name: b
 
 machine:
-  _type: cray
+   _type: local
 
 solver:
-  _type: flexi
+   _type: internal
+   projectName: Integration
 

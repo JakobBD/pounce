@@ -11,9 +11,7 @@ if not (len(sys.argv) is 2 and sys.argv[1].endswith('ml')):
    sys.exit("\nUsage: <python3 main.py parameter.yml> OR <python3 main.py --help>\n")
 
 # read input 
-uqMethod,machine,solver = config.Config(sys.argv[1])
+uqMethod = config.Config(sys.argv[1])
 
 # run simulation
-uqMethod.RunSimulation(machine,solver)
-
-solver.Report()
+uqMethod.RunSimulation()

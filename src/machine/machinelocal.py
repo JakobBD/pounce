@@ -11,16 +11,16 @@ class LocalSystem(Machine):
    """
    pass
 
-def runBatch(self,sovler):
-   self.submitJob(solver)
-
-def submitJob(self,solver):
-   if self.mpi:
-      subprocess.run(["mpirun", "-n%d"%(solver.coresPerSample), solver.runCommand])
-   else:
-      subprocess.run([solver.runCommand])
-   pass
-
-def allocateRecources(self):
-   pass
+   def RunBatch(self,sovler):
+      self.submitJob(solver)
+   
+   def SubmitJob(self,solver):
+      if self.mpi:
+         subprocess.run(["mpirun", "-n%d"%(solver.coresPerSample), solver.runCommand])
+      else:
+         subprocess.run([solver.runCommand])
+      pass
+   
+   def AllocateRecources(self):
+      pass
 

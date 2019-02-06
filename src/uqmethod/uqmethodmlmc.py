@@ -6,44 +6,40 @@ from .uqmethod import UqMethod
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
    subclassDefaults={
-      "stochVars" : 
-         {1:
-            {"distribution": "NODEFAULT",
-             "parameters": "NODEFAULT",
-             "name": "NODEFAULT"
-            }
-         },
-      "levels" : 
-         {1:
-            {"nSamples": "NODEFAULT",
-             "nCoresPerSample": "NODEFAULT"
-             }
-         },
       "nMaxIter" : "NODEFAULT"
       }
-   def GetNodesAndWeights(self,nSamples):
-       """Draws random samples for uncertain input
 
-       Args:
-          nSamples [1:nLevels]: array of number of samples to draw .
+   levelDefaults={
+      "nSamples": "NODEFAULT",
+      'solverPrms' : {}
+      }
 
-       Returns:
-          samples[0:nLevels-1,0:nStochDim].
-       """
-       samples=[]
-       weights=[]
-       levels=self.levels
-       for idx,level in levels.items():
-          localSamples=[]
-          for dist in self.distribution:
-             for key in dist:
-                if(key=="uniform"):
-                   localSamples.append(np.random.uniform(dist[key][0],dist[key][1],nSamples[idx-1]))
-                elif(key=="normal"):
-                   localSamples.append(np.random.normal(dist[key][0],dist[key][1],nSamples[idx-1]))
-                else:
-                   sys.exit('Distribution {} not implemented'.format(key))
+   def OwnConfig(self):
+      for iLevel,level in enumerate(self.levels):
+         level.ind=iLevel+1
+         level.sublevels = {'f' : SubLevel(level) }
+         if iLevel > 0: 
+            level.sublevels['c']=SubLevel(self.levels[iLevel-1])
+      
 
-          samples.append(localSamples)
-          weights.append(np.ones(nSamples[idx-1])/nSamples[idx-1])
-       return samples,weights
+   def GetNodesAndWeights(self):
+      for level in self.levels:
+         level.samples=[]
+         for var in self.stochVars:
+            level.samples.append(var.DrawSamples(level.nSamples))
+         level.samples=np.transpose(level.samples)
+         level.weights=np.ones(level.nSamples)/level.nSamples
+
+   def PrepareSimulation(self):
+      for level in self.levels:
+         for subName,sublevel in level.sublevels.items():
+             furtherAttrs=sublevel.solverPrms
+             furtherAttrs.update({"Level":level.ind})
+             furtherAttrs.update({"Sublevel":subName})
+             fileNameSubStr=str(level.ind)+str(subName)
+             self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
+
+class SubLevel():
+   def __init__(self,level):
+      self.solverPrms=level.solverPrms
+      self.nCoresPerSample=level.nCoresPerSample

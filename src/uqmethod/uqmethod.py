@@ -1,27 +1,36 @@
 from helpers.baseclass import BaseClass
 
 class UqMethod(BaseClass):
-  subclasses = {}
-  
-  def RunSimulation(self,machine,solver):
-     """Main Loop for UQMethod.
-          General procedure:
-          1. Let machine decide how many samples to compute.
-          2. Generate samples and weights.
-          3. Compute samples on system
 
-      Args:
-          machine: class of machine, i.e. local, or computing cluster.
-          solver: class of solver, i.e. flexi, or python solver.
+   subclasses={}
+   stochVarDefaults={}
+   levelDefaults={}
 
-     """
-     iteration=0
-     while True:
-        # nSamples=machine.allocateRessources(solver.dofsPerCore)
-        nSamples= [20,4]
-        samples, weight=self.GetNodesAndWeights(nSamples)
-        iteration+=1
-        if(iteration==self.nMaxIter):
-           break
+   def OwnConfig(self):
+      pass
 
+   def RunSimulation(self):
+      """Main Loop for UQMethod.
+           General procedure:
+           1. Let machine decide how many samples to compute.
+           2. Generate samples and weights.
+           3. Compute samples on system
+
+      """
+      iteration=0
+      # main loop
+      while True:
+         # self.machine.allocateRessources(self.levels,self.solver.dofsPerCore)
+         self.GetNodesAndWeights()
+         self.PrepareSimulation()
+         # self.machine.runBatch(self.solver)
+         # self.machine.runBatch(postprocSolver)
+         iteration+=1
+         if(iteration==self.nMaxIter):
+            break
+
+
+# import subclasses
 from . import *
+
+

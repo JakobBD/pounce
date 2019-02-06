@@ -8,7 +8,15 @@ uqMethod:
   distribution:
      - uniform: [-1.,1.]
      - normal : [0.,1.]
-  nLevels: 2
+  stochvar:
+     1:
+        distribution: "uniform"
+        uniform: [-1.,1.]
+        name: a
+     2:
+        distribution: "normal"
+        normal: [0.,1.]
+        name: b
   levels:
      1:
         nSamples: 10

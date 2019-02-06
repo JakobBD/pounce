@@ -1,6 +1,7 @@
 from helpers.baseclass import BaseClass
 
 class UqMethod(BaseClass):
+
   def RunSimulation(self,machine,solver):
      """Main Loop for UQMethod.
           General procedure:
@@ -19,11 +20,27 @@ class UqMethod(BaseClass):
         # nSamples=machine.allocateRessources(solver.dofsPerCore)
         nSamples= [20,4]
         samples, weights=self.GetNodesAndWeights(nSamples)
-        solver.PrepareSimulation(samples,weights)
-        machine.runBatch(solver)
-        machine.runBatch(postprocSolver)
+        for idx,level in self.levels.items():
+           for sublevel in ['c','f']:
+              prepSimuDict=self.CreatePreSimuDict(samples[idx-1],weights[idx-1],idx,sublevel)
+              # solver.PrepareSimulation(prepSimuDict)
+        # machine.runBatch(solver)
+        # machine.runBatch(postprocSolver)
         iteration+=1
         if(iteration==self.nMaxIter):
            break
+
+  def CreatePreSimuDict(self,samples,weights,level,sublevel):
+     varnames = []
+     for key in self.stochvar.items():
+        dist = self.stochvar[key[0]]
+        varnames.append(dist['name'])
+     prepSimuDict={ 'level'    : level,
+                   'sublevel': sublevel,
+                   'varnames': varnames,
+                   'samples' : samples,
+                   'weights' : weights  }
+     return(prepSimuDict)
+
 
 from . import *

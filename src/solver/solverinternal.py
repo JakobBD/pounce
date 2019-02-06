@@ -4,13 +4,13 @@ import numpy as np
 
 @Solver.RegisterSubclass('internal')
 class SolverInternal(Solver):
-   self.projectname = "Integration"
 
-   def Report(self): 
+   def Report(self):
       print("I am Internal")
 
 
    def PrepareSimulation(self,prepSimuDict):
+      print prepSimuDict
       self.WriteHdf5(prepSimuDict)
       # generateRunCommand(self)
 
@@ -25,6 +25,3 @@ class SolverInternal(Solver):
       h5f.attrs['Level']    = prepSimuDict["level"]
       h5f.attrs['SubLevel'] = prepSimuDict["sublevel"]
       h5f.close()
-
-
-

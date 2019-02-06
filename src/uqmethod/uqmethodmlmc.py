@@ -38,10 +38,10 @@ class Mlmc(UqMethod):
           varnames.append(dist['name'])
        for idx,level in self.levels.items():
           for sublevel in ['c','f']:
-             prepSimuDict={'level'    : level,
+             prepSimuDict={'level'    : idx,
                            'sublevel': sublevel,
                            'varnames': varnames,
                            'samples' : samples,
                            'weights' : weights  }
-             # solver.PrepareSimulation(prepSimuDict)
+             solver.PrepareSimulation(prepSimuDict)
        return(prepSimuDict)

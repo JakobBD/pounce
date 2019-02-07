@@ -6,7 +6,8 @@ from .uqmethod import UqMethod
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
    subclassDefaults={
-      "nMaxIter" : "NODEFAULT"
+      "nMaxIter" : "NODEFAULT",
+      "tolerance" : "NODEFAULT"
       }
 
    levelDefaults={
@@ -18,9 +19,9 @@ class Mlmc(UqMethod):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
          level.sublevels = {'f' : SubLevel(level) }
-         if iLevel > 0: 
+         if iLevel > 0:
             level.sublevels['c']=SubLevel(self.levels[iLevel-1])
-      
+
 
    def GetNodesAndWeights(self):
       for level in self.levels:
@@ -44,6 +45,11 @@ class Mlmc(UqMethod):
          for subName,sublevel in level.sublevels.items():
              self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
 
+   def getNewSamples(self):
+      self.sigmaSq = self.solver.RunPostProcBatch()
+      self.nSamples = np.ceil(np.dot(np.sqrt(np.asarray(self.sigmaSq)),np.sqrt(np.asarray(self.workMean)))\
+                                          /(self.tolerance*self.tolerance/4.)\
+                                          *np.sqrt(np.asarray(self.sigmaSq)/np.asarray((self.workMean))))
 class SubLevel():
    def __init__(self,level):
       self.solverPrms=level.solverPrms

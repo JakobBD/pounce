@@ -14,16 +14,16 @@ class LocalSystem(Machine):
       "mpi" : "NODEFAULT"
       }
 
-   def RunBatch(self,sublevel,solver):
-      self.SubmitJob(sublevel,solver)
+   def RunBatch(self,runCommand,nCoresPerSample,solver):
+      self.SubmitJob(runCommand,nCoresPerSample,solver)
    
-   def SubmitJob(self,sublevel,solver):
+   def SubmitJob(self,runCommand,nCoresPerSample,solver):
       if self.mpi:
-         # print("mpirun -n %d"%(sublevel.nCoresPerSample)+" "+sublevel.runCommand)
-         subprocess.run(["mpirun", "-n %d"%(sublevel.nCoresPerSample), sublevel.runCommand])
+         # print("mpirun -n %d"%(nCoresPerSample)+" "+runCommand)
+         subprocess.run(["mpirun", "-n %d"%(nCoresPerSample), runCommand])
       else:
-         print(sublevel.runCommand + "\n")
-         subprocess.call(shlex.split(sublevel.runCommand))
+         print(runCommand + "\n")
+         subprocess.call(shlex.split(runCommand))
       pass
    
    def AllocateRecources(self):

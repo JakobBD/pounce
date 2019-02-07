@@ -37,12 +37,12 @@ class Mlmc(UqMethod):
              furtherAttrs.update({"Level":level.ind})
              furtherAttrs.update({"Sublevel":subName})
              fileNameSubStr=str(level.ind)+str(subName)
-             self.solver.PrepareSimulation(level,sublevel,self.stochVars,fileNameSubStr,furtherAttrs)
+             sublevel.runCommand=self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
 
    def RunAllBatches(self):
       for level in self.levels:
          for subName,sublevel in level.sublevels.items():
-             self.machine.RunBatch(sublevel,self.solver)
+             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
 
 class SubLevel():
    def __init__(self,level):

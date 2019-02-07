@@ -28,7 +28,7 @@ class Mlmc(UqMethod):
       for level in self.levels:
          level.samples=[]
          for var in self.stochVars:
-            level.samples.append(var.DrawSamples(level.nCurrentSamples))
+            level.samples.append(var.DrawSamples(level.nCurrentSamples-level.nTotalSamples))
          level.samples=np.transpose(level.samples)
          level.weights=np.ones(level.nCurrentSamples)/level.nCurrentSamples
 

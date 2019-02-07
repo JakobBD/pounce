@@ -12,5 +12,5 @@ class StochVarNormal(StochVar):
    def DrawSamples(self,nSamples):
       return np.random.normal(self.mean,self.standardDeviation,nSamples)
 
-   def GetDistribution(self,nSamples):
+   def GetDistribution(self):
       return cp.Normal(self.mean,self.standardDeviation)

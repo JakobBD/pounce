@@ -25,11 +25,11 @@ class UqMethod(BaseClass):
          PrintMajorSection("Start iteration %d"%(iteration))
          # self.machine.allocateRessources(self.levels,self.solver.dofsPerCore)
          PrintMinorSection("Get samples")
+         self.GetNodesAndWeights()
          Print("Number of current samples for this iteration:")
          IndentIn()
          [Print("Level %2d: %6d samples"%(level.ind,level.nCurrentSamples)) for level in self.levels]
          IndentOut()
-         self.GetNodesAndWeights()
          PrintMinorSection("Prepare simulations")
          self.PrepareAllSimulations()
          PrintMinorSection("Run simulations")

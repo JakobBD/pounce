@@ -30,7 +30,7 @@ class Mlmc(UqMethod):
          for var in self.stochVars:
             level.samples.append(var.DrawSamples(max(level.nCurrentSamples-level.nTotalSamples,0)))
          level.samples=np.transpose(level.samples)
-         level.weights=np.ones(level.nCurrentSamples)/level.nCurrentSamples
+         level.weights=np.ones(len(max(level.nTotalSamples,level.nCurrentSamples)))/max(level.nTotalSamples,level.nCurrentSamples)
 
    def PrepareAllSimulations(self):
       for level in self.levels:
@@ -45,7 +45,7 @@ class Mlmc(UqMethod):
       for level in self.levels:
          for subName,sublevel in level.sublevels.items():
             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
-         level.nTotalSamples += max(level.nCurrentSamples-level.nTotalSamples,level.nTotalSamples)
+         level.nTotalSamples += max(level.nCurrentSamples-level.nTotalSamples,0)
          print(level.nTotalSamples)
 
    def PrepareAllPostprocessing(self):
@@ -66,7 +66,7 @@ class Mlmc(UqMethod):
          level.sigmaSq = self.solver.GetSigmaSq(fileNameSubStr)
          level.workMean = 10.*level.ind
          tmp += np.sqrt(level.sigmaSq*level.workMean)
-      for level in self.levels
+      for level in self.levels:
          level.nCurrentSamples = np.ceil(tmp*np.sqrt(level.sigmaSq/level.workMean)\
                                  /(prms.tolerance*prms.tolerance/4.))
          print(level.nCurrentSamples)

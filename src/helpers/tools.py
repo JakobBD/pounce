@@ -5,7 +5,7 @@ from helpers.printtools import *
 
 
 def SafeSqrt(arg):
-   if arg > 0.:
+   if arg >= 0.:
       return np.sqrt(arg)
    else: 
       info=inspect.getouterframes( inspect.currentframe() )[1]

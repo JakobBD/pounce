@@ -13,13 +13,12 @@ class Sc(UqMethod):
       'solverPrms' : {}
       }
 
-   def OwnConfig(self):
+   def SetupLevels(self):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
+
+   def InitLoc(self):
       self.nMaxIter=1
-   # def InitLoc(self):
-
-
 
    def GetNodesAndWeights(self):
       for level in self.levels:
@@ -29,14 +28,16 @@ class Sc(UqMethod):
          level.samples, level.weights= cp.generate_quadrature(level.polyDeg,cp.J(*level.distributions),\
          rule='G',sparse=self.sparseGrid)
 
-   def PrepareSimulation(self):
+   def PrepareAllSimulations(self):
       for level in self.levels:
          furtherAttrs=level.solverPrms
          furtherAttrs.update({"Level":level.ind})
          fileNameSubStr=str(level.ind)
-         self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
+         level.runCommand=self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
 
-class SubLevel():
-   def __init__(self,level):
-      self.solverPrms=level.solverPrms
-      self.nCoresPerSample=level.nCoresPerSample
+   def RunAllBatches(self):
+      for level in self.levels:
+         self.machine.RunBatch(level.runCommand,level.nCoresPerSample,self.solver)
+
+   def GetNewNSamples(self):
+      raise Exception("the GetNewNSamples routine should not be called for stochastic collocation")

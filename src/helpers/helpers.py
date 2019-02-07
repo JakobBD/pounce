@@ -1,23 +1,23 @@
 import operator
 import logging
 
-class Time(): 
+class Time():
    """
-   A Time object stores time data both in [h, m, s] and in sec format. 
-   It can be initialized with instance=helpers.Time(input), where input can either be a scalar 
-   or a tuple or list of length 3. 
+   A Time object stores time data both in [h, m, s] and in sec format.
+   It can be initialized with instance=helpers.Time(input), where input can either be a scalar
+   or a tuple or list of length 3.
    Its value can be retrieved with time_in_sec = instance.sec() and time_as_list = instance.list().
-   Mathematical operations can be carried out with an instance of the class and either another 
-   instance of the class, a scalar or a list / tuple. 
+   Mathematical operations can be carried out with an instance of the class and either another
+   instance of the class, a scalar or a list / tuple.
    """
 
    sec_attr=0.
    list_attr=[0.,0.,0.]
 
    def __init__(self,*args):
-      if len(args) == 1: 
+      if len(args) == 1:
          self.set(args[0])
-      elif args: 
+      elif args:
          raise TypeError("__init__() takes at most one argument. {} given".format(len(args)))
 
    def sec(self):
@@ -28,32 +28,32 @@ class Time():
       return(self.sec_attr)
 
    def set(self,*args):
-      if len(args) != 1: 
+      if len(args) != 1:
          raise TypeError("set() takes exactly one argument. {} given".format(len(args)))
-      if self.islist(args[0]): 
+      if self.islist(args[0]):
          self.list_attr = list(args[0])
          self.sec_attr = 3600*args[0][0] + 60*args[0][1] + args[0][2]
-      else: 
+      else:
          self.sec_attr = args[0]
          self.list_attr[0] = int(args[0])/3600
-         self.list_attr[1] = int(args[0])/60 - 60*self.list_attr[0] 
-         self.list_attr[2] = args[0] - 3600*self.list_attr[0]  - 60*self.list_attr[1] 
+         self.list_attr[1] = int(args[0])/60 - 60*self.list_attr[0]
+         self.list_attr[2] = args[0] - 3600*self.list_attr[0]  - 60*self.list_attr[1]
 
    def islist(self, obj):
       if type(obj) in (list,tuple):
-         if len(obj) == 3: 
+         if len(obj) == 3:
             return True
-         else: 
+         else:
             raise TypeError("List or tuple has to have length 3, but is {}.".format(len(obj)))
-      else: 
+      else:
          return False
 
    def checkinstance(self, other, op):
-      if isinstance(other,Time): 
+      if isinstance(other,Time):
          return Time(op(self.sec_attr,other.sec_attr))
-      elif self.islist(other): 
+      elif self.islist(other):
          return Time([op(a,b) for a,b in zip(self.list_attr,list(other))])
-      else: 
+      else:
          return Time(op(self.sec_attr,other))
 
    def __neg__(self):
@@ -71,9 +71,9 @@ class Time():
    def __rmul__(self, other):
       return Time(self.sec_attr*other)
    def __div__(self, other):
-      if isinstance(other,Time): 
+      if isinstance(other,Time):
          return float(self.sec_attr)/other.sec_attr
-      else: 
+      else:
          return Time(float(self.sec_attr)/other)
    def __rdiv__(self, other):
       return float(other.sec_attr)/self.sec_attr
@@ -81,12 +81,25 @@ class Time():
       return Time(self.sec_attr**other)
 
 
-
 def Log(msg):
    log = logging.getLogger('logger')
    log.info(msg)
-      
+
 def Debug(msg):
    log = logging.getLogger('logger')
    log.debug(msg)
-      
+
+def PrintHeader():
+   msg1="""
+                              `7MM***Mq.   .g8**8q. `7MMF'   `7MF'`7MN.   `7MF' .g8***bgd `7MM***YMM 
+                                MM   `MM..dP'    `YM. MM       M    MMN.    M .dP'     `M   MM    `7 
+                                MM   ,M9 dM'      `MM MM       M    M YMb   M dM'       `   MM   d   
+                                MMmmdM9  MM        MM MM       M    M  `MN. M MM            MMmmMM   
+                                MM       MM.      ,MP MM       M    M   `MM.M MM.           MM   Y  ,
+                                MM       `Mb.    ,dP' YM.     ,M    M     YMM `Mb.     ,'   MM     ,M
+                              .JMML.       `*bmmd*'    `bmmmmd*'  .JML.    YM   `*bmmmd'  .JMMmmmmMMM
+"""
+   msg2="""
+                                 Propagation of Uncertainty - Framework for HPC UQ implementations
+"""
+   print("="*132+msg1+"="*132+msg2+"="*132)

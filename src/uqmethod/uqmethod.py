@@ -1,4 +1,5 @@
 from helpers.baseclass import BaseClass
+from helpers.printtools import *
 
 class UqMethod(BaseClass):
 
@@ -21,19 +22,23 @@ class UqMethod(BaseClass):
       # main loop
       while True:
          iteration+=1
-         print("="*132+"\nStart iteration %d\n"%(iteration)+"="*132)
+         PrintMajorSection("Start iteration %d"%(iteration))
          # self.machine.allocateRessources(self.levels,self.solver.dofsPerCore)
-         print("-"*132+"\nGet sample nodes and weights")
+         PrintMinorSection("Get sample nodes and weights")
+         Print("Number of samples on every level:")
+         IndentIn()
+         [Print("Level %2d: %6d samples"%(level.ind,level.nCurrentSamples)) for level in self.levels]
+         IndentOut()
          self.GetNodesAndWeights()
-         print("-"*132+"\nPrepare simulations")
+         PrintMinorSection("Prepare simulations")
          self.PrepareAllSimulations()
-         print("-"*132+"\nRun simulations")
+         PrintMinorSection("Run simulations")
          self.RunAllBatches()
          if(iteration==self.nMaxIter):
             break
-         print("-"*132+"\nGet number of samples for next iteration")
+         PrintMinorSection("Get number of samples for next iteration")
          self.getNewNSamples()
-      print("="*132+"\nLast iteration finished. Exit loop.%d\n"%(iteration)+"="*132)
+      PrintMajorSection("Last iteration finished. Exit loop.")
       # self.machine.runBatch(postprocSolver)
 
 # import subclasses

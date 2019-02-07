@@ -1,5 +1,5 @@
 general:
-  outputLevel: debug #options: none, standard, debug
+  outputLevel: standard #options: none, standard, debug
 
 uqMethod:
   _type: sc
@@ -33,5 +33,5 @@ machine:
 solver:
   _type: internal
   projectName: Integration
-  exePath: ../externals/integration.py
+  exePath: /home/jakob/code/pounce/v1/externals/integration.py
 

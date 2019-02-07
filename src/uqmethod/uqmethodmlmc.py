@@ -22,7 +22,6 @@ class Mlmc(UqMethod):
          if iLevel > 0:
             level.sublevels['c']=SubLevel(self.levels[iLevel-1])
 
-
    def GetNodesAndWeights(self):
       for level in self.levels:
          level.samples=[]
@@ -39,6 +38,7 @@ class Mlmc(UqMethod):
              furtherAttrs.update({"Sublevel":subName})
              fileNameSubStr=str(level.ind)+str(subName)
              sublevel.runCommand=self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
+         del level.samples, level.weights
 
    def RunAllBatches(self):
       for level in self.levels:
@@ -50,6 +50,7 @@ class Mlmc(UqMethod):
       self.nSamples = np.ceil(np.dot(np.sqrt(np.asarray(self.sigmaSq)),np.sqrt(np.asarray(self.workMean)))\
                                           /(self.tolerance*self.tolerance/4.)\
                                           *np.sqrt(np.asarray(self.sigmaSq)/np.asarray((self.workMean))))
+
 class SubLevel():
    def __init__(self,level):
       self.solverPrms=level.solverPrms

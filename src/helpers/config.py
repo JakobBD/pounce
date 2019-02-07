@@ -9,8 +9,8 @@ from machine.machine import Machine
 from solver.solver import Solver
 from stochvar.stochvar import StochVar
 from level.level import Level
-from .baseclass import BaseClass
-from .helpers import Log,Debug
+from helpers.baseclass import BaseClass
+from helpers.printtools import *
 
 
 def Config(prmfile):
@@ -22,6 +22,7 @@ def Config(prmfile):
       prms = yaml.safe_load(f)
 
    # sets up global tools like logger
+   PrintMinorSection("Read parameters")
    GeneralConfig(prms["general"])
 
    # initialize classes according to chosen subclass
@@ -46,7 +47,11 @@ def ConfigList(string,prms,classInit,defaults):
       raise Exception("Required parameter '"+string+"' is not set in parameter file!")
    if type(prms[string]) is not list:
       raise Exception(" Parameter'"+string+"' needs to be defined as a list!")
-   return [ classInit(subDict,defaults) for subDict in prms[string] ]
+   Print("Setup "+yellow(string)+" - Number of" + string + " is " + yellow(str(len(prms[string]))) + ".")
+   IndentIn()
+   classes = [ classInit(subDict,defaults) for subDict in prms[string] ]
+   IndentOut()
+   return classes
 
 
 class GeneralConfig(BaseClass):
@@ -108,25 +113,33 @@ def PrintDefaultYMLFile():
 
    # First, get defaults for parent classes uqMethod, machine and solver.
    for parentClassName,parentClass in parentClasses.items():
+
       # Inquire user input to choose subclass for which defaults are to be printed
       subclassName, classDefaults, subclass = InquireSubclass(parentClassName,parentClass)
+
       # build up dictionary with defaults for this parent class.
       classDict={"_type" : subclassName}
       classDict.update(classDefaults)
       classDict.update(subclass.subclassDefaults)
+
       # add defaults for this class to dict with all defaults
       allDefaults.update({parentClassName : classDict})
+
       # we need a dict of all chosen subclasses below,
       # as some defaults set per level or per stochVar depend on the chosen subclasses.
       subclasses.update({parentClassName:subclass})
 
+
    # build defaults per level
    levelDefaultsTmp = Level.classDefaults
+
    # some defaults set per level depend on the chosen uqMethod
    levelDefaultsTmp.update(subclasses["uqMethod"].levelDefaults)
+
    # we update the large defaults dict with a list containing our level dict.
    # This outputs the defaults for nLevels = 1 in the correct format
    allDefaults.update({"levels" : [levelDefaultsTmp]})
+
 
    # for stochVars, we output a list of all implemented types
    stochVarDefaultsTmp=[]
@@ -135,8 +148,10 @@ def PrintDefaultYMLFile():
       stochVarDict={"_type" : stochVarName} # name of stochVar (e.g. normal)
       stochVarDict.update(stochVar.classDefaults.copy())
       stochVarDict.update(stochVar.subclassDefaults)
+
       # some defaults set per stochVar depend on the chosen uqMethod and are defined in the uqMethod subclass
       stochVarDict.update(subclasses["uqMethod"].stochVarDefaults)
+
       # add dict for thi sochVar to list of all stochVars
       stochVarDefaultsTmp.append(stochVarDict)
    allDefaults.update({"stochVars" : stochVarDefaultsTmp})

@@ -1,3 +1,4 @@
+from helpers.printtools import *
 
 class BaseClass():
    """
@@ -21,6 +22,7 @@ class BaseClass():
       Throws errors for invali input, else converts input dict to class attributes
       """
 
+      Print("  Setup class "+yellow(self.__class__.__name__))
       # initialize attribute dict with default values
       attributes={}
       attributes.update(self.classDefaults)
@@ -62,5 +64,6 @@ class BaseClass():
       del classDict["_type"]
       if subclassKey not in cls.subclasses:
          raise ValueError("'{}' is not a valid {}".format(subclassKey,cls.__name__))
+      Print("Chosen subclass of "+yellow(cls.__name__)+" is "+yellow(subclassKey)+".")
       return cls.subclasses[subclassKey](classDict,*args)
 

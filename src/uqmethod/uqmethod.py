@@ -22,8 +22,8 @@ class UqMethod(BaseClass):
       while True:
          # self.machine.allocateRessources(self.levels,self.solver.dofsPerCore)
          self.GetNodesAndWeights()
-         self.PrepareSimulation()
-         # self.machine.runBatch(self.solver)
+         self.PrepareAllSimulations()
+         self.RunAllBatches()
          # self.machine.runBatch(postprocSolver)
          iteration+=1
          if(iteration==self.nMaxIter):

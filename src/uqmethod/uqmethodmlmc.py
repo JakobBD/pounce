@@ -30,14 +30,19 @@ class Mlmc(UqMethod):
          level.samples=np.transpose(level.samples)
          level.weights=np.ones(level.nSamples)/level.nSamples
 
-   def PrepareSimulation(self):
+   def PrepareAllSimulations(self):
       for level in self.levels:
          for subName,sublevel in level.sublevels.items():
              furtherAttrs=sublevel.solverPrms
              furtherAttrs.update({"Level":level.ind})
              furtherAttrs.update({"Sublevel":subName})
              fileNameSubStr=str(level.ind)+str(subName)
-             self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
+             self.solver.PrepareSimulation(level,sublevel,self.stochVars,fileNameSubStr,furtherAttrs)
+
+   def RunAllBatches(self):
+      for level in self.levels:
+         for subName,sublevel in level.sublevels.items():
+             self.machine.RunBatch(sublevel,self.solver)
 
 class SubLevel():
    def __init__(self,level):

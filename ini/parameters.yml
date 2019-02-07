@@ -26,8 +26,10 @@ stochVars:
 
 machine:
    _type: local
+   mpi: false
 
 solver:
    _type: internal
    projectName: Integration
+   exePath: ../externals/integration.py
 

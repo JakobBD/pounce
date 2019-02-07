@@ -2,7 +2,7 @@ from .machine import Machine
 
 @Machine.RegisterSubclass('cray')
 class CrayCluster(Machine):
-   """Class: Defines CrayCluster machine. Machine executes Samples. 
+   """Class: Defines CrayCluster machine. Machine executes Samples.
    Args:
 
    Returns:

@@ -1,28 +1,28 @@
 general:
-   outputLevel: debug #options: none, standard, debug
+  outputLevel: debug #options: none, standard, debug
 
 uqMethod:
-   _type: sc
-   sparseGrid : False
+  _type: sc
+  sparseGrid : False
 
 levels:
-   - polyDeg: [2,2]
-     nCoresPerSample: 24
-     solverPrms:
-        nPoints: 2
+- polyDeg: [2,2]
+  nCoresPerSample: 24
+  solverPrms:
+    nPoints: 2
 
 stochVars:
-   - _type: uniform
-     bounds: [-1.,1.]
-     name: a
-   - _type: normal
-     mean: 1.
-     standardDeviation: 0.1
-     name: b
+- _type: uniform
+  bounds: [-1.,1.]
+  name: a
+- _type: normal
+  mean: 1.
+  standardDeviation: 0.1
+  name: b
 
 machine:
-   _type: local
+  _type: local
 
 solver:
-   _type: internal
-   projectName: Integration
+  _type: internal
+  projectName: Integration

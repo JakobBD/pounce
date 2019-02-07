@@ -24,6 +24,6 @@ class SolverInternal(Solver):
       h5f.create_dataset('Weights', data=level.weights)
       h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
-      for key, value in furtherAttrs.items(): 
+      for key, value in furtherAttrs.items():
          h5f.attrs[key] = value
       h5f.close()

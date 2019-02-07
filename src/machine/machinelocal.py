@@ -5,7 +5,7 @@ from .machine import Machine
 
 @Machine.RegisterSubclass('local')
 class LocalSystem(Machine):
-   """Class: Defines local machine. Machine executes Samples. 
+   """Class: Defines local machine. Machine executes Samples.
    Args:
 
    Returns:
@@ -16,7 +16,7 @@ class LocalSystem(Machine):
 
    def RunBatch(self,runCommand,nCoresPerSample,solver):
       self.SubmitJob(runCommand,nCoresPerSample,solver)
-   
+
    def SubmitJob(self,runCommand,nCoresPerSample,solver):
       if self.mpi:
          # print("mpirun -n %d"%(nCoresPerSample)+" "+runCommand)
@@ -25,7 +25,7 @@ class LocalSystem(Machine):
          print(runCommand + "\n")
          subprocess.call(shlex.split(runCommand))
       pass
-   
+
    def AllocateRecources(self):
       pass
 

@@ -20,12 +20,13 @@ class UqMethod(BaseClass):
       iteration=0
       # main loop
       while True:
+         iteration+=1
+         print("-"*132+"\nStart iteration %d\n"%(iteration)+"-"*132)
          # self.machine.allocateRessources(self.levels,self.solver.dofsPerCore)
          self.GetNodesAndWeights()
          self.PrepareAllSimulations()
          self.RunAllBatches()
          # self.machine.runBatch(postprocSolver)
-         iteration+=1
          if(iteration==self.nMaxIter):
             break
 

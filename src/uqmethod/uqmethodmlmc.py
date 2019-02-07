@@ -14,7 +14,7 @@ class Mlmc(UqMethod):
       'solverPrms' : {}
       }
 
-   def OwnConfig(self):
+   def SetupLevels(self):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
          level.sublevels = {'f' : SubLevel(level) }

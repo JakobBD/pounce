@@ -1,7 +1,11 @@
 import sys
 
 class BaseClass():
-   classDefaults={}
+   '''
+   Skeleton for most classes to inherit from. 
+   Provides methods for user input and to choose subclasses from a user input string
+   '''
+   classDefaults={} 
    subclassDefaults={}
 
    def __init__(self,classDict): 
@@ -12,9 +16,15 @@ class BaseClass():
       pass
 
    def ReadPrms(self,inputPrms):
+      ''' 
+      Gets user input for own class as a dictionary. 
+      Compares user input against defaults for parent class and subclass.
+      Throws errors for invali input, else converts input dict to class attributes
+      ''' 
 
       # initialize attribute dict with default values
-      attributes=self.classDefaults
+      attributes={}
+      attributes.update(self.classDefaults)
       attributes.update(self.subclassDefaults)
 
       # overwrite defaults with custom input prms
@@ -34,6 +44,10 @@ class BaseClass():
 
    @classmethod
    def RegisterSubclass(cls, subclassKey):
+      '''
+      this is called before defining a cubclass of a parent class. 
+      It adds each subclass to a dict, so that the subclass can be chosen via a user input string.
+      '''
       def Decorator(subclass):
          cls.subclasses[subclassKey] = subclass
          return subclass
@@ -41,57 +55,13 @@ class BaseClass():
 
    @classmethod
    def Create(cls,classDict,*args):
+      '''
+      Choose subclass via a input string and init. 
+      The further user input for this class is passed to init as a dict
+      '''
       subclassKey=classDict["_type"]
       del classDict["_type"]
       if subclassKey not in cls.subclasses:
          raise ValueError("'{}' is not a valid {}".format(subclassKey,cls.__name__))
       return cls.subclasses[subclassKey](classDict,*args)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# OLD CODE
-
-         # # Nested dicts are assumed to be numbered lists, i.e. have keys 1,2,...
-         # # A range of these keys is stored in an "ind" item. 
-         # # For each item of the list, the default value is then copied into the attributes array.
-         # # Input valies are then compared against this array
-         # else:
-            # inputValue["ind"]=range(1,len(inputValue)+1)
-            # try:
-               # for ind in inputValue["ind"]:
-                  # attributes[ind]=attributes[1]
-                  # for prm in inputValue[ind]:
-                     # if prm not in attributes[inputPrmName][ind]:
-                        # sys.exit("'"+prm+"' is not a valid input parameter name for an item of '"+inputPrmName+"'!")
-                     # else:
-                        # attributes[inputPrmName][ind][prm]=inputValue[ind][prm]
-            # except KeyError: 
-               # sys.exit("Items of '"+inputPrmName+"' have to be acending integers: 1,2,...!")

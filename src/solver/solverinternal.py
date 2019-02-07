@@ -22,7 +22,6 @@ class SolverInternal(Solver):
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
       h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
-      h5f.create_dataset('Weights', data=level.weights)
       h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
       for key, value in furtherAttrs.items():
@@ -31,7 +30,6 @@ class SolverInternal(Solver):
 
    def PreparePostprocessing(self,fileNameSubStr):
       runPostprocCommand=self.GeneratePostprocessingCommand(fileNameSubStr)
-      print(runPostprocCommand)
       return runPostprocCommand
 
    def GeneratePostprocessingCommand(self,fileNameSubStr):

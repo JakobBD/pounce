@@ -11,13 +11,13 @@ def WriteHdf5(projectname,level,nSamples,sums):
    h5f = h5py.File(projectname+'_'+str(level)+'_Postproc.h5', 'w')
    h5f.attrs['ProjectName'] = projectname
    h5f.attrs['Level']       = level
+   h5f.attrs['nSamples']    = nSamples
    for key,value in sums.items():
       h5f.create_dataset(key, data=value)
    h5f.close()
 
 parser = argparse.ArgumentParser(description='Integration of function with two input parameters')
 parser.add_argument('-f','--file'   ,help='Stochastic Input h5 File',nargs='+')
-parser.add_argument('-s','--sums'   ,help='h5 file containing the all sum from previous simulations.')
 
 args = parser.parse_args()
 
@@ -34,17 +34,17 @@ if level > 1:
    h5f.close()
 
 sums = {}
-if args.sums:
-   h5f = h5py.File(args.sums, 'r')
-   nSamples = h5f['nSamples']
-   sums.update({"uFineSum":h5f['uFineSum']})
-   sums.update({"uFineSqSum":h5f['uFineSqSum']})
+try :
+   h5f = h5py.File(projectname+'_'+str(level)+'_Postproc.h5', 'r')
+   nSamples = h5f.attrs['nSamples']
+   sums.update({"uFineSum":np.array(h5f['uFineSum'])})
+   sums.update({"uFineSqSum":np.array(h5f['uFineSqSum'])})
    if level > 1:
-      sums.update({"uCoarseSum":h5f['uCoarseSum']})
-      sums.update({"uCoarseSqSum":h5f['uCoarseSqSum']})
-      sums.update({"dUSqSum":h5f['dUSqSum']})
+      sums.update({"uCoarseSum":np.array(h5f['uCoarseSum'])})
+      sums.update({"uCoarseSqSum":np.array(h5f['uCoarseSqSum'])})
+      sums.update({"dUSqSum":np.array(h5f['dUSqSum'])})
    h5f.close()
-else:
+except:
    nSamples=0
    sums.update({"uFineSum": 0.})
    sums.update({"uFineSqSum": 0.})

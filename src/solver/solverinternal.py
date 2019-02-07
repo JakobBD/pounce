@@ -5,7 +5,8 @@ import numpy as np
 @Solver.RegisterSubclass('internal')
 class SolverInternal(Solver):
    subclassDefaults={
-      "exePath" : "NODEFAULT"
+      "exeSimulationPath" : "NODEFAULT"
+      "exePostprocessingPath" : "NODEFAULT"
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -27,3 +28,14 @@ class SolverInternal(Solver):
       for key, value in furtherAttrs.items():
          h5f.attrs[key] = value
       h5f.close()
+
+   def PreparePostprocessing(self,fileNameSubStr):
+      runPostprocCommand=self.GeneratePostprocessingCommand(fileNameSubStr)
+      print(runPostprocCommand)
+      return runPostprocCommand
+
+   def GeneratePostprocessingCommand(self,fileNameSubStr):
+      runPostprocCommand='python '+self.exePath+ ' -f '
+      for subStrs in fileNameSubStr:
+         runPostprocCommand=runPostprocCommand+self.projectName+'_'fileNameSubStr+'_Postproc.h5'
+      return runPostprocCommand

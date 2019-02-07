@@ -10,7 +10,7 @@ if len(sys.argv) is 2 and sys.argv[1] in ['-h','--help']:
 if not (len(sys.argv) is 2 and sys.argv[1].endswith('ml')):
    sys.exit("\nUsage: <python3 main.py parameter.yml> OR <python3 main.py --help>\n")
 
-# read input 
+# read input
 uqMethod = config.Config(sys.argv[1])
 
 # run simulation

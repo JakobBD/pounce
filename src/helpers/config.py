@@ -13,22 +13,22 @@ from .baseclass import BaseClass
 from .helpers import Log,Debug
 
 
-def Config(prmfile): 
-   '''
+def Config(prmfile):
+   """
    Reads all user input and sets up (sub-)classes according to this input
-   '''
+   """
    # read user input to dict
    with open(prmfile, 'r') as f:
       prms = yaml.safe_load(f)
 
    # sets up global tools like logger
-   GeneralConfig(prms["general"])  
+   GeneralConfig(prms["general"])
 
    # initialize classes according to chosen subclass
    uqMethod = UqMethod.Create(prms["uqMethod"])
    uqMethod.machine = Machine.Create(prms["machine"])
    uqMethod.solver = Solver.Create(prms["solver"])
-   
+
    # initialize lists of classes for all levels and all stochVars
    uqMethod.stochVars = ConfigList("stochVars",prms,StochVar.Create,uqMethod.stochVarDefaults)
    uqMethod.levels = ConfigList("levels",prms,Level,uqMethod.levelDefaults)
@@ -37,20 +37,21 @@ def Config(prmfile):
    uqMethod.SetupLevels()
 
    return uqMethod
-      
+
 def ConfigList(string,prms,classInit,defaults):
-   '''
+   """
    Checks for correct input format for list type input and initializes (sub-) class for given input
-   '''
+   """
    if string not in prms:
-      sys.exit("'"+string+"' is not set in parameter file!")
+      raise Exception("Required parameter '"+string+"' is not set in parameter file!")
    if type(prms[string]) is not list:
-      sys.exit("'"+string+"' need to be defined as a list!")
+      raise Exception(" Parameter'"+string+"' needs to be defined as a list!")
    return [ classInit(subDict,defaults) for subDict in prms[string] ]
 
 
-class GeneralConfig(BaseClass): 
-   """This class consists mainly of attributes. 
+class GeneralConfig(BaseClass):
+   """
+   This class consists mainly of attributes.
    Its purpose is to ease general parameter readin and default value handling.
    """
    classDefaults={"outputLevel" : "standard"}
@@ -59,18 +60,19 @@ class GeneralConfig(BaseClass):
       self.SetupLogger()
 
    def SetupLogger(self):
-      """Setups a global logger with the name 'logger'. 
+      """
+      Setups a global logger with the name 'logger'.
       This logger can accessed in any function by "log = logging.getLogger('logger')".
       Three different logging levels:
           none     : print no logging messages
           standard : print information messages (i.e. print all messages invoked with "log.info(message)")
-          debug    : print debug + information messages (i.e. print all messages invoked with "log.info(message)" 
+          debug    : print debug + information messages (i.e. print all messages invoked with "log.info(message)"
                      or "log.debug(message)")
-      """ 
+      """
 
       if self.outputLevel == "none" :       # no logging
-         formatter = logging.Formatter()  
-      elif self.outputLevel == "standard" : # info 
+         formatter = logging.Formatter()
+      elif self.outputLevel == "standard" : # info
          formatter = logging.Formatter(fmt='%(message)s')
       elif self.outputLevel == "debug" :    # debug
          formatter = logging.Formatter(fmt='%(levelname)s - %(module)s: %(message)s')
@@ -90,12 +92,12 @@ class GeneralConfig(BaseClass):
       return logger
 
 
-def PrintDefaultYMLFile(): 
-   '''
-   Asks for user input to choose one of the available subclasses, 
-   builds up dictionary of defaults for all variables for this sub class combinatiion, 
+def PrintDefaultYMLFile():
+   """
+   Asks for user input to choose one of the available subclasses,
+   builds up dictionary of defaults for all variables for this sub class combinatiion,
    then prints default YML file using yaml.dump.
-   '''
+   """
    print("\nPrint default YML File\n"+"-"*132+"\nConfig:\n")
    allDefaults={}
 
@@ -104,8 +106,8 @@ def PrintDefaultYMLFile():
                   "solver": Solver }
    subclasses={}
 
-   # First, get defaults for parent classes uqMethod, machine and solver. 
-   for parentClassName,parentClass in parentClasses.items(): 
+   # First, get defaults for parent classes uqMethod, machine and solver.
+   for parentClassName,parentClass in parentClasses.items():
       # Inquire user input to choose subclass for which defaults are to be printed
       subclassName, classDefaults, subclass = InquireSubclass(parentClassName,parentClass)
       # build up dictionary with defaults for this parent class.
@@ -114,7 +116,7 @@ def PrintDefaultYMLFile():
       classDict.update(subclass.subclassDefaults)
       # add defaults for this class to dict with all defaults
       allDefaults.update({parentClassName : classDict})
-      # we need a dict of all chosen subclasses below, 
+      # we need a dict of all chosen subclasses below,
       # as some defaults set per level or per stochVar depend on the chosen subclasses.
       subclasses.update({parentClassName:subclass})
 
@@ -122,7 +124,7 @@ def PrintDefaultYMLFile():
    levelDefaultsTmp = Level.classDefaults
    # some defaults set per level depend on the chosen uqMethod
    levelDefaultsTmp.update(subclasses["uqMethod"].levelDefaults)
-   # we update the large defaults dict with a list containing our level dict. 
+   # we update the large defaults dict with a list containing our level dict.
    # This outputs the defaults for nLevels = 1 in the correct format
    allDefaults.update({"levels" : [levelDefaultsTmp]})
 
@@ -147,11 +149,11 @@ def PrintDefaultYMLFile():
    sys.exit()
 
 
-def InquireSubclass(parentClassName,parentClass): 
-   '''
+def InquireSubclass(parentClassName,parentClass):
+   """
    Asks for user input to choose one of the available subclasses
-   '''
-   msg = "Available types for "+parentClassName+" (please choose): " 
+   """
+   msg = "Available types for "+parentClassName+" (please choose): "
    for subclassName in parentClass.subclasses:
       msg += subclassName + ", "
    while True:
@@ -159,5 +161,5 @@ def InquireSubclass(parentClassName,parentClass):
       # check if user input is a valid option
       if subclassName in parentClass.subclasses:
          return subclassName, parentClass.classDefaults, parentClass.subclasses[subclassName]
-      else: 
+      else:
          print("Wrong input. Repeat.")

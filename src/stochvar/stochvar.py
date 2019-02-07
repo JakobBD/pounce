@@ -1,6 +1,6 @@
 from helpers.baseclass import BaseClass
 
-class StochVar(BaseClass): 
+class StochVar(BaseClass):
    subclasses = {}
    classDefaults={
       'name' : 'NODEFAULT'

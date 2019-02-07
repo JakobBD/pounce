@@ -18,9 +18,9 @@ class Mlmc(UqMethod):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
          level.sublevels = {'f' : SubLevel(level) }
-         if iLevel > 0: 
+         if iLevel > 0:
             level.sublevels['c']=SubLevel(self.levels[iLevel-1])
-      
+
 
    def GetNodesAndWeights(self):
       for level in self.levels:

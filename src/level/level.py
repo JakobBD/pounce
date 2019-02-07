@@ -1,6 +1,6 @@
 from helpers.baseclass import BaseClass
 
-class Level(BaseClass): 
+class Level(BaseClass):
    subclasses = {}
    classDefaults={
       'nCoresPerSample' : 'NODEFAULT'

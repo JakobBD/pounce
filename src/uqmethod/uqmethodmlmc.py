@@ -60,13 +60,15 @@ class Mlmc(UqMethod):
          self.machine.RunBatch(level.runPostprocCommand,1,self.solver)
 
    def GetNewNCurrentSamples(self):
+      tmp = 0.
       for level in self.levels:
          fileNameSubStr = str(level.ind)
          level.sigmaSq = self.solver.GetSigmaSq(fileNameSubStr)
          level.workMean = 10.*level.ind
-         level.nCurrentSamples = int(np.ceil(np.dot(np.sqrt(level.sigmaSq),np.sqrt(level.workMean))\
-                          /(self.tolerance**2/4.)\
-                          *np.sqrt(level.sigmaSq/(level.workMean)) ))
+         tmp += np.sqrt(level.sigmaSq*level.workMean)
+      for level in self.levels
+         level.nCurrentSamples = np.ceil(tmp*np.sqrt(level.sigmaSq/level.workMean)\
+                                 /(prms.tolerance*prms.tolerance/4.))
          print(level.nCurrentSamples)
 
 

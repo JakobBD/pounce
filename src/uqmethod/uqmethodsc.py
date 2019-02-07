@@ -22,3 +22,11 @@ class Sc(UqMethod):
             level.distributions.append(var.GetDistribution())
          level.samples, level.weights= cp.generate_quadrature(level.polyDeg+1,cp.J(*level.distributions),\
          rule='G',sparse=self.sparseGrid)
+
+   def PrepareSimulation(self):
+      for level in self.levels:
+         for subName,sublevel in level.sublevels.items():
+             furtherAttrs=sublevel.solverPrms
+             furtherAttrs.update({"Level":level.ind})
+             fileNameSubStr=str(level.ind)+str(subName)
+             self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)

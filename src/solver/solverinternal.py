@@ -8,13 +8,15 @@ class SolverInternal(Solver):
       "exePath" : "NODEFAULT"
       }
 
-   def PrepareSimulation(self,level,sublevel,stochVars,fileNameSubStr,furtherAttrs):
+   def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
       h5FileName = self.projectName+'_'+fileNameSubStr+'_StochInput.h5'
       self.WriteHdf5(level,stochVars,fileNameSubStr,furtherAttrs)
-      self.GenerateRunCommand(sublevel,h5FileName)
+      runCommand=self.GenerateRunCommand(h5FileName)
+      return runCommand
 
-   def GenerateRunCommand(self,sublevel,h5FileName):
-      sublevel.runCommand='python '+self.exePath+ ' -f '+h5FileName
+   def GenerateRunCommand(self,h5FileName):
+      runCommand='python '+self.exePath+ ' -f '+h5FileName
+      return runCommand
 
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
       h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')

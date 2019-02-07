@@ -30,6 +30,7 @@ class Mlmc(UqMethod):
          for var in self.stochVars:
             level.samples.append(var.DrawSamples(level.nCurrentSamples))
          level.samples=np.transpose(level.samples)
+         level.weights=[]
 
    def PrepareAllSimulations(self):
       for level in self.levels:

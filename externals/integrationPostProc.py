@@ -22,9 +22,10 @@ parser.add_argument('-f','--file'   ,help='Stochastic Input h5 File',nargs='+')
 args = parser.parse_args()
 
 h5f = h5py.File(args.file[0], 'r')
-projectname = h5f.attrs['ProjectName'] 
-level = h5f.attrs['Level'] 
+projectname = h5f.attrs['ProjectName']
+level = h5f.attrs['Level']
 integralF = np.array(h5f['Integral'])
+weights   = np.array(h5f['Weights'])
 nNewSamples=len(integralF)
 h5f.close()
 
@@ -49,26 +50,24 @@ except:
    sums.update({"uFineSum": 0.})
    sums.update({"uFineSqSum": 0.})
    if level > 1:
-      sums.update({"uCoarseSum": 0.}) 
-      sums.update({"uCoarseSqSum": 0.}) 
-      sums.update({"dUSqSum": 0.}) 
+      sums.update({"uCoarseSum": 0.})
+      sums.update({"uCoarseSqSum": 0.})
+      sums.update({"dUSqSum": 0.})
 
 nSamples+=nNewSamples
 for i in range(nNewSamples):
    sums["uFineSum"]   += integralF[i]
-   sums["uFineSqSum"] += (integralF[i])**2 
+   sums["uFineSqSum"] += (integralF[i])**2
    if level > 1:
       sums["uCoarseSum"]   += integralC[i]
       sums["uCoarseSqSum"] += (integralC[i])**2
       sums["dUSqSum"]      += (integralF[i]-integralC[i])**2
-
+weights = weights if len(weights)>0 else 1./nSamples
 if level > 1:
    sums["mean"] = (sums["uFineSum"]-sums["uCoarseSum"])/nSamples
    sums["sigmaSq"] = (sums["dUSqSum"])/(nSamples-1)-(sums["uFineSum"]-sums["uCoarseSum"])**2/(nSamples*(nSamples-1))
 else:
-   sums["mean"] = sums["uFineSum"]/nSamples
+   sums["mean"] = np.sum(integralF*weights)
    sums["sigmaSq"] = (sums["uFineSqSum"])/(nSamples-1)-(sums["uFineSum"])**2/(nSamples*(nSamples-1))
 
 WriteHdf5(projectname,level,nSamples,sums)
-
-

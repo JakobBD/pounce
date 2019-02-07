@@ -7,9 +7,10 @@ def Function(func,spacing,sample,n):
       func[ind]=func[ind]+sp*spacing**n
    return func
 
-def WriteHdf5(integral,projectname,level,sublevel):
+def WriteHdf5(integral,weights,projectname,level,sublevel):
    h5f = h5py.File(projectname+'_'+str(level)+sublevel+'_State.h5', 'w')
    h5f.create_dataset('Integral', data=integral)
+   h5f.create_dataset('Weights', data=weights)
    h5f.attrs['ProjectName'] = projectname
    h5f.attrs['Level']       = level
    h5f.attrs['SubLevel']    = sublevel
@@ -30,7 +31,7 @@ except:
    sublevel = ''
 varnames = h5f.attrs['StochVars']
 sample   = np.transpose(np.array(h5f['Samples']))
-
+weights  = np.transpose(np.array(h5f['Weights']))
 spacing  = np.linspace(0.,10.,nPoints)
 cells    = len(spacing)-1
 function = np.zeros((len(sample[0]),len(spacing)))
@@ -42,4 +43,4 @@ integral = np.zeros(len(sample[0]))
 for i in range(cells):
    integral = integral + (np.transpose(function)[i+1]+np.transpose(function)[i])/2.*(spacing[1]-spacing[0])
 
-WriteHdf5(integral,projectname,level,sublevel)
+WriteHdf5(integral,weights,projectname,level,sublevel)

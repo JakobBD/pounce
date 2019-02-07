@@ -37,8 +37,7 @@ class Sc(UqMethod):
 
    def RunAllBatches(self):
       for level in self.levels:
-         self.machine.RunBatch(level,self.solver)
-
-   def RunAllBatches(self):
-      for level in self.levels:
          self.machine.RunBatch(level.runCommand,level.nCoresPerSample,self.solver)
+
+   def GetNewNSamples(self):
+      raise Exception("the GetNewNSamples routine should not be called for stochastic collocation")

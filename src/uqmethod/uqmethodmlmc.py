@@ -56,8 +56,7 @@ class Mlmc(UqMethod):
 
    def RunAllBatchesPostprocessing(self):
       for level in self.levels:
-         for subName,sublevel in level.sublevels.items():
-            self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+         self.machine.RunBatch(level.runPostprocCommand,1,self.solver)
 
    def getNewNCurrentSamples(self):
       for level in self.levels:

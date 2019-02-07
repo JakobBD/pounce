@@ -3,14 +3,15 @@ general:
 
 uqMethod:
   _type: mlmc
-  nMaxIter: 1
+  nMaxIter: 2
+  tolerance: 0.1
 
 levels:
-   - nSamples: 10
+   - nCurrentSamples: 10
      nCoresPerSample: 24
      solverPrms:
         nPoints: 10
-   - nSamples: 4
+   - nCurrentSamples: 4
      nCoresPerSample: 48
      solverPrms:
         nPoints: 20
@@ -31,5 +32,6 @@ machine:
 solver:
   _type: internal
   projectName: Integration
-  exePath: ../externals/integration.py
+  exeSimulationPath: ../externals/integration.py
+  exePostprocessingPath: ../externals/integrationPostProc.py
 

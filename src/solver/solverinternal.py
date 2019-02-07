@@ -5,7 +5,7 @@ import numpy as np
 @Solver.RegisterSubclass('internal')
 class SolverInternal(Solver):
    subclassDefaults={
-      "exeSimulationPath" : "NODEFAULT"
+      "exeSimulationPath" : "NODEFAULT",
       "exePostprocessingPath" : "NODEFAULT"
       }
 
@@ -16,7 +16,7 @@ class SolverInternal(Solver):
       return runCommand
 
    def GenerateRunCommand(self,h5FileName):
-      runCommand='python '+self.exePath+ ' -f '+h5FileName
+      runCommand='python '+self.exeSimulationPath+ ' -f '+h5FileName
       return runCommand
 
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -35,7 +35,14 @@ class SolverInternal(Solver):
       return runPostprocCommand
 
    def GeneratePostprocessingCommand(self,fileNameSubStr):
-      runPostprocCommand='python '+self.exePath+ ' -f '
+      runPostprocCommand='python '+self.exePostprocessingPath+ ' -f '
       for subStrs in fileNameSubStr:
-         runPostprocCommand=runPostprocCommand+self.projectName+'_'fileNameSubStr+'_Postproc.h5'
+         runPostprocCommand=runPostprocCommand+self.projectName+'_'+subStrs+'_State.h5 '
       return runPostprocCommand
+
+   def GetSigmaSq(self,fileNameSubStr):
+      h5FileName = self.projectName+'_'+fileNameSubStr+'_Postproc.h5'
+      h5f = h5py.File(h5FileName, 'r')
+      sigmaSq = np.array(h5f['sigmaSq'])
+      h5f.close()
+      return sigmaSq

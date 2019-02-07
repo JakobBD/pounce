@@ -89,3 +89,17 @@ def Debug(msg):
    log = logging.getLogger('logger')
    log.debug(msg)
 
+def PrintHeader():
+   msg1="""
+                              `7MM***Mq.   .g8**8q. `7MMF'   `7MF'`7MN.   `7MF' .g8***bgd `7MM***YMM 
+                                MM   `MM..dP'    `YM. MM       M    MMN.    M .dP'     `M   MM    `7 
+                                MM   ,M9 dM'      `MM MM       M    M YMb   M dM'       `   MM   d   
+                                MMmmdM9  MM        MM MM       M    M  `MN. M MM            MMmmMM   
+                                MM       MM.      ,MP MM       M    M   `MM.M MM.           MM   Y  ,
+                                MM       `Mb.    ,dP' YM.     ,M    M     YMM `Mb.     ,'   MM     ,M
+                              .JMML.       `*bmmd*'    `bmmmmd*'  .JML.    YM   `*bmmmd'  .JMMmmmmMMM
+"""
+   msg2="""
+                                 Propagation of Uncertainty - Framework for HPC UQ implementations
+"""
+   print("="*132+msg1+"="*132+msg2+"="*132)

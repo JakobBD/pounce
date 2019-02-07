@@ -7,7 +7,7 @@ uqMethod:
 
 levels:
 - nSamples: 10
-  #nCoresPerSample: 24
+  nCoresPerSample: 24
   solverPrms:
     nPoints: 1
 - nSamples: 4

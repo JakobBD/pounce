@@ -59,9 +59,9 @@ class Mlmc(UqMethod):
          for subName,sublevel in level.sublevels.items():
             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
 
-   def getNewNCurrentSamples(self):
+   def GetNewNCurrentSamples(self):
       for level in self.levels:
-         level.sigmaSq = self.solver.RunPostProcBatch()
+         level.sigmaSq = self.solver.GetSigmaSq(level.ind)
          level.nCurrentSamples = np.ceil(np.dot(np.sqrt(level.sigmaSq),np.sqrt(level.workMean))\
                           /(level.tolerance*level.tolerance/4.)\
                           *np.sqrt(level.sigmaSq/(level.workMean)) )

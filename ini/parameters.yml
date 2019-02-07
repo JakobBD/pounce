@@ -3,7 +3,7 @@ general:
 
 uqMethod:
   _type: mlmc
-  nMaxIter: 2
+  nMaxIter: 20
   tolerance: 0.1
 
 levels:

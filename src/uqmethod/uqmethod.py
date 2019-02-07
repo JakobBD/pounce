@@ -36,7 +36,7 @@ class UqMethod(BaseClass):
          print("-"*132+"\nRun postprocessing")
          self.RunAllBatchesPostprocessing()
          print("-"*132+"\nGet number of samples for next iteration")
-         # self.getNewNCurrentSamples()
+         self.GetNewNCurrentSamples()
       print("="*132+"\nLast iteration finished. Exit loop.%d\n"%(iteration)+"="*132)
       # self.machine.runBatch(postprocSolver)
 

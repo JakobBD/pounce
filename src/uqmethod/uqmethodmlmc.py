@@ -3,6 +3,7 @@ import os
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
+from helpers.tools import *
 
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
@@ -43,9 +44,15 @@ class Mlmc(UqMethod):
          del level.samples
 
    def RunAllBatches(self):
+      jobHandles=[]
       for level in self.levels:
          for subName,sublevel in level.sublevels.items():
-            self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+            jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+            jobHandles.append(jobHandle)
+      PrintMinorSection("Waiting for jobs to finish:")
+      self.machine.WaitFinished(jobHandles)
+      Print("All jobs finished.")
+      for level in self.levels:
          level.nFinshedSamples += level.nCurrentSamples
 
    def PrepareAllPostprocessing(self):
@@ -76,7 +83,7 @@ class Mlmc(UqMethod):
          level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
          level.workMean = 10.*level.ind #TODO
 
-         sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean,"sigma^2*w")
+         sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
 
          # add values to stdout table
          headerStr  +="     Level %2d ║ "%(level.ind)
@@ -84,7 +91,8 @@ class Mlmc(UqMethod):
          meanWorkStr+="%13.4e ║ "%(level.workMean)
 
       for level in self.levels:
-         mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean,"sigma^2/w") / (self.tolerance*self.tolerance/4.)
+         #TODO: add formula for given maxWork
+         mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean) / (self.tolerance*self.tolerance/4.)
          level.nCurrentSamples = max(int(np.ceil(mlopt))-level.nFinshedSamples , 0)
 
          # add values to stdout table
@@ -100,14 +108,6 @@ class Mlmc(UqMethod):
       Print(mloptStr)
       Print(fininshedStr)
       Print(newStr)
-
-
-def SafeSqrt(arg,descriptor):
-   if arg > 0.:
-      return np.sqrt(arg)
-   else: 
-      raise Warning("Sqrt of "+descriptor+" received invalid value "+arg+". Is set to 0.")
-      return 0.
 
 
 class SubLevel():

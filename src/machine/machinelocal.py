@@ -19,6 +19,7 @@ class LocalSystem(Machine):
       self.SubmitJob(runCommand,nCoresPerSample,solver)
 
    def SubmitJob(self,runCommand,nCoresPerSample,solver):
+      # TODO: enable parallel runs of jobs
       if self.mpi:
          args=["mpirun", "-n %d"%(nCoresPerSample), runCommand]
          Print("run command "+yellow(" ".join(args)))
@@ -29,5 +30,11 @@ class LocalSystem(Machine):
       pass
 
    def AllocateRecources(self):
+      pass
+
+   def WaitFinished(self,jobHandles):
+      """
+      Since we are on a local machine without submit script, all jobs are already finished.
+      """
       pass
 

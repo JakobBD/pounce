@@ -31,6 +31,10 @@ class UqMethod(BaseClass):
          self.RunAllBatches()
          if(iteration==self.nMaxIter):
             break
+         print("-"*132+"\nPrepare postprocessing")
+         self.PrepareAllPostprocessings()
+         print("-"*132+"\nRun postprocessing")
+         self.RunAllBatchesPostprocessing()
          print("-"*132+"\nGet number of samples for next iteration")
          self.getNewNCurrentSamples()
       print("="*132+"\nLast iteration finished. Exit loop.%d\n"%(iteration)+"="*132)

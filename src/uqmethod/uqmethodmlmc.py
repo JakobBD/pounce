@@ -47,6 +47,22 @@ class Mlmc(UqMethod):
             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
          level.nTotalSamples += (level.nCurrentSamples-level.nTotalSamples)
 
+   def PrepareAllPostprocessing(self):
+      for level in self.levels:
+         for subName,sublevel in level.sublevels.items():
+             furtherAttrs=sublevel.solverPrms
+             furtherAttrs.update({"Level":level.ind})
+             furtherAttrs.update({"Sublevel":subName})
+             fileNameSubStr=str(level.ind)+str(subName)
+         
+         sublevel.runCommand=self.solver.PreparePostprocessing(level,self.stochVars,fileNameSubStr,furtherAttrs)
+
+   # def RunAllBatchesPostprocessing(self):
+      # for level in self.levels:
+         # for subName,sublevel in level.sublevels.items():
+            # self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+         # level.nTotalSamples += (level.nCurrentSamples-level.nTotalSamples)
+
    def getNewNCurrentSamples(self):
       for level in self.levels:
          level.sigmaSq = self.solver.RunPostProcBatch()

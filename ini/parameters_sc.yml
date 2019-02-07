@@ -2,19 +2,15 @@ general:
    outputLevel: debug #options: none, standard, debug
 
 uqMethod:
-   _type: mlmc
-   nMaxIter: 1
+   _type: sc
+   sparseGrid : False
 
 levels:
-   - nSamples: 10
+   - polyDeg: [2,2]
      nCoresPerSample: 24
      solverPrms:
-        nPoints: 1
-   - nSamples: 4
-     nCoresPerSample: 48
-     solverPrms:
         nPoints: 2
- 
+
 stochVars:
    - _type: uniform
      bounds: [-1.,1.]
@@ -26,10 +22,7 @@ stochVars:
 
 machine:
    _type: local
-   mpi: false
 
 solver:
    _type: internal
    projectName: Integration
-   exePath: ../externals/integration.py
-

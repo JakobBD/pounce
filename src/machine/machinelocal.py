@@ -1,3 +1,4 @@
+import shlex
 import subprocess
 
 from .machine import Machine
@@ -9,16 +10,20 @@ class LocalSystem(Machine):
 
    Returns:
    """
-   pass
+   subclassDefaults={
+      "mpi" : "NODEFAULT"
+      }
 
-   def RunBatch(self,sovler):
-      self.submitJob(solver)
+   def RunBatch(self,sublevel,solver):
+      self.SubmitJob(sublevel,solver)
    
-   def SubmitJob(self,solver):
+   def SubmitJob(self,sublevel,solver):
       if self.mpi:
-         subprocess.run(["mpirun", "-n%d"%(solver.coresPerSample), solver.runCommand])
+         # print("mpirun -n %d"%(sublevel.nCoresPerSample)+" "+sublevel.runCommand)
+         subprocess.run(["mpirun", "-n %d"%(sublevel.nCoresPerSample), sublevel.runCommand])
       else:
-         subprocess.run([solver.runCommand])
+         print(sublevel.runCommand + "\n")
+         subprocess.call(shlex.split(sublevel.runCommand))
       pass
    
    def AllocateRecources(self):

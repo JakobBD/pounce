@@ -10,7 +10,7 @@ def Function(func,spacing,sample,n):
 def WriteHdf5(integral,projectname,level,sublevel):
    h5f = h5py.File(projectname+'_'+str(level)+sublevel+'_PostProc.h5', 'w')
    h5f.create_dataset('Integral', data=integral)
-   h5f.attrs['Projectname'] = projectname
+   h5f.attrs['ProjectName'] = projectname
    h5f.attrs['Level']       = level
    h5f.attrs['SubLevel']    = sublevel
    h5f.close()
@@ -24,7 +24,7 @@ h5f = h5py.File(args.file, 'r')
 projectname = h5f.attrs['Projectname']    
 level    = h5f.attrs['Level']    
 nPoints  = h5f.attrs['nPoints']    
-sublevel = h5f.attrs['SubLevel'] 
+sublevel = h5f.attrs['Sublevel'] 
 varnames = h5f.attrs['StochVars']
 sample   = np.transpose(np.array(h5f['Samples']))
 

@@ -1,35 +1,35 @@
 general:
-   outputLevel: debug #options: none, standard, debug
+  outputLevel: debug #options: none, standard, debug
 
 uqMethod:
-   _type: mlmc
-   nMaxIter: 1
+  _type: mlmc
+  nMaxIter: 1
 
 levels:
-   - nSamples: 10
-     #nCoresPerSample: 24
-     solverPrms:
-        nPoints: 1
-   - nSamples: 4
-     nCoresPerSample: 48
-     solverPrms:
-        nPoints: 2
+- nSamples: 10
+  #nCoresPerSample: 24
+  solverPrms:
+    nPoints: 1
+- nSamples: 4
+  nCoresPerSample: 48
+  solverPrms:
+    nPoints: 2
  
 stochVars:
-   - _type: uniform
-     bounds: [-1.,1.]
-     name: a
-   - _type: normal
-     mean: 1.
-     standardDeviation: 0.1
-     name: b
+- _type: uniform
+  bounds: [-1.,1.]
+  name: a
+- _type: normal
+  mean: 1.
+  standardDeviation: 0.1
+  name: b
 
 machine:
-   _type: local
-   mpi: false
+  _type: local
+  mpi: false
 
 solver:
-   _type: internal
-   projectName: Integration
-   exePath: ../externals/integration.py
+  _type: internal
+  projectName: Integration
+  exePath: ../externals/integration.py
 

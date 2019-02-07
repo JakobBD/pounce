@@ -6,7 +6,7 @@ class UqMethod(BaseClass):
    stochVarDefaults={}
    levelDefaults={}
 
-   def OwnConfig(self):
+   def SetupLevels(self):
       pass
 
    def RunSimulation(self):

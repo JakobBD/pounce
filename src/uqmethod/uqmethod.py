@@ -26,12 +26,10 @@ class UqMethod(BaseClass):
          self.GetNodesAndWeights()
          self.PrepareAllSimulations()
          self.RunAllBatches()
-         # self.machine.runBatch(postprocSolver)
          if(iteration==self.nMaxIter):
+            # self.machine.runBatch(postprocSolver)
             break
-
+         self.getNewSamples()
 
 # import subclasses
 from . import *
-
-

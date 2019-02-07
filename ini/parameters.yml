@@ -9,11 +9,11 @@ levels:
    - nSamples: 10
      nCoresPerSample: 24
      solverPrms:
-        nPoints: 1
+        nPoints: 10
    - nSamples: 4
      nCoresPerSample: 48
      solverPrms:
-        nPoints: 2
+        nPoints: 20
  
 stochVars:
    - _type: uniform

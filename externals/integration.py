@@ -8,7 +8,7 @@ def Function(func,spacing,sample,n):
    return func
 
 def WriteHdf5(integral,projectname,level,sublevel):
-   h5f = h5py.File(projectname+'_'+str(level)+sublevel+'_PostProc.h5', 'w')
+   h5f = h5py.File(projectname+'_'+str(level)+sublevel+'_State.h5', 'w')
    h5f.create_dataset('Integral', data=integral)
    h5f.attrs['ProjectName'] = projectname
    h5f.attrs['Level']       = level

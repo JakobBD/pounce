@@ -1,6 +1,7 @@
 from .solver import Solver
 import h5py
 import numpy as np
+from helpers.printtools import *
 
 @Solver.RegisterSubclass('internal')
 class SolverInternal(Solver):
@@ -10,6 +11,7 @@ class SolverInternal(Solver):
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
+      Print("Write HDF5 parameter file for simulation "+fileNameSubStr)
       h5FileName = self.projectName+'_'+fileNameSubStr+'_StochInput.h5'
       self.WriteHdf5(level,stochVars,fileNameSubStr,furtherAttrs)
       runCommand=self.GenerateRunCommand(h5FileName)
@@ -30,6 +32,7 @@ class SolverInternal(Solver):
       h5f.close()
 
    def PreparePostprocessing(self,fileNameSubStr):
+      Print("Generate Post-proc command for simulation(s) "+", ".join(fileNameSubStr))
       runPostprocCommand=self.GeneratePostprocessingCommand(fileNameSubStr)
       return runPostprocCommand
 
@@ -39,9 +42,9 @@ class SolverInternal(Solver):
          runPostprocCommand=runPostprocCommand+self.projectName+'_'+subStrs+'_State.h5 '
       return runPostprocCommand
 
-   def GetSigmaSq(self,fileNameSubStr):
+   def GetPostProcQuantityFromFile(self,fileNameSubStr,quantityName):
       h5FileName = self.projectName+'_'+fileNameSubStr+'_Postproc.h5'
       h5f = h5py.File(h5FileName, 'r')
-      sigmaSq = np.array(h5f['sigmaSq'])
+      quantity = np.array(h5f[quantityName])
       h5f.close()
-      return sigmaSq
+      return quantity

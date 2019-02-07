@@ -47,7 +47,6 @@ class Mlmc(UqMethod):
          for subName,sublevel in level.sublevels.items():
             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
          level.nFinshedSamples += level.nCurrentSamples
-         print(level.nFinshedSamples)
 
    def PrepareAllPostprocessing(self):
       for level in self.levels:
@@ -61,36 +60,54 @@ class Mlmc(UqMethod):
          self.machine.RunBatch(level.runPostprocCommand,1,self.solver)
 
    def GetNewNCurrentSamples(self):
+
+      # prepare stdout in table
+      headerStr   = "                ║ "
+      sigmaSqStr  = "        SigmaSq ║ "
+      meanWorkStr = "      mean work ║ "
+      mloptStr    = "         ML_opt ║ "
+      fininshedStr= "finshed Samples ║ "
+      newStr      = "    new Samples ║ "
+
+      # build sum over levels of sqrt(sigma^2/w)
       sumSigmaW = 0.
-      headerStr   = "                | "
-      sigmaSqStr  = "        SigmaSq | "
-      meanWorkStr = "      mean work | "
-      mloptStr    = "         ML_opt | "
-      fininshedStr= "finshed Samples | "
-      newStr      = "    new Samples | "
       for level in self.levels:
          fileNameSubStr = str(level.ind)
-         level.sigmaSq = self.solver.GetSigmaSq(fileNameSubStr)
+         level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
          level.workMean = 10.*level.ind #TODO
-         sigmaSqW=level.sigmaSq*level.workMean
-         sumSigmaW += np.sqrt(sigmaSqW) if sigmaSqW > 0. else 0.
-         headerStr+="     Level %2d | "%(level.ind)
-         sigmaSqStr+="%13.4e | "%(level.sigmaSq)
-         meanWorkStr+="%13.4e | "%(level.workMean)
+
+         sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean,"sigma^2*w")
+
+         # add values to stdout table
+         headerStr  +="     Level %2d ║ "%(level.ind)
+         sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
+         meanWorkStr+="%13.4e ║ "%(level.workMean)
+
       for level in self.levels:
-         sqrtTmp= np.sqrt(level.sigmaSq/level.workMean) if level.sigmaSq/level.workMean > 0. else 0.
-         mlopt=sumSigmaW*sqrtTmp/(self.tolerance*self.tolerance/4.)
+         mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean,"sigma^2/w") / (self.tolerance*self.tolerance/4.)
          level.nCurrentSamples = max(int(np.ceil(mlopt))-level.nFinshedSamples , 0)
-         mloptStr+="%13.3f | "%(mlopt)
-         fininshedStr+="%13d | "%(level.nFinshedSamples)
-         newStr+="%13d | "%(level.nCurrentSamples)
+
+         # add values to stdout table
+         mloptStr    +="%13.3f ║ "%(mlopt)
+         fininshedStr+="%13d ║ "%(level.nFinshedSamples)
+         newStr      +="%13d ║ "%(level.nCurrentSamples)
+
+      # print stdout table
       Print(headerStr)
-      Print("-"*len(headerStr))
+      Print("══"+("═"*14+"╬═")*(len(self.levels)+1))
       Print(sigmaSqStr)
       Print(meanWorkStr)
       Print(mloptStr)
       Print(fininshedStr)
       Print(newStr)
+
+
+def SafeSqrt(arg,descriptor):
+   if arg > 0.:
+      return np.sqrt(arg)
+   else: 
+      raise Warning("Sqrt of "+descriptor+" received invalid value "+arg+". Is set to 0.")
+      return 0.
 
 
 class SubLevel():

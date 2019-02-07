@@ -49,10 +49,10 @@ def Print(msg,color="stdcolor"):
 
 def PrintMinorSection(msg):
    print("-"*132)
-   print(green(" "+msg))
+   print(green(" "+msg)+"\n")
 
 def PrintMajorSection(msg,color="stdcolor"):
-   print("="*132)
+   print("\n"+"="*132)
    print(cyan(" "+msg))
    print("="*132)
 

@@ -34,10 +34,14 @@ class UqMethod(BaseClass):
          self.PrepareAllSimulations()
          PrintMinorSection("Run simulations")
          self.RunAllBatches()
+         PrintMinorSection("Prepare postprocessing")
+         self.PrepareAllPostprocessing()
+         PrintMinorSection("Run postprocessing")
+         self.RunAllBatchesPostprocessing()
          if(iteration==self.nMaxIter):
             break
          PrintMinorSection("Get number of samples for next iteration")
-         self.getNewNSamples()
+         self.GetNewNCurrentSamples()
       PrintMajorSection("Last iteration finished. Exit loop.")
       # self.machine.runBatch(postprocSolver)
 

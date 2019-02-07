@@ -2,20 +2,19 @@ general:
   outputLevel: standard #options: none, standard, debug
 
 uqMethod:
-  _type: sc
-  #nMaxIter: 1
-  sparseGrid: True
+  _type: mlmc
+  nMaxIter: 20
+  tolerance: 0.1
 
 levels:
-#- nSamples: 10
-- nCoresPerSample: 24
-  solverPrms:
-    nPoints: 1
-  polyDeg: 5
-#- nSamples: 4
-  #nCoresPerSample: 48
-  #solverPrms:
-    #nPoints: 2
+   - nCurrentSamples: 10
+     nCoresPerSample: 24
+     solverPrms:
+        nPoints: 10
+   - nCurrentSamples: 4
+     nCoresPerSample: 48
+     solverPrms:
+        nPoints: 20
  
 stochVars:
 - _type: uniform
@@ -33,5 +32,6 @@ machine:
 solver:
   _type: internal
   projectName: Integration
-  exePath: /home/jakob/code/pounce/v1/externals/integration.py
+  exeSimulationPath: ../externals/integration.py
+  exePostprocessingPath: ../externals/integrationPostProc.py
 

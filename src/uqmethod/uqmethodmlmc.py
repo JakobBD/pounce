@@ -11,12 +11,13 @@ class Mlmc(UqMethod):
       }
 
    levelDefaults={
-      "nSamples": "NODEFAULT",
+      "nCurrentSamples": "NODEFAULT",
       'solverPrms' : {}
       }
 
    def SetupLevels(self):
       for iLevel,level in enumerate(self.levels):
+         level.nTotalSamples = 0
          level.ind=iLevel+1
          level.sublevels = {'f' : SubLevel(level) }
          if iLevel > 0:
@@ -26,9 +27,9 @@ class Mlmc(UqMethod):
       for level in self.levels:
          level.samples=[]
          for var in self.stochVars:
-            level.samples.append(var.DrawSamples(level.nSamples))
+            level.samples.append(var.DrawSamples(max(level.nCurrentSamples-level.nTotalSamples,0)))
          level.samples=np.transpose(level.samples)
-         level.weights=np.ones(level.nSamples)/level.nSamples
+         level.weights=np.ones(len(max(level.nTotalSamples,level.nCurrentSamples)))/max(level.nTotalSamples,level.nCurrentSamples)
 
    def PrepareAllSimulations(self):
       for level in self.levels:
@@ -43,13 +44,33 @@ class Mlmc(UqMethod):
    def RunAllBatches(self):
       for level in self.levels:
          for subName,sublevel in level.sublevels.items():
-             self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+            self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+         level.nTotalSamples += max(level.nCurrentSamples-level.nTotalSamples,0)
+         print(level.nTotalSamples)
 
-   def getNewNSamples(self):
-      self.sigmaSq = self.solver.RunPostProcBatch()
-      self.nSamples = np.ceil(np.dot(np.sqrt(np.asarray(self.sigmaSq)),np.sqrt(np.asarray(self.workMean)))\
-                                          /(self.tolerance*self.tolerance/4.)\
-                                          *np.sqrt(np.asarray(self.sigmaSq)/np.asarray((self.workMean))))
+   def PrepareAllPostprocessing(self):
+      for level in self.levels:
+         fileNameSubStr = []
+         for subName,sublevel in level.sublevels.items():
+            fileNameSubStr.append("{}{}".format(level.ind,subName))
+         level.runPostprocCommand=self.solver.PreparePostprocessing(fileNameSubStr)
+
+   def RunAllBatchesPostprocessing(self):
+      for level in self.levels:
+         self.machine.RunBatch(level.runPostprocCommand,1,self.solver)
+
+   def GetNewNCurrentSamples(self):
+      tmp = 0.
+      for level in self.levels:
+         fileNameSubStr = str(level.ind)
+         level.sigmaSq = self.solver.GetSigmaSq(fileNameSubStr)
+         level.workMean = 10.*level.ind
+         tmp += np.sqrt(level.sigmaSq*level.workMean)
+      for level in self.levels:
+         level.nCurrentSamples = np.ceil(tmp*np.sqrt(level.sigmaSq/level.workMean)\
+                                 /(prms.tolerance*prms.tolerance/4.))
+         print(level.nCurrentSamples)
+
 
 class SubLevel():
    def __init__(self,level):

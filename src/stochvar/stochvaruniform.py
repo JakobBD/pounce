@@ -9,7 +9,7 @@ class StochVarUniform(StochVar):
       }
 
    def DrawSamples(self,nSamples):
-      return np.random.uniform(self.bounds[0],self.bounds[1],nSamples)
+      return np.random.uniform(self.bounds[0],self.bounds[1],nSamples) if nSamples >0 else []
 
    def GetDistribution(self):
       return cp.Uniform(self.bounds[0],self.bounds[1])

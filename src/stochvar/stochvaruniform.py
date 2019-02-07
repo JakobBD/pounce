@@ -1,5 +1,5 @@
 import numpy as np
-
+import chaospy as cp
 from .stochvar import StochVar
 
 @StochVar.RegisterSubclass('uniform')
@@ -11,3 +11,5 @@ class StochVarUniform(StochVar):
    def DrawSamples(self,nSamples):
       return np.random.uniform(self.bounds[0],self.bounds[1],nSamples)
 
+   def GetDistribution(self):
+      return cp.Uniform(self.bounds[0],self.bounds[1])

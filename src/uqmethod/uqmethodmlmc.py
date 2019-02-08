@@ -18,12 +18,15 @@ class Mlmc(UqMethod):
       }
 
    def SetupLevels(self):
+      self.allSublevels=[]
       for iLevel,level in enumerate(self.levels):
          level.nFinshedSamples = 0
          level.ind=iLevel+1
-         level.sublevels = {'f' : SubLevel(level) }
+         level.sublevels= [ SubLevel(level,level,'f') ]
+         self.allSublevels.append(level.sublevels[-1])
          if iLevel > 0:
-            level.sublevels['c']=SubLevel(self.levels[iLevel-1])
+            level.sublevels.append(SubLevel(level,self.levels[iLevel-1],'c'))
+            self.allSublevels.append(level.sublevels[-1])
 
    def GetNodesAndWeights(self):
       for level in self.levels:
@@ -34,21 +37,19 @@ class Mlmc(UqMethod):
          level.weights=[]
 
    def PrepareAllSimulations(self):
+      for sublevel in self.allSublevels:
+         furtherAttrs=sublevel.solverPrms
+         furtherAttrs.update({"Level":sublevel.level.ind})
+         furtherAttrs.update({"Sublevel":sublevel.subName})
+         sublevel.runCommand=self.solver.PrepareSimulation(sublevel.level,self.stochVars,sublevel.wholeName,furtherAttrs)
       for level in self.levels:
-         for subName,sublevel in level.sublevels.items():
-             furtherAttrs=sublevel.solverPrms
-             furtherAttrs.update({"Level":level.ind})
-             furtherAttrs.update({"Sublevel":subName})
-             fileNameSubStr=str(level.ind)+str(subName)
-             sublevel.runCommand=self.solver.PrepareSimulation(level,self.stochVars,fileNameSubStr,furtherAttrs)
-         del level.samples
+         del level.samples 
 
    def RunAllBatches(self):
       jobHandles=[]
-      for level in self.levels:
-         for subName,sublevel in level.sublevels.items():
-            jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
-            jobHandles.append(jobHandle)
+      for sublevel in self.allSublevels:
+         jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+         jobHandles.append(jobHandle)
       PrintMinorSection("Waiting for jobs to finish:")
       self.machine.WaitFinished(jobHandles)
       Print("All jobs finished.")
@@ -57,9 +58,7 @@ class Mlmc(UqMethod):
 
    def PrepareAllPostprocessing(self):
       for level in self.levels:
-         fileNameSubStr = []
-         for subName,sublevel in level.sublevels.items():
-            fileNameSubStr.append("{}{}".format(level.ind,subName))
+         fileNameSubStr = [sublevel.wholeName for sublevel in level.sublevels]
          level.runPostprocCommand=self.solver.PreparePostprocessing(fileNameSubStr)
 
    def RunAllBatchesPostprocessing(self):
@@ -89,9 +88,12 @@ class Mlmc(UqMethod):
 
 
 class SubLevel():
-   def __init__(self,level):
-      self.solverPrms=level.solverPrms
-      self.nCoresPerSample=level.nCoresPerSample
+   def __init__(self,diffLevel,resolutionLevel,name):
+      self.solverPrms=resolutionLevel.solverPrms
+      self.nCoresPerSample=resolutionLevel.nCoresPerSample
+      self.level = diffLevel
+      self.subName=name
+      self.wholeName=str(diffLevel.ind)+name
 
 
 

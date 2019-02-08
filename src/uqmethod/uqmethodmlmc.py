@@ -68,7 +68,7 @@ class Mlmc(UqMethod):
 
    def GetNewNCurrentSamples(self):
 
-      stdoutTable=StdOutTable() # defined in printtools
+      stdoutTable=StdOutTable()
 
       # build sum over levels of sqrt(sigma^2/w)
       sumSigmaW = 0.
@@ -93,3 +93,39 @@ class SubLevel():
    def __init__(self,level):
       self.solverPrms=level.solverPrms
       self.nCoresPerSample=level.nCoresPerSample
+
+
+
+class StdOutTable():
+   """
+   Helper class for GetNewNCurrentSamples routine. 
+   Outsourced for improved readability.
+   Prints values for each level in ordered table to stdout.
+   """
+   def __init__(self):
+      self.headerStr   = "                ║ "
+      self.sigmaSqStr  = "        SigmaSq ║ "
+      self.meanWorkStr = "      mean work ║ "
+      self.mloptStr    = "         ML_opt ║ "
+      self.fininshedStr= "finshed Samples ║ "
+      self.newStr      = "    new Samples ║ "
+
+   def Update1(self,level):
+      self.headerStr  +="     Level %2d ║ "%(level.ind)
+      self.sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
+      self.meanWorkStr+="%13.4e ║ "%(level.workMean)
+
+   def Update2(self,level):
+      self.mloptStr    +="%13.3f ║ "%(level.mlopt)
+      self.fininshedStr+="%13d ║ "%(level.nFinshedSamples)
+      self.newStr      +="%13d ║ "%(level.nCurrentSamples)
+
+   def Print(self):
+      Print(self.headerStr)
+      sepStr="═"*14+"╬═"
+      Print("══"+sepStr*int(len(self.headerStr)/len(sepStr)))
+      Print(self.sigmaSqStr)
+      Print(self.meanWorkStr)
+      Print(self.mloptStr)
+      Print(self.fininshedStr)
+      Print(self.newStr)

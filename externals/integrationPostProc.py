@@ -62,12 +62,12 @@ for i in range(nNewSamples):
       sums["uCoarseSum"]   += integralC[i]
       sums["uCoarseSqSum"] += (integralC[i])**2
       sums["dUSqSum"]      += (integralF[i]-integralC[i])**2
-weights = weights if len(weights)>0 else 1./nSamples
 if level > 1:
    sums["mean"] = (sums["uFineSum"]-sums["uCoarseSum"])/nSamples
    sums["sigmaSq"] = (sums["dUSqSum"])/(nSamples-1)-(sums["uFineSum"]-sums["uCoarseSum"])**2/(nSamples*(nSamples-1))
 else:
-   sums["mean"] = np.sum(integralF*weights)
-   sums["sigmaSq"] = (sums["uFineSqSum"])/(nSamples-1)-(sums["uFineSum"])**2/(nSamples*(nSamples-1))
+   sums["mean"] = np.sum(integralF*weights) if len(weights)>0 else np.sum(integralF*(1./nSamples))
+   sums["sigmaSq"] = np.sum((integralF)**2*weights) -np.sum(integralF*weights)**2 if len(weights)>0 \
+                    else  (sums["uFineSqSum"])/(nSamples-1)-(sums["uFineSum"])**2/(nSamples*(nSamples-1))
 
 WriteHdf5(projectname,level,nSamples,sums)

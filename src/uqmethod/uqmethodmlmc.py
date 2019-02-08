@@ -43,7 +43,7 @@ class Mlmc(UqMethod):
          furtherAttrs.update({"Sublevel":sublevel.subName})
          sublevel.runCommand=self.solver.PrepareSimulation(sublevel.level,self.stochVars,sublevel.wholeName,furtherAttrs)
       for level in self.levels:
-         del level.samples 
+         del level.samples
 
    def RunAllBatches(self):
       jobHandles=[]
@@ -51,8 +51,8 @@ class Mlmc(UqMethod):
          jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
          jobHandles.append(jobHandle)
       PrintMinorSection("Waiting for jobs to finish:")
-      self.machine.WaitFinished(jobHandles)
-      Print("All jobs finished.")
+      if self.machine.WaitFinished(jobHandles) Print("Computations finished.")
+      if self.machine.CheckAllFinished() Print("All jobs finished.")
       for level in self.levels:
          level.nFinshedSamples += level.nCurrentSamples
 

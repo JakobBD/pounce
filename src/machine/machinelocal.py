@@ -42,5 +42,7 @@ class Local(Machine):
       """
       Since we are on a local machine without submit script, all jobs are already finished.
       """
-      pass
-
+      return True
+      
+   def CheckAllFinished(self):
+      return True

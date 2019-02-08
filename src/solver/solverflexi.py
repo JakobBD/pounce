@@ -25,7 +25,8 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand= self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName
+      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
+                 + self.machine.nSequentialRuns + self.machine.nParallelRuns 
       return runCommand
 
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):

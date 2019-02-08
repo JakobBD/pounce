@@ -51,8 +51,8 @@ class Mlmc(UqMethod):
          jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
          jobHandles.append(jobHandle)
       PrintMinorSection("Waiting for jobs to finish:")
-      if self.machine.WaitFinished(jobHandles) Print("Computations finished.")
-      if self.machine.CheckAllFinished() Print("All jobs finished.")
+      if self.machine.WaitFinished(jobHandles): Print("Computations finished.")
+      if self.machine.CheckAllFinished(): Print("All jobs finished.")
       for level in self.levels:
          level.nFinshedSamples += level.nCurrentSamples
 

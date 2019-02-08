@@ -10,16 +10,19 @@ class Cray(Machine):
       }
 
    def RunBatch(self,runCommand,nCoresPerSample,solver):
-      """Runs a job by generating the necessary jobfile,
+      """Runs a job by generating the necessary jobfile
+          and submitting it.
       """
       self.GenerateJob(runCommand,nCoresPerSample,solver)
       return self.submitJob()
 
    def GenerateJob(self,runCommand,nCoresPerSample,solver):
+      """Generates the necessary jobfile.
+      """
       jobfile = open('jobfile_{}{}'.format(sublevel.level.ind,sublevel.subName),'w')
       avg_cores=int(nCoresPerSample*24)
-      jobfile.write('aprun -n  {} -N 24 {}  &> calc_{}{}.log \
-      \n'.format(avg_cores,sublevel.level.ind,sublevel.runCommand,sublevel.subName))
+      jobfile.write('aprun -n  {}  -N 24 {}  &> calc_{}{}.log \
+      \n'.format(avg_cores,sublevel.runCommand,sublevel.level.ind, sublevel.subName))
 
    def SubmitJob(self,solver):
       """Submits a job into the Cray Hazelhen HPC queue.
@@ -62,7 +65,7 @@ class Cray(Machine):
                            status_string="id {} has status {}".format(i,status)
                            if not status_string in status_list:
                               status_list.append(status_string)
-                              print "Job with {}!".format(status_string)
+                              print("Job with {}!".format(status_string))
                if not found: # jobID is not in st: pretend it is finished
                   [jobHandles,unfinished_jobs,n_remain]=check_errorfile(i,jobHandles,unfinished_jobs,index,n_remain,do_exit)
          if sum(jobHandles)==0:

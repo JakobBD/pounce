@@ -7,11 +7,13 @@ def Function(func,spacing,sample,n):
       func[ind]=func[ind]+sp*spacing**n
    return func
 
-def WriteHdf5(projectname,level,nSamples,sums):
+def WriteHdf5(projectname,level,nSamples,sums,workMean):
    h5f = h5py.File(projectname+'_'+str(level)+'_Postproc.h5', 'w')
    h5f.attrs['ProjectName'] = projectname
    h5f.attrs['Level']       = level
    h5f.attrs['nSamples']    = nSamples
+   h5f.attrs['nSamples']    = nSamples
+   h5f.create_dataset('WorkMean', data=workMean)
    for key,value in sums.items():
       h5f.create_dataset(key, data=value)
    h5f.close()
@@ -26,6 +28,7 @@ projectname = h5f.attrs['ProjectName']
 level = h5f.attrs['Level']
 integralF = np.array(h5f['Integral'])
 weights   = np.array(h5f['Weights'])
+workMean = np.array(h5f['WorkMean'])
 nNewSamples=len(integralF)
 h5f.close()
 
@@ -54,6 +57,7 @@ except:
       sums.update({"uCoarseSqSum": 0.})
       sums.update({"dUSqSum": 0.})
 
+
 nSamples+=nNewSamples
 for i in range(nNewSamples):
    sums["uFineSum"]   += integralF[i]
@@ -70,4 +74,4 @@ else:
    sums["sigmaSq"] = np.sum((integralF)**2*weights) -np.sum(integralF*weights)**2 if len(weights)>0 \
                     else  (sums["uFineSqSum"])/(nSamples-1)-(sums["uFineSum"])**2/(nSamples*(nSamples-1))
 
-WriteHdf5(projectname,level,nSamples,sums)
+WriteHdf5(projectname,level,nSamples,sums,workMean)

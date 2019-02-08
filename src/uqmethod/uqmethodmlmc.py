@@ -75,8 +75,7 @@ class Mlmc(UqMethod):
       for level in self.levels:
          fileNameSubStr = str(level.ind)
          level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
-         # level.workMean = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"workMean")
-         level.workMean = 10.*level.ind #TODO
+         level.workMean = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"WorkMean")
          sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
          stdoutTable.Update1(level)
 
@@ -98,7 +97,7 @@ class SubLevel():
 
 class StdOutTable():
    """
-   Helper class for GetNewNCurrentSamples routine. 
+   Helper class for GetNewNCurrentSamples routine.
    Outsourced for improved readability.
    Prints values for each level in ordered table to stdout.
    """

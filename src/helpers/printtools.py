@@ -20,11 +20,11 @@ class Bcolors :
    UNDERLINE = '\033[4m'
    
 
-red      = lambda text : bcolors.RED   +text+bcolors.ENDC
-green    = lambda text : bcolors.GREEN +text+bcolors.ENDC
-blue     = lambda text : bcolors.BLUE  +text+bcolors.ENDC
-yellow   = lambda text : bcolors.YELLOW+text+bcolors.ENDC
-cyan     = lambda text : bcolors.CYAN  +text+bcolors.ENDC
+red      = lambda text : Bcolors.RED   +text+Bcolors.ENDC
+green    = lambda text : Bcolors.GREEN +text+Bcolors.ENDC
+blue     = lambda text : Bcolors.BLUE  +text+Bcolors.ENDC
+yellow   = lambda text : Bcolors.YELLOW+text+Bcolors.ENDC
+cyan     = lambda text : Bcolors.CYAN  +text+Bcolors.ENDC
 stdcolor = lambda text : text
 
 colors={"red"     :red,

@@ -69,6 +69,7 @@ class Mlmc(UqMethod):
    def GetNewNCurrentSamples(self):
 
       # prepare stdout in table
+      # stdoutTable=InitStdOutTable()
       headerStr   = "                ║ "
       sigmaSqStr  = "        SigmaSq ║ "
       meanWorkStr = "      mean work ║ "
@@ -81,11 +82,13 @@ class Mlmc(UqMethod):
       for level in self.levels:
          fileNameSubStr = str(level.ind)
          level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
+         # level.workMean = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"workMean")
          level.workMean = 10.*level.ind #TODO
 
          sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
 
          # add values to stdout table
+         # stdoutTable=UpdateStdOutTable1()
          headerStr  +="     Level %2d ║ "%(level.ind)
          sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
          meanWorkStr+="%13.4e ║ "%(level.workMean)
@@ -96,6 +99,7 @@ class Mlmc(UqMethod):
          level.nCurrentSamples = max(int(np.ceil(mlopt))-level.nFinshedSamples , 0)
 
          # add values to stdout table
+         # stdoutTable=UpdateStdOutTable2()
          mloptStr    +="%13.3f ║ "%(mlopt)
          fininshedStr+="%13d ║ "%(level.nFinshedSamples)
          newStr      +="%13d ║ "%(level.nCurrentSamples)

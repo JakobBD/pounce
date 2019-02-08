@@ -2,6 +2,7 @@ import shlex
 import subprocess
 
 from .machine import Machine
+from helpers.printtools import *
 
 @Machine.RegisterSubclass('local')
 class Local(Machine):
@@ -22,16 +23,24 @@ class Local(Machine):
    def SubmitJob(self,runCommand,nCoresPerSample,solver):
       """Call the subprocess command to run the solver.
       """
+      # TODO: enable parallel runs of jobs
       if self.mpi:
-         # print("mpirun -n %d"%(nCoresPerSample)+" "+runCommand)
-         subprocess.run(["mpirun", "-n %d"%(nCoresPerSample), runCommand])
+         args=["mpirun", "-n %d"%(nCoresPerSample), runCommand]
+         Print("run command "+yellow(" ".join(args)))
+         subprocess.run(args)
       else:
-         print(runCommand + "\n")
+         Print("run command "+yellow(runCommand))
          subprocess.call(shlex.split(runCommand))
       pass
 
    def AllocateResources(self):
       """Allocates the recources depending on the job to be executed.
+      """
+      pass
+
+   def WaitFinished(self,jobHandles):
+      """
+      Since we are on a local machine without submit script, all jobs are already finished.
       """
       pass
 

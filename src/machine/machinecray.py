@@ -21,7 +21,6 @@ class Cray(Machine):
       jobfile.write('aprun -n  {} -N 24 {}  &> calc_{}{}.log \
       \n'.format(avg_cores,sublevel.level.ind,sublevel.runCommand,sublevel.subName))
 
-
    def SubmitJob(self,solver):
       """Submits a job into the Cray Hazelhen HPC queue.
       """
@@ -31,8 +30,9 @@ class Cray(Machine):
       jobID = int(jobID_tmp)
       return jobID
 
-
    def WaitFinished(self,jobHandles):
+      """Monitors all jobs on Cray Hazelhen HPC queue. Checks if jobfile finished.
+      """
       status_list=[]
       comp_finished=None
       unfinished_jobs=None
@@ -71,8 +71,9 @@ class Cray(Machine):
             time.sleep(1)
       return(unfinished_jobs)
 
-
    def CheckAllFinished(self):
+      """Checks if all computations finished and all files are available.
+      """
       return True
 
    def AllocateResources(self):

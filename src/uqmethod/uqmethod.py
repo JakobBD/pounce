@@ -12,11 +12,12 @@ class UqMethod(BaseClass):
 
    def RunSimulation(self):
       """Main Loop for UQMethod.
-           General procedure:
-           1. Let machine decide how many samples to compute.
-           2. Generate samples and weights.
-           3. Compute samples on system
 
+      General procedure:
+      
+      1. Let machine decide how many samples to compute.
+      2. Generate samples and weights.
+      3. Compute samples on system
       """
       iteration=0
       # main loop

@@ -68,11 +68,13 @@ class GeneralConfig(BaseClass):
       """
       Setups a global logger with the name 'logger'.
       This logger can accessed in any function by "log = logging.getLogger('logger')".
+      
       Three different logging levels:
-          none     : print no logging messages
-          standard : print information messages (i.e. print all messages invoked with "log.info(message)")
-          debug    : print debug + information messages (i.e. print all messages invoked with "log.info(message)"
-                     or "log.debug(message)")
+
+          - none     : print no logging messages
+          - standard : print information messages (i.e. print all messages invoked with "log.info(message)")
+          - debug    : print debug + information messages (i.e. print all messages invoked with "log.info(message)"
+                       or "log.debug(message)")
       """
 
       if self.outputLevel == "none" :       # no logging

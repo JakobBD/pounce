@@ -1,6 +1,6 @@
 import logging
 
-class bcolors :
+class Bcolors :
    """color and font style definitions for changing output appearance"""
    # Reset (user after applying a color to return to normal coloring)
    ENDC   ='\033[0m'    

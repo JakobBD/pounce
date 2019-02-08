@@ -4,7 +4,7 @@ import subprocess
 from .machine import Machine
 
 @Machine.RegisterSubclass('local')
-class LocalSystem(Machine):
+class Local(Machine):
    """Class: Defines local machine. Machine executes Samples.
    Args:
 
@@ -15,9 +15,13 @@ class LocalSystem(Machine):
       }
 
    def RunBatch(self,runCommand,nCoresPerSample,solver):
+      """Runs a job by calling a subprocess.
+      """
       self.SubmitJob(runCommand,nCoresPerSample,solver)
 
    def SubmitJob(self,runCommand,nCoresPerSample,solver):
+      """Call the subprocess command to run the solver.
+      """
       if self.mpi:
          # print("mpirun -n %d"%(nCoresPerSample)+" "+runCommand)
          subprocess.run(["mpirun", "-n %d"%(nCoresPerSample), runCommand])
@@ -26,6 +30,8 @@ class LocalSystem(Machine):
          subprocess.call(shlex.split(runCommand))
       pass
 
-   def AllocateRecources(self):
+   def AllocateResources(self):
+      """Allocates the recources depending on the job to be executed.
+      """
       pass
 

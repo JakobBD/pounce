@@ -6,7 +6,9 @@ from .stochvar import StochVar
 class StochVarNormal(StochVar):
    subclassDefaults={
       'mean' : 'NODEFAULT',
-      'standardDeviation' : 'NODEFAULT'
+      'standardDeviation' : 'NODEFAULT',
+      'iOccurrence': {},
+      'iPos': {}
       }
 
    def DrawSamples(self,nSamples):
@@ -14,3 +16,9 @@ class StochVarNormal(StochVar):
 
    def GetDistribution(self):
       return cp.Normal(self.mean,self.standardDeviation)
+
+   def GetiOccurrence(self):
+      return self.iOccurrence
+
+   def GetiPos(self):
+      return self.iPos

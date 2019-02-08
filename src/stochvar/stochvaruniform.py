@@ -5,7 +5,9 @@ from .stochvar import StochVar
 @StochVar.RegisterSubclass('uniform')
 class StochVarUniform(StochVar):
    subclassDefaults={
-      'bounds' : 'NODEFAULT'
+      'bounds' : 'NODEFAULT',
+      'iOccurrence': {},
+      'iPos': {}
       }
 
    def DrawSamples(self,nSamples):
@@ -13,3 +15,9 @@ class StochVarUniform(StochVar):
 
    def GetDistribution(self):
       return cp.Uniform(self.bounds[0],self.bounds[1])
+
+   def GetiOccurrence(self):
+      return self.iOccurrence
+
+   def GetiPos(self):
+      return self.iPos

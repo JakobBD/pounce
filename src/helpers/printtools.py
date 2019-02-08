@@ -81,3 +81,44 @@ def Debug(msg,color="stdcolor"):
    log = logging.getLogger('logger')
    log.info(colors[color](msg))
 
+
+class StdOutTable():
+
+   def __init__(self):
+      self.headerStr   = "                ║ "
+      self.sigmaSqStr  = "        SigmaSq ║ "
+      self.meanWorkStr = "      mean work ║ "
+      self.mloptStr    = "         ML_opt ║ "
+      self.fininshedStr= "finshed Samples ║ "
+      self.newStr      = "    new Samples ║ "
+
+   def Update1(self,level):
+      self.headerStr  +="     Level %2d ║ "%(level.ind)
+      self.sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
+      self.meanWorkStr+="%13.4e ║ "%(level.workMean)
+
+   def Update2(self,level):
+      self.mloptStr    +="%13.3f ║ "%(level.mlopt)
+      self.fininshedStr+="%13d ║ "%(level.nFinshedSamples)
+      self.newStr      +="%13d ║ "%(level.nCurrentSamples)
+
+   def Print(self):
+      Print(self.headerStr)
+      sepStr="═"*14+"╬═"
+      Print("══"+sepStr*int(len(self.headerStr)/len(sepStr)))
+      Print(self.sigmaSqStr)
+      Print(self.meanWorkStr)
+      Print(self.mloptStr)
+      Print(self.fininshedStr)
+      Print(self.newStr)
+
+
+
+
+
+
+
+
+
+
+

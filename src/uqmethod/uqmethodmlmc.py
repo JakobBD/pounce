@@ -68,14 +68,7 @@ class Mlmc(UqMethod):
 
    def GetNewNCurrentSamples(self):
 
-      # prepare stdout in table
-      # stdoutTable=InitStdOutTable()
-      headerStr   = "                ║ "
-      sigmaSqStr  = "        SigmaSq ║ "
-      meanWorkStr = "      mean work ║ "
-      mloptStr    = "         ML_opt ║ "
-      fininshedStr= "finshed Samples ║ "
-      newStr      = "    new Samples ║ "
+      stdoutTable=StdOutTable() # defined in printtools
 
       # build sum over levels of sqrt(sigma^2/w)
       sumSigmaW = 0.
@@ -84,34 +77,16 @@ class Mlmc(UqMethod):
          level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
          # level.workMean = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"workMean")
          level.workMean = 10.*level.ind #TODO
-
          sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
-
-         # add values to stdout table
-         # stdoutTable=UpdateStdOutTable1()
-         headerStr  +="     Level %2d ║ "%(level.ind)
-         sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
-         meanWorkStr+="%13.4e ║ "%(level.workMean)
+         stdoutTable.Update1(level)
 
       for level in self.levels:
          #TODO: add formula for given maxWork
-         mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean) / (self.tolerance*self.tolerance/4.)
-         level.nCurrentSamples = max(int(np.ceil(mlopt))-level.nFinshedSamples , 0)
+         level.mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean) / (self.tolerance*self.tolerance/4.)
+         level.nCurrentSamples = max(int(np.ceil(level.mlopt))-level.nFinshedSamples , 0)
+         stdoutTable.Update2(level)
 
-         # add values to stdout table
-         # stdoutTable=UpdateStdOutTable2()
-         mloptStr    +="%13.3f ║ "%(mlopt)
-         fininshedStr+="%13d ║ "%(level.nFinshedSamples)
-         newStr      +="%13d ║ "%(level.nCurrentSamples)
-
-      # print stdout table
-      Print(headerStr)
-      Print("══"+("═"*14+"╬═")*(len(self.levels)+1))
-      Print(sigmaSqStr)
-      Print(meanWorkStr)
-      Print(mloptStr)
-      Print(fininshedStr)
-      Print(newStr)
+      stdoutTable.Print()
 
 
 class SubLevel():

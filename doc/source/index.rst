@@ -28,6 +28,8 @@ Table of contents
    uqmethod/index.rst
    machine/index.rst
    helpers/index.rst
+   stochvar/index.rst
+   level/index.rst
 
 
 * :ref:`genindex`

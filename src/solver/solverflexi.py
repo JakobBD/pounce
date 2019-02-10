@@ -7,8 +7,8 @@ class SolverFlexi(Solver):
    subclassDefaults={
       "exeSimulationPath" : "NODEFAULT",
       "exePostprocessingPath" : "NODEFAULT",
-      "generalFilename" : "NODEFAULT",
-      "prmfile": "NODEFAULT"
+      "projectName" : "NODEFAULT",
+      "prmFile": "NODEFAULT"
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -17,7 +17,7 @@ class SolverFlexi(Solver):
       and the current level.
       """
       Print("Write HDF5 parameter file for simulation "+fileNameSubStr)
-      h5FileName = self.generalFilename+'_'+fileNameSubStr+'.h5'
+      h5FileName = self.projectName+'_'+fileNameSubStr+'.h5'
       self.WriteHdf5(level,stochVars,fileNameSubStr,furtherAttrs)
       runCommand=self.GenerateRunCommand(h5FileName)
       return runCommand
@@ -25,7 +25,7 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
+      runCommand = self.exeSimulationPath + ' ' + self.prmFile + ' ' + h5FileName \
                  + self.nSequentialRuns + self.nParallelRuns 
       return runCommand
 
@@ -33,7 +33,7 @@ class SolverFlexi(Solver):
       """ Writes the HDF5 file containing all necessary data for flexi run
       to run.
       """
-      h5f = h5py.File(self.generalFilename+'_'+fileNameSubStr+'_StochInput.h5', 'w')
+      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
       h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )

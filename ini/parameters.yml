@@ -30,8 +30,9 @@ machine:
   mpi: false
 
 solver:
-  _type: internal
-  projectName: Integration
+  _type: flexi
+  projectName: freestream
+  prmFile: parameter.ini
   exeSimulationPath: ../externals/integration.py
   exePostprocessingPath: ../externals/integrationPostProc.py
 

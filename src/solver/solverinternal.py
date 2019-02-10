@@ -7,7 +7,8 @@ from helpers.printtools import *
 class SolverInternal(Solver):
    subclassDefaults={
       "exeSimulationPath" : "NODEFAULT",
-      "exePostprocessingPath" : "NODEFAULT"
+      "exePostprocessingPath" : "NODEFAULT",
+      "projectName" : "NODEFAULT"
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):

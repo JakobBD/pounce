@@ -77,26 +77,26 @@ class Cray(Machine):
       return(unfinished_jobs)
 
    def CheckErrorfile(i,jobID,unfinished_jobs,index,n_remain):
-   with open(glob.glob('*.e{}'.format(i))[0]) as f:
-      lines = f.read().splitlines()
-      if len(lines)==0:
-         error=None
-      else:
-         error=True
-         for errortext in lines:
-            errortext=errortext.split()
-            if len(errortext)>=7:
-               if errortext[4]=='walltime' and errortext[6]=='exceeded':
-                  error=None
-                  unfinished_jobs=True
-                  break
-   if error:
-      print('\nWARNING: Error in jobfile execution! See file *.e{} for details.\n'.format(i))
-      unfinished_jobs=True
-   jobID[index]=0
-   n_remain-=1
-   print('job ID {} is now complete! {} jobs remaining'.format(i,n_remain))
-   return(jobID,unfinished_jobs,n_remain)
+      with open(glob.glob('*.e{}'.format(i))[0]) as f:
+         lines = f.read().splitlines()
+         if len(lines)==0:
+            error=None
+         else:
+            error=True
+            for errortext in lines:
+               errortext=errortext.split()
+               if len(errortext)>=7:
+                  if errortext[4]=='walltime' and errortext[6]=='exceeded':
+                     error=None
+                     unfinished_jobs=True
+                     break
+      if error:
+         print('\nWARNING: Error in jobfile execution! See file *.e{} for details.\n'.format(i))
+         unfinished_jobs=True
+      jobID[index]=0
+      n_remain-=1
+      print('job ID {} is now complete! {} jobs remaining'.format(i,n_remain))
+      return(jobID,unfinished_jobs,n_remain)
 
    def CheckAllFinished(self):
       """Checks if all computations finished and all files are available.

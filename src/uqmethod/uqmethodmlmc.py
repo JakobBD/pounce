@@ -9,13 +9,19 @@ from helpers.tools import *
 class Mlmc(UqMethod):
    subclassDefaults={
       "nMaxIter" : "NODEFAULT",
-      "tolerance" : "NODEFAULT"
+      "tolerance" : "NODEFAULT",
+      "resetSeed" : False
       }
 
    levelDefaults={
       "nCurrentSamples": "NODEFAULT",
       'solverPrms' : {}
       }
+
+   def InitLoc(self):
+      if self.resetSeed:
+         print('hello')
+         np.random.seed(0)
 
    def SetupLevels(self):
       self.allSublevels=[]

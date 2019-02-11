@@ -10,12 +10,8 @@ class BaseClass():
 
    def __init__(self,classDict):
       self.ReadPrms(classDict)
-      self.InitLoc()
 
-   def InitLoc(self):
-      pass
-
-   def ReadPrms(self,inputPrms):
+   def ReadPrms(self,inputPrmDict):
       """
       Gets user input for own class as a dictionary.
       Compares user input against defaults for parent class and subclass.
@@ -29,7 +25,7 @@ class BaseClass():
       attributes.update(self.subclassDefaults)
 
       # overwrite defaults with custom input prms
-      for inputPrmName,inputValue in inputPrms.items():
+      for inputPrmName,inputValue in inputPrmDict.items():
          if inputPrmName not in attributes:
             raise Exception("'"+inputPrmName+"' is not a valid input parameter name!")
          else:

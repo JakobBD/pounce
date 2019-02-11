@@ -61,7 +61,8 @@ class GeneralConfig(BaseClass):
    """
    classDefaults={"outputLevel" : "standard"}
 
-   def InitLoc(self):
+   def __init__(self,inputPrmDict):
+      super().__init__(inputPrmDict)
       self.SetupLogger()
 
    def SetupLogger(self):

@@ -13,12 +13,13 @@ class Sc(UqMethod):
       'solverPrms' : {}
       }
 
+   def __init__(self,inputPrmDict):
+      super().__init__(inputPrmDict)
+      self.nMaxIter=1
+
    def SetupLevels(self):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
-
-   def InitLoc(self):
-      self.nMaxIter=1
 
    def GetNodesAndWeights(self):
       for level in self.levels:

@@ -8,7 +8,8 @@ class SolverFlexi(Solver):
       "exeSimulationPath" : "NODEFAULT",
       "exePostprocessingPath" : "NODEFAULT",
       "projectName" : "NODEFAULT",
-      "prmFile": "NODEFAULT"
+      "generalFilename" : "NODEFAULT",
+      "prmfile" : "NODEFAULT"
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -25,8 +26,10 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + self.prmFile + ' ' + h5FileName \
-                 + self.nSequentialRuns + self.nParallelRuns 
+      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
+                    + ' 4  4'
+                 # + self.nSequentialRuns + self.nParallelRuns
+
       return runCommand
 
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -60,7 +63,7 @@ class SolverFlexi(Solver):
       return runPostprocCommand
 
    def GetPostProcQuantityFromFile(self,fileNameSubStr,quantityName):
-      """ Readin sigmaSq for MLMC.
+      """ Readin sigmaSq or avgWalltime for MLMC.
       """
       h5FileName = self.projectName+'_'+fileNameSubStr+'_Postproc.h5'
       h5f = h5py.File(h5FileName, 'r')

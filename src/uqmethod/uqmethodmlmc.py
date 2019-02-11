@@ -18,9 +18,10 @@ class Mlmc(UqMethod):
       'solverPrms' : {}
       }
 
-   def InitLoc(self):
+   def __init__(self,inputPrmDict):
+      super().__init__(inputPrmDict)
       if self.resetSeed:
-         print('hello')
+         Print("Reset RNG seed to 0")
          np.random.seed(0)
 
    def SetupLevels(self):

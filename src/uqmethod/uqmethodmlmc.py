@@ -59,15 +59,10 @@ class Mlmc(UqMethod):
 
    def RunAllBatches(self):
       jobHandles=[]
-<<<<<<< HEAD
       for sublevel in self.allSublevels:
          fileNameStr = str(sublevel.level.ind) + sublevel.subName
          jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,\
                      sublevel.level.nCurrentSamples,sublevel.avgNodes,self.solver,fileNameStr)
-=======
-      for sublevel in self.activeSublevels:
-         jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
->>>>>>> c17caff8c7670b57564b37fe261b22d6d00d7f94
          jobHandles.append(jobHandle)
       PrintMinorSection("Waiting for jobs to finish:")
       if self.machine.WaitFinished(jobHandles): Print("Computations finished.")
@@ -116,15 +111,10 @@ class SubLevel():
       self.solverPrms = resolutionLevel.solverPrms
       self.nCoresPerSample = resolutionLevel.nCoresPerSample
       self.level = diffLevel
-<<<<<<< HEAD
       self.subName=name
       self.wholeName=str(diffLevel.ind)+name
       self.avgNodes=resolutionLevel.avgNodes
       self.workMean=resolutionLevel.workMean
-=======
-      self.subName = name
-      self.wholeName = str(diffLevel.ind)+name
->>>>>>> c17caff8c7670b57564b37fe261b22d6d00d7f94
 
 
 

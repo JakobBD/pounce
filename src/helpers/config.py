@@ -45,7 +45,7 @@ def ConfigList(string,prms,classInit,defaults):
    """
    if string not in prms:
       raise Exception("Required parameter '"+string+"' is not set in parameter file!")
-   if type(prms[string]) is not list:
+   if not isinstance(prms[string],list):
       raise Exception(" Parameter'"+string+"' needs to be defined as a list!")
    Print("Setup "+yellow(string)+" - Number of " + string + " is " + yellow(str(len(prms[string]))) + ".")
    IndentIn()

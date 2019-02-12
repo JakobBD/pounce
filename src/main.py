@@ -6,9 +6,9 @@ from helpers import config,printtools
 from helpers.printtools import *
 
 # parse commmand line arguments
-if len(sys.argv) is 2 and sys.argv[1] in ['-h','--help']:
+if len(sys.argv) == 2 and sys.argv[1] in ['-h','--help']:
    config.PrintDefaultYMLFile()
-if not (len(sys.argv) is 2 and sys.argv[1].endswith('ml')):
+if not (len(sys.argv) == 2 and sys.argv[1].endswith(('yml','yaml'))):
    sys.exit("\nUsage: <python3 main.py parameter.yml> OR <python3 main.py --help>\n")
 
 PrintHeader()

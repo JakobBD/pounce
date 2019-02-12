@@ -40,7 +40,7 @@ class Time():
          self.list_attr[2] = args[0] - 3600*self.list_attr[0]  - 60*self.list_attr[1]
 
    def islist(self, obj):
-      if type(obj) in (list,tuple):
+      if isinstance(obj,(list,tuple)):
          if len(obj) == 3:
             return True
          else:

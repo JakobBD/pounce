@@ -8,6 +8,7 @@ from helpers.tools import *
 
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
+
    subclassDefaults={
       "nMaxIter" : "NODEFAULT",
       "tolerance" : "NODEFAULT",
@@ -45,6 +46,8 @@ class Mlmc(UqMethod):
             level.samples.append(var.DrawSamples(level.nCurrentSamples))
          level.samples=np.transpose(level.samples)
          level.weights=[]
+      Print("Number of current samples for this iteration:")
+      [Print("  Level %2d: %6d samples"%(level.ind,level.nCurrentSamples)) for level in self.levels]
 
    def PrepareAllSimulations(self):
       for sublevel in self.activeSublevels:
@@ -118,22 +121,22 @@ class StdOutTable():
    Prints values for each level in ordered table to stdout.
    """
    def __init__(self):
-      self.headerStr   = "                 ║ "
-      self.sigmaSqStr  = "         SigmaSq ║ "
-      self.meanWorkStr = "       mean work ║ "
-      self.mloptStr    = "          ML_opt ║ "
-      self.fininshedStr= "finished Samples ║ "
-      self.newStr      = "     new Samples ║ "
+      self.headerStr    = "                 ║ "
+      self.sigmaSqStr   = "         SigmaSq ║ "
+      self.meanWorkStr  = "       mean work ║ "
+      self.mloptStr     = "          ML_opt ║ "
+      self.fininshedStr = "finished Samples ║ "
+      self.newStr       = "     new Samples ║ "
 
    def Update1(self,level):
-      self.headerStr  +="     Level %2d ║ "%(level.ind)
-      self.sigmaSqStr +="%13.4e ║ "%(level.sigmaSq)
-      self.meanWorkStr+="%13.4e ║ "%(level.workMean)
+      self.headerStr   += "     Level %2d ║ "%(level.ind)
+      self.sigmaSqStr  +=         "%13.4e ║ "%(level.sigmaSq)
+      self.meanWorkStr +=         "%13.4e ║ "%(level.workMean)
 
    def Update2(self,level):
-      self.mloptStr    +="%13.3f ║ "%(level.mlopt)
-      self.fininshedStr+="%13d ║ "%(level.nFinishedSamples)
-      self.newStr      +="%13d ║ "%(level.nCurrentSamples)
+      self.mloptStr     += "%13.3f ║ "%(level.mlopt)
+      self.fininshedStr +=   "%13d ║ "%(level.nFinishedSamples)
+      self.newStr       +=   "%13d ║ "%(level.nCurrentSamples)
 
    def Print(self):
       Print(self.headerStr)

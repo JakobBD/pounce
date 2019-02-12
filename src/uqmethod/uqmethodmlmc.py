@@ -17,7 +17,9 @@ class Mlmc(UqMethod):
 
    levelDefaults={
       "nCurrentSamples": "NODEFAULT",
-      'solverPrms' : {}
+      "solverPrms" : {},
+      "workMean" :  {},
+      "avgNodes" :  {}
       }
 
    def __init__(self,inputPrmDict):
@@ -60,14 +62,17 @@ class Mlmc(UqMethod):
 
    def RunAllBatches(self):
       jobHandles=[]
-      for sublevel in self.activeSublevels:
-         jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,self.solver)
+      for sublevel in self.allSublevels:
+         fileNameStr = str(sublevel.level.ind) + sublevel.subName
+         jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,\
+                     sublevel.level.nCurrentSamples,sublevel.avgNodes,self.solver,fileNameStr)
          jobHandles.append(jobHandle)
       PrintMinorSection("Waiting for jobs to finish:")
       if self.machine.WaitFinished(jobHandles): Print("Computations finished.")
       if self.machine.CheckAllFinished(): Print("All jobs finished.")
       for level in self.activeLevels:
          level.nFinishedSamples += level.nCurrentSamples
+
 
    def PrepareAllPostprocessing(self):
       for level in self.activeLevels:
@@ -109,8 +114,10 @@ class SubLevel():
       self.solverPrms = resolutionLevel.solverPrms
       self.nCoresPerSample = resolutionLevel.nCoresPerSample
       self.level = diffLevel
-      self.subName = name
-      self.wholeName = str(diffLevel.ind)+name
+      self.subName=name
+      self.wholeName=str(diffLevel.ind)+name
+      self.avgNodes=resolutionLevel.avgNodes
+      self.workMean=resolutionLevel.workMean
 
 
 

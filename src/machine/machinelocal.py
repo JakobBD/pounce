@@ -15,7 +15,7 @@ class Local(Machine):
       "mpi" : "NODEFAULT"
       }
 
-   def RunBatch(self,runCommand,nCoresPerSample,solver):
+   def RunBatch(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
       """Runs a job by calling a subprocess.
       """
       self.SubmitJob(runCommand,nCoresPerSample,solver)
@@ -43,6 +43,6 @@ class Local(Machine):
       Since we are on a local machine without submit script, all jobs are already finished.
       """
       return True
-      
+
    def CheckAllFinished(self):
       return True

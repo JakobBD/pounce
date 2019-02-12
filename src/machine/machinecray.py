@@ -1,7 +1,10 @@
-import subprocess
 import time
 import glob
+import os
+import subprocess
+
 from .machine import Machine
+from helpers.time import *
 
 @Machine.RegisterSubclass('cray')
 class Cray(Machine):
@@ -11,25 +14,34 @@ class Cray(Machine):
       "username" : "NODEFAULT"
       }
 
-   def RunBatch(self,runCommand,nCoresPerSample,solver):
+   def RunBatch(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
       """Runs a job by generating the necessary jobfile
           and submitting it.
       """
-      self.GenerateJob(runCommand,nCoresPerSample,solver)
-      return self.submitJob()
+      self.GenerateJob(runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr)
+      return self.SubmitJob(fileNameStr)
 
-   def GenerateJob(self,runCommand,nCoresPerSample,solver):
+   def GenerateJob(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
       """Generates the necessary jobfile.
       """
-      jobfile = open('jobfile_{}{}'.format(sublevel.level.ind,sublevel.subName),'w')
+      jobfileString = '#!/bin/bash\n'
+      jobfileString = jobfileString + '#PBS -N {}\n'.format(solver.projectName)
+      timeHelper=Time(nCurrentSamples*nCoresPerSample)
+      jobfileString = jobfileString + '#PBS -l nodes={}:ppn=24\n'.format(avgNodes)
+      jobfileString = jobfileString + '#PBS -l walltime={}\n'.format( timeHelper.list())
+      jobfileString = jobfileString + 'WORKDIR=\'{}\'\n'.format(os.getcwd())
+      jobfileString = jobfileString + 'cd $WORKDIR \n'
+      jobfile = open('jobfile_{}'.format(fileNameStr),'w')
+      jobfile.write(jobfileString)
       avg_cores=int(nCoresPerSample*24)
-      jobfile.write('aprun -n  {}  -N 24 {}  &> calc_{}{}.log \
-      \n'.format(avg_cores,sublevel.runCommand,sublevel.level.ind, sublevel.subName))
+      jobfile.write('aprun -n  {}  -N 24 {}  &> calc_{}.log \
+      \n'.format(avg_cores,runCommand,fileNameStr))
+      jobfile.close()
 
-   def SubmitJob(self,solver):
+   def SubmitJob(self,fileNameStr):
       """Submits a job into the Cray Hazelhen HPC queue.
       """
-      job = subprocess.Popen(['qsub',jobfile],stdout=subprocess.PIPE)
+      job = subprocess.Popen(['qsub','jobfile_{}'.format(fileNameStr)],stdout=subprocess.PIPE)
       jobID_tmp = job.stdout.read()
       jobID_tmp = jobID_tmp.split(".")[0]
       jobID = int(jobID_tmp)

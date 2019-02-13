@@ -36,12 +36,13 @@ class SolverFlexi(Solver):
       """ Writes the HDF5 file containing all necessary data for flexi run
       to run.
       """
-      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
+      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
-      h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('StochVarNames', [var.name for var in stochVars], (len(stochVars),) )
+      h5f.attrs["nStochVars"] = len(stochVars)
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
-      h5f.attrs.create('iPos', [var.GetiPos() for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
       for key, value in furtherAttrs.items():
          h5f.attrs[key] = value

@@ -24,13 +24,13 @@ class UqMethod(BaseClass):
       """
       # main loop
       while self.doContinue:
-         self.RunIteration()
+         self.RunIteration(self.iterations[-1])
 
       PrintMajorSection("Last iteration finished. Exit loop.")
       # self.machine.runBatch(postprocSolver)
 
 
-   def RunIteration(self):
+   def RunIteration(self,iteration):
       """General procedure:
       
       1. Let machine decide how many samples to compute.
@@ -39,27 +39,27 @@ class UqMethod(BaseClass):
       """
 
       PrintMajorSection("Start iteration %d"%(len(self.iterations)))
-      if self.iterations[-1].finishedSteps:
+      if iteration.finishedSteps:
          Print(green("Skipping finished steps of iteration:"))
-         [Print("  "+i) for i in self.iterations[-1].finishedSteps]
+         [Print("  "+i) for i in iteration.finishedSteps]
 
-      # self.RunStep(self.machine.allocateRessources,"Allocate resources")
+      # iteration.RunStep(self,self.machine.allocateRessources,"Allocate resources")
 
-      self.RunStep(self.GetNodesAndWeights,"Get samples")
+      iteration.RunStep(self,self.GetNodesAndWeights,"Get samples")
 
-      self.RunStep(self.PrepareAllSimulations,"Prepare simulations")
+      iteration.RunStep(self,self.PrepareAllSimulations,"Prepare simulations")
 
-      self.RunStep(self.RunAllBatches,"Run simulations")
+      iteration.RunStep(self,self.RunAllBatches,"Run simulations")
 
-      self.RunStep(self.PrepareAllPostprocessing,"Prepare postprocessing")
+      iteration.RunStep(self,self.PrepareAllPostprocessing,"Prepare postprocessing")
 
-      self.RunStep(self.RunAllBatchesPostprocessing,"Run postprocessing")
+      iteration.RunStep(self,self.RunAllBatchesPostprocessing,"Run postprocessing")
 
       if len(self.iterations) == self.nMaxIter:
          self.doContinue=False
          return
 
-      self.RunStep(self.GetNewNCurrentSamples,"Get number of samples for next iteration")
+      iteration.RunStep(self,self.GetNewNCurrentSamples,"Get number of samples for next iteration")
 
       if self.doContinue:
          self.iterations.append(Iteration())
@@ -67,11 +67,6 @@ class UqMethod(BaseClass):
       return
 
 
-   def RunStep(self,func,description):
-      if description not in self.iterations[-1].finishedSteps:
-         PrintStep(description+":")
-         func()
-         self.iterations[-1].UpdateStep(self,description)
 
 
 
@@ -80,12 +75,17 @@ class Iteration():
    def __init__(self):
       self.finishedSteps=[]
 
-   def UpdateStep(self,instance,string):
+   def UpdateStep(self,uqMethod,string):
       self.finishedSteps.append(string)
 
-      f = open(instance.filename, 'wb')
-      pickle.dump(instance, f, 2)
-      f.close()
+      with open(uqMethod.filename, 'wb') as f:
+         pickle.dump(uqMethod, f, 2)
+
+   def RunStep(self,uqMethod,func,description):
+      if description not in self.finishedSteps:
+         PrintStep(description+":")
+         func()
+         self.UpdateStep(uqMethod,description)
 
 
 

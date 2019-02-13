@@ -1,5 +1,6 @@
-from .solver import Solver
 import h5py
+import numpy as np
+from .solver import Solver
 from helpers.printtools import *
 
 @Solver.RegisterSubclass('flexi')
@@ -39,7 +40,7 @@ class SolverFlexi(Solver):
       h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
-      h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('StochVars', np.array([var.name for var in stochVars], dtype='S'), (len(stochVars),) )
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
       h5f.attrs.create('iPos', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName

@@ -44,6 +44,7 @@ class SolverFlexi(Solver):
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
       h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
+      h5f.attrs["nStochVars"] = len(stochVars)
       for key, value in furtherAttrs.items():
          h5f.attrs[key] = value
       h5f.close()

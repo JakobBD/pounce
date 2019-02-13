@@ -3,6 +3,7 @@ import sys
 import yaml
 import logging
 import copy
+import pickle
 # ---------- local imports -------------
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
@@ -22,7 +23,7 @@ def Config(prmfile):
       prms = yaml.safe_load(f)
 
    # sets up global tools like logger
-   PrintMinorSection("Read parameters")
+   PrintStep("Read parameters")
    GeneralConfig(prms["general"])
 
    # initialize classes according to chosen subclass
@@ -38,6 +39,22 @@ def Config(prmfile):
    uqMethod.SetupLevels()
 
    return uqMethod
+
+def Restart(prmfile=None):
+
+   f = open('pickle', 'rb')
+   uqMethod = pickle.load(f)
+   f.close()          
+
+   if prmfile:
+      raise Exception("Modifying parameters at restart is not yet implemented")
+
+   nFinishedIter = len(uqMethod.iterations) - (1 if uqMethod.doContinue else 0)
+   if nFinishedIter > 0:
+      Print(cyan("Skipping %i finished Iteration(s)."%(nFinishedIter)))
+
+   return uqMethod
+
 
 def ConfigList(string,prms,classInit,defaults):
    """

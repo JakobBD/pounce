@@ -6,6 +6,7 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 
+
 @UqMethod.RegisterSubclass('mlmc')
 class Mlmc(UqMethod):
 
@@ -61,14 +62,14 @@ class Mlmc(UqMethod):
          del level.samples
 
    def RunAllBatches(self):
-      jobHandles=[]
-      for sublevel in self.allSublevels:
+      self.jobHandles=[]
+      for sublevel in self.activeSublevels:
          fileNameStr = str(sublevel.level.ind) + sublevel.subName
          jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,\
                      sublevel.level.nCurrentSamples,sublevel.avgNodes,self.solver,fileNameStr)
-         jobHandles.append(jobHandle)
-      PrintMinorSection("Waiting for jobs to finish:")
-      if self.machine.WaitFinished(jobHandles): Print("Computations finished.")
+         self.jobHandles.append(jobHandle)
+      Print("Waiting for jobs to finish:")
+      if self.machine.WaitFinished(self.jobHandles): Print("Computations finished.")
       if self.machine.CheckAllFinished(): Print("All jobs finished.")
       for level in self.activeLevels:
          level.nFinishedSamples += level.nCurrentSamples
@@ -81,7 +82,7 @@ class Mlmc(UqMethod):
 
    def RunAllBatchesPostprocessing(self):
       for level in self.activeLevels:
-         self.machine.RunBatch(level.runPostprocCommand,1,self.solver)
+         self.machine.RunBatch(level.runPostprocCommand,1,1,1,self.solver," ")
 
    def GetNewNCurrentSamples(self):
 
@@ -107,6 +108,7 @@ class Mlmc(UqMethod):
 
       self.activeLevels    = [i for i in self.levels if i.nCurrentSamples > 0]
       self.activeSublevels = [i for i in self.allSublevels if i.level.nCurrentSamples > 0]
+      self.doContinue = len(self.activeLevels) > 0
 
 
 class SubLevel():
@@ -119,6 +121,14 @@ class SubLevel():
       self.avgNodes=resolutionLevel.avgNodes
       self.workMean=resolutionLevel.workMean
 
+# class MlmcIteration(Iteration):
+
+   # def FillPrms(self,levels):
+      # self.sigmaSq          = [level.sigmaSq for level in levels]
+      # self.meanWork         = [level.meanWork for level in levels]
+      # self.mlopt            = [level.mlopt for level in levels]
+      # self.nFinishedSamples = [level.nFinishedSamples for level in levels]
+      # self.nSamplesNext     = [level.nCurrentSamples for level in levels]
 
 
 class StdOutTable():

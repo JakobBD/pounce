@@ -3,7 +3,7 @@ general:
 
 uqMethod:
   _type: mlmc
-  nMaxIter: 20
+  nMaxIter: 4
   tolerance: 0.1
 
 levels:
@@ -30,9 +30,9 @@ machine:
   mpi: false
 
 solver:
-  _type: flexi
-  projectName: freestream
-  prmFile: parameter.ini
+  _type: internal
+  projectName: v4
+  #prmFile: parameter.ini
   exeSimulationPath: ../externals/integration.py
   exePostprocessingPath: ../externals/integrationPostProc.py
 

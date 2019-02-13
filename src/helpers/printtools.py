@@ -20,19 +20,17 @@ class Bcolors :
    UNDERLINE = '\033[4m'
    
 
-red      = lambda text : Bcolors.RED   +text+Bcolors.ENDC
-green    = lambda text : Bcolors.GREEN +text+Bcolors.ENDC
-blue     = lambda text : Bcolors.BLUE  +text+Bcolors.ENDC
-yellow   = lambda text : Bcolors.YELLOW+text+Bcolors.ENDC
-cyan     = lambda text : Bcolors.CYAN  +text+Bcolors.ENDC
-stdcolor = lambda text : text
+def red   (text): return Bcolors.RED   +text+Bcolors.ENDC
+def green (text): return Bcolors.GREEN +text+Bcolors.ENDC
+def blue  (text): return Bcolors.BLUE  +text+Bcolors.ENDC
+def yellow(text): return Bcolors.YELLOW+text+Bcolors.ENDC
+def cyan  (text): return Bcolors.CYAN  +text+Bcolors.ENDC
 
 colors={"red"     :red,
         "green"   :green,
         "blue"    :blue,
         "yellow"  :yellow,
-        "cyan"    :cyan,
-        "stdcolor":stdcolor}
+        "cyan"    :cyan}
 
 indent=" "
 
@@ -44,10 +42,10 @@ def IndentOut():
    global indent
    indent=indent[:-2]
 
-def Print(msg,color="stdcolor"):
-   print(colors[color](indent+msg))
+def Print(msg):
+   print(indent+msg)
 
-def PrintMinorSection(msg):
+def PrintStep(msg):
    print("-"*132)
    print(green(" "+msg)+"\n")
 
@@ -73,13 +71,13 @@ def PrintHeader():
 
 
 
-def Log(msg,color="stdcolor"):
+def Log(msg):
    log = logging.getLogger('logger')
-   log.info(colors[color](msg))
+   log.info(msg)
 
-def Debug(msg,color="stdcolor"):
+def Debug(msg):
    log = logging.getLogger('logger')
-   log.info(colors[color](msg))
+   log.debug(msg)
 
 
 

@@ -40,7 +40,7 @@ class SolverFlexi(Solver):
       h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
-      h5f.attrs.create('StochVarNames', np.array([var.name for var in stochVars], dtype='S'), (len(stochVars),) )
+      h5f.attrs.create('StochVarNames', [var.name.ljust(255) for var in stochVars], (len(stochVars),), dtype='S255' )
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
       h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName

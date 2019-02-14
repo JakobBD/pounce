@@ -5,10 +5,10 @@ class StochVar(BaseClass):
    classDefaults={
       'name' : 'NODEFAULT'
       }
-   def __init__(self,classDict,*args):
+
+   def __init__(self,inputPrmDict,*args):
       for arg in args:
          self.classDefaults.update(arg)
-      self.ReadPrms(classDict)
-      self.InitLoc()
+      super().__init__(inputPrmDict)
 
 from . import *

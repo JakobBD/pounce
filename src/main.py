@@ -6,17 +6,39 @@ from helpers import config,printtools
 from helpers.printtools import *
 
 # parse commmand line arguments
-if len(sys.argv) is 2 and sys.argv[1] in ['-h','--help']:
+
+usage="""
+Allowed usage:
+python3 main.py parameter.yml
+python3 main.py -r
+python3 main.py -r parameter.yml
+python3 main.py --help>
+"""
+nArgs=len(sys.argv)
+
+if nArgs < 2:
+   raise Exception(usage)
+
+if nArgs == 2 and sys.argv[1] in ['-h','--help']:
    config.PrintDefaultYMLFile()
-if not (len(sys.argv) is 2 and sys.argv[1].endswith('ml')):
-   sys.exit("\nUsage: <python3 main.py parameter.yml> OR <python3 main.py --help>\n")
 
 PrintHeader()
 
-# read input
+lastArgIsPrmFile = sys.argv[-1].endswith(('yml','yaml'))
+restartMode = sys.argv[1] in ['-r','--restart']
 
-PrintMajorSection("Start parameter readin and configuration")
-uqMethod = config.Config(sys.argv[1])
+if nArgs == 2 and lastArgIsPrmFile:
+   PrintMajorSection("Start parameter readin and configuration")
+   uqMethod = config.Config(sys.argv[-1])
+elif restartMode and nArgs == 2:
+   PrintMajorSection("Restart simulation")
+   uqMethod = config.Restart()
+elif restartMode and nArgs == 3 and lastArgIsPrmFile:
+   PrintMajorSection("Restart simulation")
+   uqMethod = config.Restart(prmfile=sys.argv[-1])
+else:
+   raise Exception(usage)
+
 
 # run simulation
 uqMethod.RunSimulation()

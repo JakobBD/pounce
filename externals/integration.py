@@ -5,7 +5,7 @@ import time
 
 def Function(func,spacing,sample,n):
    for ind,sp in enumerate(sample):
-      func[ind]=func[ind]+sp*spacing**n
+      func[ind]=func[ind]+sp*spacing**(n+1)
    return func
 
 def WriteHdf5(integral,weights,projectname,level,sublevel,workMean):

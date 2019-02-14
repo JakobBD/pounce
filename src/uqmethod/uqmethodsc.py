@@ -1,9 +1,12 @@
 import chaospy as cp
 import numpy as np
+
 from .uqmethod import UqMethod
+from helpers.printtools import *
 
 @UqMethod.RegisterSubclass('sc')
 class Sc(UqMethod):
+
    subclassDefaults={
       "sparseGrid" : "NODEFAULT"
       }
@@ -13,12 +16,13 @@ class Sc(UqMethod):
       'solverPrms' : {}
       }
 
+   def __init__(self,inputPrmDict):
+      super().__init__(inputPrmDict)
+      self.nMaxIter=1
+
    def SetupLevels(self):
       for iLevel,level in enumerate(self.levels):
          level.ind=iLevel+1
-
-   def InitLoc(self):
-      self.nMaxIter=1
 
    def GetNodesAndWeights(self):
       for level in self.levels:
@@ -30,6 +34,8 @@ class Sc(UqMethod):
                                                                   rule='G',sparse=self.sparseGrid)
          level.samples=np.transpose(level.samples)
          level.nCurrentSamples = len(level.samples)
+      Print("Number of current samples for this iteration:")
+      [Print("  Level %2d: %6d samples"%(level.ind,level.nCurrentSamples)) for level in self.levels]
 
 
    def PrepareAllSimulations(self):

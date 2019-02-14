@@ -1,5 +1,6 @@
-from .solver import Solver
 import h5py
+import numpy as np
+from .solver import Solver
 from helpers.printtools import *
 
 @Solver.RegisterSubclass('flexi')
@@ -8,7 +9,8 @@ class SolverFlexi(Solver):
       "exeSimulationPath" : "NODEFAULT",
       "exePostprocessingPath" : "NODEFAULT",
       "projectName" : "NODEFAULT",
-      "prmFile": "NODEFAULT"
+      "generalFilename" : "NODEFAULT",
+      "prmfile" : "NODEFAULT"
       }
 
    def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
@@ -25,21 +27,24 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + self.prmFile + ' ' + h5FileName \
-                 + self.nSequentialRuns + self.nParallelRuns 
+      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
+                    + ' 4  4'
+                 # + self.nSequentialRuns + self.nParallelRuns
+
       return runCommand
 
    def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
       """ Writes the HDF5 file containing all necessary data for flexi run
       to run.
       """
-      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
+      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
-      h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('StochVarNames', np.array([var.name for var in stochVars], dtype='S'), (len(stochVars),) )
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
-      h5f.attrs.create('iPos', [var.GetiPos() for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
+      h5f.attrs["nStochVars"] = len(stochVars)
       for key, value in furtherAttrs.items():
          h5f.attrs[key] = value
       h5f.close()
@@ -60,7 +65,7 @@ class SolverFlexi(Solver):
       return runPostprocCommand
 
    def GetPostProcQuantityFromFile(self,fileNameSubStr,quantityName):
-      """ Readin sigmaSq for MLMC.
+      """ Readin sigmaSq or avgWalltime for MLMC.
       """
       h5FileName = self.projectName+'_'+fileNameSubStr+'_Postproc.h5'
       h5f = h5py.File(h5FileName, 'r')

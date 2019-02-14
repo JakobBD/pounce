@@ -27,9 +27,7 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
-                    + ' 4  4'
-                 # + self.nSequentialRuns + self.nParallelRuns
+      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName
 
       return runCommand
 
@@ -45,6 +43,9 @@ class SolverFlexi(Solver):
       h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
       h5f.attrs["nStochVars"] = len(stochVars)
+      h5f.attrs["nGlobalRuns"] = len(level.samples)
+      # h5f.attrs["nParallelRuns"] = self.nParallelRuns
+      h5f.attrs["nParallelRuns"] = 2
       for key, value in furtherAttrs.items():
          h5f.attrs[key] = value
       h5f.close()

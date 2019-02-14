@@ -27,7 +27,7 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + h5FileName + ' ' + self.prmfile  
+      runCommand = self.exeSimulationPath + ' ' + h5FileName + ' ' + self.prmfile
 
       return runCommand
 
@@ -46,9 +46,26 @@ class SolverFlexi(Solver):
       h5f.attrs["nGlobalRuns"] = len(level.samples)
       # h5f.attrs["nParallelRuns"] = self.nParallelRuns
       h5f.attrs["nParallelRuns"] = 2
+      levelVarsInt={}
+      levelVarsString={}
+      levelVarsReal={}
       for key, value in furtherAttrs.items():
-         h5f.attrs[key] = value
+         print(key,value)
+         if(type(value)) is int and (key != 'Level'): levelVarsInt.update({key:value})
+         if(type(value)) is str and (key != 'Sublevel'): levelVarsString.update({key:value})
+         if(type(value)) is float: levelVarsReal.update({key:value})
+      h5f.attrs["nLevelVarsInt"] = len(levelVarsInt)
+      h5f.attrs["LevelVarsNamesInt"] = np.array([key for key in levelVarsInt], dtype='S')
+      h5f.attrs["LevelVarsInt"] = [levelVarsInt.get(key) for key in levelVarsInt]
+      h5f.attrs["nLevelVarsStr"] = len(levelVarsString)
+      h5f.attrs["LevelVarsNamesStr"] = np.array([key for key in levelVarsString], dtype='S')
+      h5f.attrs["LevelVarsStr"] = [levelVarsString.get(key) for key in levelVarsString]
+      h5f.attrs["nLevelVarsReal"] = len(levelVarsReal)
+      h5f.attrs["LevelVarsNamesReal"] = np.array([key for key in levelVarsReal], dtype='S')
+      h5f.attrs["LevelVarsReal"] = [levelVarsReal.get(key) for key in levelVarsReal]
+
       h5f.close()
+      pause
 
    def PreparePostprocessing(self,fileNameSubStr):
       """ Prepares the postprocessing by generating the runPostprocCommand.

@@ -65,7 +65,6 @@ class SolverFlexi(Solver):
       h5f.attrs["LevelVarsReal"] = [levelVarsReal.get(key) for key in levelVarsReal]
 
       h5f.close()
-      pause
 
    def PreparePostprocessing(self,fileNameSubStr):
       """ Prepares the postprocessing by generating the runPostprocCommand.

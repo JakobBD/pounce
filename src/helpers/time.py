@@ -35,9 +35,9 @@ class Time():
          self.sec_attr = 3600*args[0][0] + 60*args[0][1] + args[0][2]
       else:
          self.sec_attr = args[0]
-         self.list_attr[0] = int(args[0])/3600
-         self.list_attr[1] = int(args[0])/60 - 60*self.list_attr[0]
-         self.list_attr[2] = args[0] - 3600*self.list_attr[0]  - 60*self.list_attr[1]
+         self.list_attr[0] = int(int(args[0])/3600)
+         self.list_attr[1] = int(int(args[0])/60 - 60*self.list_attr[0])
+         self.list_attr[2] = int(args[0] - 3600*self.list_attr[0]  - 60*self.list_attr[1])
 
    def islist(self, obj):
       if isinstance(obj,(list,tuple)):
@@ -79,4 +79,3 @@ class Time():
       return float(other.sec_attr)/self.sec_attr
    def __pow__(self, other):
       return Time(self.sec_attr**other)
-

@@ -59,7 +59,7 @@ class SolverFlexi(Solver):
       h5f.attrs["LevelVarsInt"] = [levelVarsInt.get(key) for key in levelVarsInt]
       h5f.attrs["nLevelVarsStr"] = len(levelVarsString)
       h5f.attrs["LevelVarsNamesStr"] = np.array([key for key in levelVarsString], dtype='S')
-      h5f.attrs["LevelVarsStr"] = [levelVarsString.get(key) for key in levelVarsString]
+      h5f.attrs["LevelVarsStr"] = np.array([levelVarsString.get(key) for key in levelVarsString], dtype='S')
       h5f.attrs["nLevelVarsReal"] = len(levelVarsReal)
       h5f.attrs["LevelVarsNamesReal"] = np.array([key for key in levelVarsReal], dtype='S')
       h5f.attrs["LevelVarsReal"] = [levelVarsReal.get(key) for key in levelVarsReal]

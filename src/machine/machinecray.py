@@ -42,9 +42,11 @@ class Cray(Machine):
       """
       jobfileString = '#!/bin/bash\n'
       jobfileString = jobfileString + '#PBS -N {}\n'.format(solver.projectName)
-      timeHelper=Time(nCurrentSamples*nCoresPerSample)
-      jobfileString = jobfileString + '#PBS -l nodes={}:ppn=24\n'.format(avgNodes)
-      jobfileString = jobfileString + '#PBS -l walltime={}\n'.format( timeHelper.list())
+      timeHelper=Time(int(nCurrentSamples*2))
+      jobfileString = jobfileString + '#PBS -l nodes={}:ppn=24\n'.format(avgNodes*24)
+      jobfileString = jobfileString + '#PBS -l walltime={}:{}:{}\n'.format( timeHelper.list()[0],\
+                                                                            timeHelper.list()[1],\
+                                                                            timeHelper.list()[2])
       jobfileString = jobfileString + 'WORKDIR=\'{}\'\n'.format(os.getcwd())
       jobfileString = jobfileString + 'cd $WORKDIR \n'
       jobfile = open('jobfile_{}'.format(fileNameStr),'w')
@@ -57,7 +59,8 @@ class Cray(Machine):
    def SubmitJob(self,fileNameStr):
       """Submits a job into the Cray Hazelhen HPC queue.
       """
-      job = subprocess.Popen(['qsub','jobfile_{}'.format(fileNameStr)],stdout=subprocess.PIPE)
+      job = subprocess.Popen(['qsub','jobfile_{}'.format(fileNameStr)],stdout=subprocess.PIPE\
+                                                                      ,universal_newlines=True)
       jobID_tmp = job.stdout.read()
       jobID_tmp = jobID_tmp.split(".")[0]
       jobID = int(jobID_tmp)
@@ -71,8 +74,9 @@ class Cray(Machine):
       unfinished_jobs=None
       n_remain=len(jobHandles)
       while not comp_finished:
-         job = subprocess.Popen(['qstat','-u',self.username],stdout=subprocess.PIPE)
-         status_tmp = job.stdout.read()
+         job = subprocess.Popen(['qstat','-u',self.username],stdout=subprocess.PIPE\
+                                                            ,universal_newlines=True)
+         status_tmp = str(job.stdout.read())
          status_tmp = status_tmp.split('\n')
          if len(status_tmp)<4:
             jobs_in_queue=None
@@ -90,21 +94,21 @@ class Cray(Machine):
                         found=True
                         status = line.split()[9]
                         if status=='C':
-                           [jobHandles,unfinished_jobs,n_remain]=CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
+                           [jobHandles,unfinished_jobs,n_remain]=self.CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
                         else:
                            status_string="id {} has status {}".format(i,status)
                            if not status_string in status_list:
                               status_list.append(status_string)
                               print("Job with {}!".format(status_string))
                if not found: # jobID is not in st: pretend it is finished
-                  [jobHandles,unfinished_jobs,n_remain]=CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
+                  [jobHandles,unfinished_jobs,n_remain]=self.CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
          if sum(jobHandles)==0:
             comp_finished=True
          else:
             time.sleep(1)
       return(unfinished_jobs)
 
-   def CheckErrorfile(i,jobID,unfinished_jobs,index,n_remain):
+   def CheckErrorfile(self,i,jobID,unfinished_jobs,index,n_remain):
       with open(glob.glob('*.e{}'.format(i))[0]) as f:
          lines = f.read().splitlines()
          if len(lines)==0:

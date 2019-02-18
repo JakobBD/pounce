@@ -1,5 +1,6 @@
-from .solver import Solver
 import h5py
+import numpy as np
+from .solver import Solver
 from helpers.printtools import *
 
 @Solver.RegisterSubclass('flexi')
@@ -26,9 +27,7 @@ class SolverFlexi(Solver):
    def GenerateRunCommand(self,h5FileName):
       """ Generates the run command which is executed by the machine.
       """
-      runCommand = self.exeSimulationPath + ' ' + self.prmfile + ' ' + h5FileName \
-                    + ' 4  4'
-                 # + self.nSequentialRuns + self.nParallelRuns
+      runCommand = self.exeSimulationPath + ' ' + h5FileName + ' ' + self.prmfile
 
       return runCommand
 
@@ -36,15 +35,35 @@ class SolverFlexi(Solver):
       """ Writes the HDF5 file containing all necessary data for flexi run
       to run.
       """
-      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
+      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'.h5', 'w')
       h5f.create_dataset('Samples', data=level.samples)
       h5f.create_dataset('Weights', data=level.weights)
-      h5f.attrs.create('StochVars', [var.name for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('StochVarNames', [var.name.ljust(255) for var in stochVars], (len(stochVars),), dtype='S255' )
       h5f.attrs.create('iOccurrence', [var.GetiOccurrence() for var in stochVars], (len(stochVars),) )
-      h5f.attrs.create('iPos', [var.GetiPos() for var in stochVars], (len(stochVars),) )
+      h5f.attrs.create('iArray', [var.GetiPos() for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
+      h5f.attrs["nStochVars"] = len(stochVars)
+      h5f.attrs["nGlobalRuns"] = len(level.samples)
+      # h5f.attrs["nParallelRuns"] = self.nParallelRuns
+      h5f.attrs["nParallelRuns"] = 2
+      levelVarsInt={}
+      levelVarsString={}
+      levelVarsReal={}
       for key, value in furtherAttrs.items():
-         h5f.attrs[key] = value
+         print(key,value)
+         if(type(value)) is int and (key != 'Level'): levelVarsInt.update({key:value})
+         if(type(value)) is str and (key != 'Sublevel'): levelVarsString.update({key:value})
+         if(type(value)) is float: levelVarsReal.update({key:value})
+      h5f.attrs["nLevelVarsInt"] = len(levelVarsInt)
+      h5f.attrs["LevelVarsNamesInt"] = np.array([key for key in levelVarsInt], dtype='S')
+      h5f.attrs["LevelVarsInt"] = [levelVarsInt.get(key) for key in levelVarsInt]
+      h5f.attrs["nLevelVarsStr"] = len(levelVarsString)
+      h5f.attrs["LevelVarsNamesStr"] = np.array([key for key in levelVarsString], dtype='S')
+      h5f.attrs["LevelVarsStr"] = np.array([levelVarsString.get(key) for key in levelVarsString], dtype='S')
+      h5f.attrs["nLevelVarsReal"] = len(levelVarsReal)
+      h5f.attrs["LevelVarsNamesReal"] = np.array([key for key in levelVarsReal], dtype='S')
+      h5f.attrs["LevelVarsReal"] = [levelVarsReal.get(key) for key in levelVarsReal]
+
       h5f.close()
 
    def PreparePostprocessing(self,fileNameSubStr):

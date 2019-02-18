@@ -33,7 +33,9 @@ def Config(prmfile):
 
    # initialize lists of classes for all levels and all stochVars
    uqMethod.stochVars = ConfigList("stochVars",prms,StochVar.Create,uqMethod.stochVarDefaults)
-   uqMethod.levels = ConfigList("levels",prms,Level,uqMethod.levelDefaults)
+   defaults = {}
+   [defaults.update(x.levelDefaults) for x in [uqMethod, uqMethod.machine] ]
+   uqMethod.levels = ConfigList("levels",prms,Level,defaults)
 
    # in the multilevel case, some firther setup is needed for the levels (mainly sorting prms into sublevels f and c)
    uqMethod.SetupLevels()

@@ -7,14 +7,16 @@ uqMethod:
   tolerance: 0.1
 
 levels:
-   - nCurrentSamples: 10
-     nCoresPerSample: 24
-     solverPrms:
-        nPoints: 10
-   - nCurrentSamples: 4
-     nCoresPerSample: 48
-     solverPrms:
-        nPoints: 20
+- nCurrentSamples: 10
+  nCoresPerSample: 24
+  solverPrms:
+     nPoints: 10
+  avgWalltime: 3
+- nCurrentSamples: 4
+  nCoresPerSample: 48
+  solverPrms:
+     nPoints: 20
+  avgWalltime: 100
  
 stochVars:
 - _type: uniform
@@ -26,8 +28,8 @@ stochVars:
   name: b
 
 machine:
-  _type: local
-  mpi: false
+  _type: cray
+  username: iagduerr
 
 solver:
   _type: internal

@@ -43,7 +43,7 @@ class UqMethod(BaseClass):
          Print(green("Skipping finished steps of iteration:"))
          [Print("  "+i) for i in iteration.finishedSteps]
 
-      # iteration.RunStep(self,self.machine.allocateRessources,"Allocate resources")
+      iteration.RunStep(self,self.machine.AllocateResources,"Allocate resources",self)
 
       iteration.RunStep(self,self.GetNodesAndWeights,"Get samples")
 
@@ -81,10 +81,10 @@ class Iteration():
       with open(uqMethod.filename, 'wb') as f:
          pickle.dump(uqMethod, f, 2)
 
-   def RunStep(self,uqMethod,func,description):
+   def RunStep(self,uqMethod,func,description,*args):
       if description not in self.finishedSteps:
          PrintStep(description+":")
-         func()
+         func(args) if args else func()
          self.UpdateStep(uqMethod,description)
 
 

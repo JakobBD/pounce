@@ -1,18 +1,34 @@
 import time
 import glob
 import os
+import math
+import numpy as np
 import subprocess
 
 from .machine import Machine
 from helpers.time import *
+from helpers.printtools import *
 
 @Machine.RegisterSubclass('cray')
 class Cray(Machine):
    """Definition of Cray Hazelhen machine.
    """
    subclassDefaults={
-      "username" : "NODEFAULT"
+      "username" : "NODEFAULT",
+      "walltimeFactor" : 1.2,
+      "nMaxCores" : 10000,
+      "maxWalltime" : 86400, # 24h
+      "maxTotalWork" : 36E6  # 10.000 CoreH
       }
+
+   levelDefaults={
+      "avgWalltime" : "NODEFAULT",
+      }
+
+   def __init__(self,classDict):
+      self.nCoresPerNode = 24
+      self.totalWork = 0.
+      super().__init__(classDict)
 
    def RunBatch(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
       """Runs a job by generating the necessary jobfile
@@ -115,7 +131,174 @@ class Cray(Machine):
       """
       return True
 
-   def AllocateResources(self):
-      """Allocates the recources depending on the job to be executed.
+   def AllocateResources(self,level):
+      """Takes the properties of the level (number of current samples, walltime and cores of current sample) 
+      as well as the machine properties or machine input (number of cores per node, max nodes etc.) 
+      and outputs number of cores and number of parallel runs for 
       """
-      pass
+
+      self.walltimeFactor = 1.2
+      level.scaledAvgWalltime=self.walltimeFactor*level.avgWalltime
+      level.work=level.scaledAvgWalltime*level.nCoresPerSample*level.nCurrentSamples
+
+      self.GetPackageProperties(level)
+
+      self.GetNRunsMax(level)
+      
+      GetQueue(level)
+
+      self.GetBestOption(level)
+
+      level.nCores = level.nParallelRuns * level.nCoresPerSample
+      level.batchWalltime = level.nSequentialRuns * level.scaledAvgWalltime
+      level.nNodes = level.nCores / self.nCoresPerNode
+
+      self.totalWork += level.nCores * level.batchWalltime
+      if self.totalWork > self.maxTotalWork:
+         raise Exception("Max total core hours exceeded!")
+
+      Print("")
+      Print("nParallelRuns = %i"%(level.nParallelRuns))
+      Print("nSequentialRuns = %i"%(level.nSequentialRuns))
+      Print("")
+      Print("nCores = %i"%(level.nCores))
+      Print("batchWalltime = %f"%(level.batchWalltime))
+
+
+   def GetPackageProperties(self,level):
+      level.nParallelRunsPackage = max( 1, self.nCoresPerNode // level.nCoresPerSample)
+      level.nCoresPackage = level.nCoresPerSample*level.nParallelRunsPackage
+      if level.nCoresPackage%self.nCoresPerNode: 
+         raise Exception("nCoresPerSample has to be multiple of nCoresPerNode or vice versa")
+      if level.nCoresPackage > self.nMaxCores:
+         raise Exception("nMaxCores (%i) too small for smallest batch nCores (%i)"%(self.nMaxCores,nCores))
+
+   def GetNRunsMax(self,level):
+      level.nSequentialRunsMax = level.scaledAvgWalltime * ( self.maxWalltime // level.scaledAvgWalltime )
+      if level.nSequentialRunsMax == 0: 
+         raise Exception("A single job takes longer than the set walltime maximum. I cannot work like this.")
+
+      level.nParallelRunsMax = ( level.nCoresPackage * (self.nMaxCores // level.nCoresPackage) ) / level.nCoresPerSample
+      if level.nParallelRunsMax*level.nSequentialRunsMax < level.nCurrentSamples: 
+         PrintWarning("The limits set for #Cores and walltime are too small for this batch. nSamples is reduced.")
+
+
+   def GetBestOption(self,level):
+      baseOpt = Option(level)
+      level.nParallelRuns = baseOpt.nParallelRuns
+      level.nSequentialRuns = baseOpt.nSequentialRuns
+
+      furtherOpts = []
+      for i in range(-50,50): 
+         furtherOpts.append( Option( level,nParallelRuns=level.nParallelRuns+i*level.nParallelRunsPackage) )
+         furtherOpts.append( Option( level,nSequentialRuns=level.nSequentialRuns+i) )
+
+      if baseOpt.valid: 
+         level.maxRating = baseOpt.rating
+      else:
+         level.nParallelRuns = -1
+         level.nSequentialRuns = -1
+         level.maxRating = -1.
+
+      for opt in furtherOpts:
+         if opt.valid and (opt.rating > level.maxRating):
+            level.maxRating = opt.rating
+            level.nParallelRuns = opt.nParallelRuns
+            level.nSequentialRuns = opt.nSequentialRuns
+      if level.maxRating <= 0.:
+         raise Exception("Something went wrong in AllocateResources. No valid option found")
+
+
+def GetQueue(level):
+   # in order for the multi queue to be used, nParallelRunsMultiMin
+   level.nSequentialRunsMultiMin = int(math.ceil( 5*60 / level.scaledAvgWalltime  ))
+   level.nParallelRunsMultiMin = level.nParallelRunsPackage * int(math.ceil( 48*24 / level.nCoresPackage ))
+
+   level.nSequentialRuns4hMax = level.scaledAvgWalltime* ( 4*3600 // level.scaledAvgWalltime )
+   efficiencyVsQueueFactor = 0.9
+   nSamplesMulti = (
+   efficiencyVsQueueFactor     *max( level.nParallelRunsMultiMin   *(level.nSequentialRunsMultiMin-1),
+                                    (level.nParallelRunsMultiMin-1)* level.nSequentialRunsMultiMin    ) + 
+   (1.-efficiencyVsQueueFactor)*min( level.nParallelRunsMultiMin   *(level.nSequentialRunsMultiMin-1),
+                                    (level.nParallelRunsMultiMin-1)* level.nSequentialRunsMultiMin    ) )
+
+   if nSamplesMulti >= level.nCurrentSamples:
+      Print("Small Queue")
+      SmallQueue(level)
+   elif level.nSequentialRuns4hMax*level.nParallelRunsMax < level.nCurrentSamples: 
+      LongQueue(level)
+      Print("Long Queue")
+   else: 
+      MultiQueue(level)
+      Print("Multi Queue")
+
+   #fill ideal values according to queue
+   level.workFunc = [a*b for a,b in zip(level.wtFunc,level.coresFunc)]
+   level.expWt = np.log(level.wtFunc[1]/level.wtFunc[0]) / np.log(level.workFunc[1]/level.workFunc[0])
+   level.expCores = 1 - level.expWt
+   level.idealWt = level.wtFunc[0] * (level.work / level.workFunc[0])**level.expWt
+   level.idealCores = level.coresFunc[0] * (level.work / level.workFunc[0])**level.expCores
+   Print("")
+   Print("expWt = %f"%(level.expWt))
+   Print("idealCores = %f"%(level.idealCores))
+   Print("idealWt = %f"%(level.idealWt))
+
+
+
+class Option():
+   def __init__(self,level,**kwargs):
+      if np.any([a<=0 for a in kwargs.values()]):
+         self.rating=-1.
+         self.valid=False
+         return
+      if "nSequentialRuns" in kwargs:
+         self.nSequentialRuns = kwargs["nSequentialRuns"]
+         self.nParallelRuns = ( level.nParallelRunsPackage *   
+                                int(math.ceil(level.nCurrentSamples / (self.nSequentialRuns*level.nParallelRunsPackage))) )
+      else:
+         if "nParallelRuns" in kwargs:
+            self.nParallelRuns = kwargs["nParallelRuns"]
+         else:
+            self.nParallelRuns = level.nParallelRunsPackage*int(math.ceil(level.idealCores / level.nCoresPackage))
+         self.nSequentialRuns = int(math.ceil( level.nCurrentSamples / self.nParallelRuns ))
+      self.walltime = self.nSequentialRuns*level.scaledAvgWalltime
+      self.nCores= self.nParallelRuns*level.nCoresPerSample
+
+      self.Rating(level)
+      self.CheckValid(level)
+      Print("OPTION:")
+      Print("OPTION:")
+      Print("nParallelRuns = %i"%(self.nParallelRuns))
+      Print("nSequentialRuns = %i"%(self.nSequentialRuns))
+      Print("queueRating = %f"%(self.queueRating))
+      Print("effiencyRating = %f"%(self.effiencyRating))
+      Print("rating = %f"%(self.rating))
+      Print("valid = {}".format(self.valid))
+
+
+   def Rating(self,level): 
+      self.queueRating = min( level.idealCores / self.nCores , level.idealWt / self.walltime ) 
+      self.effiencyRating = level.nCurrentSamples / (self.nParallelRuns * self.nSequentialRuns)
+      self.rating = self.effiencyRating ** 3. * self.queueRating
+
+   def CheckValid(self,level):
+      self.valid = ( ( level.boundsParallel[0]   <= self.nParallelRuns   <= level.boundsParallel[1]   ) and
+                     ( level.boundsSequential[0] <= self.nSequentialRuns <= level.boundsSequential[1] ) )
+
+def SmallQueue(level):
+   level.wtFunc = [5.*60, 24.*60 ]
+   level.coresFunc = [1*24, 10*24]
+   level.boundsParallel = [level.nParallelRunsPackage, level.nParallelRunsMax]
+   level.boundsSequential = [1, level.nSequentialRunsMax]
+
+def MultiQueue(level):
+   level.wtFunc = [30.*60, 4.*3600 ]
+   level.coresFunc = [48*24, 192*24]
+   level.boundsParallel = [level.nParallelRunsMultiMin, level.nParallelRunsMax]
+   level.boundsSequential = [level.nSequentialRunsMultiMin, level.nSequentialRuns4hMax]
+
+def LongQueue(level):
+   level.wtFunc = [4.*3600, 8.*3600 ]
+   level.coresFunc = [500*24, 500*24]
+   level.boundsParallel = [level.nParallelRunsMultiMin, level.nParallelRunsMax]
+   level.boundsSequential = [1, level.nSequentialRunsMax]

@@ -19,8 +19,6 @@ class Mlmc(UqMethod):
    levelDefaults={
       "nCurrentSamples": "NODEFAULT",
       "solverPrms" : {},
-      "workMean" :  {},
-      "avgNodes" :  {}
       }
 
    def __init__(self,inputPrmDict):
@@ -118,8 +116,8 @@ class SubLevel():
       self.level = diffLevel
       self.subName=name
       self.wholeName=str(diffLevel.ind)+name
-      self.avgNodes=resolutionLevel.avgNodes
-      self.workMean=resolutionLevel.workMean
+      # self.avgNodes=resolutionLevel.avgNodes
+      # self.workMean=resolutionLevel.workMean
 
 # class MlmcIteration(Iteration):
 

@@ -33,7 +33,7 @@ class Local(Machine):
          subprocess.call(shlex.split(runCommand))
       pass
 
-   def AllocateResources(self):
+   def AllocateResources(self,uqMethod):
       """Allocates the recources depending on the job to be executed.
       """
       pass

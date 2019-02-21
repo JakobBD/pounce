@@ -41,7 +41,6 @@ machine:
 solver:
   _type: flexi
   projectName: cavity
-  generalFilename: flexi
   prmfile: 'parameter_flexi.ini'
   exeSimulationPath: ../externals/flexi
-  exePostprocessingPath: ../externals/integrationPostProc.py
+  exePostprocessingPath: ../externals/mlmc_estimatesigma

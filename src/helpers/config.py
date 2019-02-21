@@ -38,7 +38,7 @@ def Config(prmfile):
    uqMethod.levels = ConfigList("levels",prms,Level,defaults)
 
    # in the multilevel case, some firther setup is needed for the levels (mainly sorting prms into sublevels f and c)
-   uqMethod.SetupLevels()
+   uqMethod.SetupBatches()
 
    return uqMethod
 

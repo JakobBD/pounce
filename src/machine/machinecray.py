@@ -8,6 +8,7 @@ import subprocess
 from .machine import Machine
 from helpers.time import *
 from helpers.printtools import *
+from helpers.tools import *
 
 @Machine.RegisterSubclass('cray')
 class Cray(Machine):
@@ -18,7 +19,7 @@ class Cray(Machine):
       "walltimeFactor" : 1.2,
       "nMaxCores" : 10000,
       "maxWalltime" : 86400, # 24h
-      "maxTotalWork" : 36E6  # 10.000 CoreH
+      "maxTotalWork" : 36E5  # 1.000 CoreH
       }
 
    levelDefaults={
@@ -30,45 +31,58 @@ class Cray(Machine):
       self.totalWork = 0.
       super().__init__(classDict)
 
-   def RunBatch(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
+
+   def PreparePostProc(self,batches,solver):
+      for batch in batches: 
+         batch.nCores=self.nCoresPerNode
+         batch.walltime=120.
+         solver.PreparePostprocessing(batch)
+
+
+   def RunBatches(self,batches,solver,postProc=False):
       """Runs a job by generating the necessary jobfile
           and submitting it.
       """
-      self.GenerateJob(runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr)
-      return self.SubmitJob(fileNameStr)
+      self.unfinished_batches=batches
+      for batch in self.unfinished_batches:
+         batch.jobfile=self.GenerateJobFile(batch,solver)
+         batch.jobID=self.SubmitJob(batch.jobfile)
+      self.waitingForJobs=True
+      self.unfinished_batches=self.WaitFinished(self.unfinished_batches)
+      self.waitingForJobs=False
+      if not postProc:
+         solver.CheckAllFinished(batches)
+      #TODO: restart unfinished jobs
 
-   def GenerateJob(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
+
+   def GenerateJobFile(self,batch,solver):
       """Generates the necessary jobfile.
       """
-      jobfileString = '#!/bin/bash\n'
-      jobfileString = jobfileString + '#PBS -N {}\n'.format(solver.projectName)
-      timeHelper=Time(int(nCurrentSamples*2))
-      jobfileString = jobfileString + '#PBS -l nodes={}:ppn=24\n'.format(avgNodes*24)
-      jobfileString = jobfileString + '#PBS -l walltime={}:{}:{}\n'.format( timeHelper.list()[0],\
-                                                                            timeHelper.list()[1],\
-                                                                            timeHelper.list()[2])
-      jobfileString = jobfileString + 'WORKDIR=\'{}\'\n'.format(os.getcwd())
-      jobfileString = jobfileString + 'cd $WORKDIR \n'
-      jobfile = open('jobfile_{}'.format(fileNameStr),'w')
-      jobfile.write(jobfileString)
-      avg_cores=int(nCoresPerSample*24)
-      jobfile.write('aprun -n  {}  -N 24 {}  &> calc_{}.log \
-      \n'.format(avg_cores,runCommand,fileNameStr))
-      jobfile.close()
+      jobfileString = (
+        '#!/bin/bash\n'
+      + '#PBS -N {}\n'.format(solver.projectName)
+      + '#PBS -l nodes={}:ppn=24\n'.format(batch.nCores)
+      + '#PBS -l walltime='+Time(batch.batchWalltime).str+"\n\n"
+      + 'cd $PBS_O_WORKDIR\n\n'
+      + 'aprun -n  {}  -N 24 {}  &> calc_{}.log\n'.format(batch.nCores,batch.runCommand,batch.name)
+      )
+      jobfileName = 'jobfile_{}'.format(batch.name)
+      with open(jobfileName,'w+') as jf:
+         jf.write(jobfileString)
+      return jobfileName
 
-   def SubmitJob(self,fileNameStr):
+
+   def SubmitJob(self,jobfile):
       """Submits a job into the Cray Hazelhen HPC queue.
       """
-      job = subprocess.Popen(['qsub','jobfile_{}'.format(fileNameStr)],stdout=subprocess.PIPE\
-                                                                      ,universal_newlines=True)
-      jobID_tmp = job.stdout.read()
-      jobID_tmp = jobID_tmp.split(".")[0]
-      jobID = int(jobID_tmp)
-      return jobID
+      job = subprocess.run(['qsub',jobfile],stdout=subprocess.PIPE,universal_newlines=True)
+      return int(job.stdout.read().split(".")[0])
 
-   def WaitFinished(self,jobHandles):
+
+   def WaitFinished(self,batches):
       """Monitors all jobs on Cray Hazelhen HPC queue. Checks if jobfile finished.
       """
+      jobHandles=[batch.jobID for batch in batches]
       status_list=[]
       comp_finished=None
       unfinished_jobs=None
@@ -106,7 +120,8 @@ class Cray(Machine):
             comp_finished=True
          else:
             time.sleep(1)
-      return(unfinished_jobs)
+      return([batch for batch in batches if batch.jobID in unfinished_jobs])
+
 
    def CheckErrorfile(self,i,jobID,unfinished_jobs,index,n_remain):
       with open(glob.glob('*.e{}'.format(i))[0]) as f:
@@ -130,179 +145,167 @@ class Cray(Machine):
       print('job ID {} is now complete! {} jobs remaining'.format(i,n_remain))
       return(jobID,unfinished_jobs,n_remain)
 
-   def CheckAllFinished(self):
-      """Checks if all computations finished and all files are available.
-      """
-      return True
 
-   def AllocateResources(self,level):
-      """Takes the properties of the level (number of current samples, walltime and cores of current sample) 
+   def AllocateResources(self,batches):
+      """Takes the properties of the batch (number of current samples, walltime and cores of current sample) 
       as well as the machine properties or machine input (number of cores per node, max nodes etc.) 
       and outputs number of cores and number of parallel runs for 
       """
 
       self.walltimeFactor = 1.2
-      level.scaledAvgWalltime=self.walltimeFactor*level.avgWalltime
-      level.work=level.scaledAvgWalltime*level.nCoresPerSample*level.nCurrentSamples
+      for batch in batches:
+         batch.scaledAvgWalltime=self.walltimeFactor*batch.avgWalltime
+         batch.work=batch.scaledAvgWalltime*batch.nCoresPerSample*batch.samples.n
 
-      self.GetPackageProperties(level)
+         self.GetPackageProperties(batch)
 
-      self.GetNRunsMax(level)
-      
-      GetQueue(level)
+         self.GetNRunsMax(batch)
+         
+         GetQueue(batch)
 
-      self.GetBestOption(level)
+         self.GetBestOption(batch)
 
-      level.nCores = level.nParallelRuns * level.nCoresPerSample
-      level.batchWalltime = level.nSequentialRuns * level.scaledAvgWalltime
-      level.nNodes = level.nCores / self.nCoresPerNode
+         batch.nCores = batch.nParallelRuns * batch.nCoresPerSample
+         batch.batchWalltime = batch.nSequentialRuns * batch.scaledAvgWalltime
+         batch.nNodes = batch.nCores / self.nCoresPerNode
 
-      self.totalWork += level.nCores * level.batchWalltime
-      if self.totalWork > self.maxTotalWork:
-         raise Exception("Max total core hours exceeded!")
+         self.totalWork += batch.nCores * batch.batchWalltime
+         if self.totalWork > self.maxTotalWork:
+            raise Exception("Max total core hours exceeded!")
 
-      Print("")
-      Print("nParallelRuns = %i"%(level.nParallelRuns))
-      Print("nSequentialRuns = %i"%(level.nSequentialRuns))
-      Print("")
-      Print("nCores = %i"%(level.nCores))
-      Print("batchWalltime = %f"%(level.batchWalltime))
+         Print("")
+         Print("Queue = %s"%(batch.queue))
+         Print("Rating = %s"%(batch.maxRating))
+         Print("nParallelRuns = %i"%(batch.nParallelRuns))
+         Print("nSequentialRuns = %i"%(batch.nSequentialRuns))
+         Print("nCores = %i"%(batch.nCores))
+         Print("nNodes = %i"%(batch.nNodes))
+         Print("batchWalltime = %f"%(batch.batchWalltime))
 
 
-   def GetPackageProperties(self,level):
-      level.nParallelRunsPackage = max( 1, self.nCoresPerNode // level.nCoresPerSample)
-      level.nCoresPackage = level.nCoresPerSample*level.nParallelRunsPackage
-      if level.nCoresPackage%self.nCoresPerNode: 
+   def GetPackageProperties(self,batch):
+      batch.nParallelRunsPackage = max( 1, self.nCoresPerNode // batch.nCoresPerSample)
+      batch.nCoresPackage = batch.nCoresPerSample*batch.nParallelRunsPackage
+      if batch.nCoresPackage%self.nCoresPerNode: 
          raise Exception("nCoresPerSample has to be multiple of nCoresPerNode or vice versa")
-      if level.nCoresPackage > self.nMaxCores:
+      if batch.nCoresPackage > self.nMaxCores:
          raise Exception("nMaxCores (%i) too small for smallest batch nCores (%i)"%(self.nMaxCores,nCores))
 
-   def GetNRunsMax(self,level):
-      level.nSequentialRunsMax = level.scaledAvgWalltime * ( self.maxWalltime // level.scaledAvgWalltime )
-      if level.nSequentialRunsMax == 0: 
+   def GetNRunsMax(self,batch):
+      batch.nSequentialRunsMax = batch.scaledAvgWalltime * ( self.maxWalltime // batch.scaledAvgWalltime )
+      if batch.nSequentialRunsMax == 0: 
          raise Exception("A single job takes longer than the set walltime maximum. I cannot work like this.")
 
-      level.nParallelRunsMax = ( level.nCoresPackage * (self.nMaxCores // level.nCoresPackage) ) / level.nCoresPerSample
-      if level.nParallelRunsMax*level.nSequentialRunsMax < level.nCurrentSamples: 
+      batch.nParallelRunsMax = ( batch.nCoresPackage * (self.nMaxCores // batch.nCoresPackage) ) / batch.nCoresPerSample
+      if batch.nParallelRunsMax*batch.nSequentialRunsMax < batch.samples.n: 
          PrintWarning("The limits set for #Cores and walltime are too small for this batch. nSamples is reduced.")
 
 
-   def GetBestOption(self,level):
-      baseOpt = Option(level)
-      level.nParallelRuns = baseOpt.nParallelRuns
-      level.nSequentialRuns = baseOpt.nSequentialRuns
+   def GetBestOption(self,batch):
+      baseOpt = Option(batch)
+      batch.nParallelRuns = baseOpt.nParallelRuns
+      batch.nSequentialRuns = baseOpt.nSequentialRuns
 
       furtherOpts = []
       for i in range(-50,50): 
-         furtherOpts.append( Option( level,nParallelRuns=level.nParallelRuns+i*level.nParallelRunsPackage) )
-         furtherOpts.append( Option( level,nSequentialRuns=level.nSequentialRuns+i) )
+         furtherOpts.append( Option( batch,nParallelRuns=batch.nParallelRuns+i*batch.nParallelRunsPackage) )
+         furtherOpts.append( Option( batch,nSequentialRuns=batch.nSequentialRuns+i) )
 
       if baseOpt.valid: 
-         level.maxRating = baseOpt.rating
+         batch.maxRating = baseOpt.rating
       else:
-         level.nParallelRuns = -1
-         level.nSequentialRuns = -1
-         level.maxRating = -1.
+         batch.nParallelRuns = -1
+         batch.nSequentialRuns = -1
+         batch.maxRating = -1.
 
       for opt in furtherOpts:
-         if opt.valid and (opt.rating > level.maxRating):
-            level.maxRating = opt.rating
-            level.nParallelRuns = opt.nParallelRuns
-            level.nSequentialRuns = opt.nSequentialRuns
-      if level.maxRating <= 0.:
+         if opt.valid and (opt.rating > batch.maxRating):
+            batch.maxRating = opt.rating
+            batch.nParallelRuns = opt.nParallelRuns
+            batch.nSequentialRuns = opt.nSequentialRuns
+      if batch.maxRating <= 0.:
          raise Exception("Something went wrong in AllocateResources. No valid option found")
 
 
-def GetQueue(level):
+def GetQueue(batch):
    # in order for the multi queue to be used, nParallelRunsMultiMin
-   level.nSequentialRunsMultiMin = int(math.ceil( 5*60 / level.scaledAvgWalltime  ))
-   level.nParallelRunsMultiMin = level.nParallelRunsPackage * int(math.ceil( 48*24 / level.nCoresPackage ))
+   batch.nSequentialRunsMultiMin = int(math.ceil( 5*60 / batch.scaledAvgWalltime  ))
+   batch.nParallelRunsMultiMin = batch.nParallelRunsPackage * int(math.ceil( 48*24 / batch.nCoresPackage ))
 
-   level.nSequentialRuns4hMax = level.scaledAvgWalltime* ( 4*3600 // level.scaledAvgWalltime )
+   batch.nSequentialRuns4hMax = batch.scaledAvgWalltime* ( 4*3600 // batch.scaledAvgWalltime )
    efficiencyVsQueueFactor = 0.9
    nSamplesMulti = (
-   efficiencyVsQueueFactor     *max( level.nParallelRunsMultiMin   *(level.nSequentialRunsMultiMin-1),
-                                    (level.nParallelRunsMultiMin-1)* level.nSequentialRunsMultiMin    ) + 
-   (1.-efficiencyVsQueueFactor)*min( level.nParallelRunsMultiMin   *(level.nSequentialRunsMultiMin-1),
-                                    (level.nParallelRunsMultiMin-1)* level.nSequentialRunsMultiMin    ) )
+   efficiencyVsQueueFactor     *max( batch.nParallelRunsMultiMin   *(batch.nSequentialRunsMultiMin-1),
+                                    (batch.nParallelRunsMultiMin-1)* batch.nSequentialRunsMultiMin    ) + 
+   (1.-efficiencyVsQueueFactor)*min( batch.nParallelRunsMultiMin   *(batch.nSequentialRunsMultiMin-1),
+                                    (batch.nParallelRunsMultiMin-1)* batch.nSequentialRunsMultiMin    ) )
 
-   if nSamplesMulti >= level.nCurrentSamples:
-      Print("Small Queue")
-      SmallQueue(level)
-   elif level.nSequentialRuns4hMax*level.nParallelRunsMax < level.nCurrentSamples: 
-      LongQueue(level)
-      Print("Long Queue")
+   if nSamplesMulti >= batch.samples.n:
+      SmallQueue(batch)
+   elif batch.nSequentialRuns4hMax*batch.nParallelRunsMax < batch.samples.n: 
+      LongQueue(batch)
    else: 
-      MultiQueue(level)
-      Print("Multi Queue")
+      MultiQueue(batch)
 
    #fill ideal values according to queue
-   level.workFunc = [a*b for a,b in zip(level.wtFunc,level.coresFunc)]
-   level.expWt = np.log(level.wtFunc[1]/level.wtFunc[0]) / np.log(level.workFunc[1]/level.workFunc[0])
-   level.expCores = 1 - level.expWt
-   level.idealWt = level.wtFunc[0] * (level.work / level.workFunc[0])**level.expWt
-   level.idealCores = level.coresFunc[0] * (level.work / level.workFunc[0])**level.expCores
-   Print("")
-   Print("expWt = %f"%(level.expWt))
-   Print("idealCores = %f"%(level.idealCores))
-   Print("idealWt = %f"%(level.idealWt))
+   batch.workFunc = [a*b for a,b in zip(batch.wtFunc,batch.coresFunc)]
+   batch.expWt = np.log(batch.wtFunc[1]/batch.wtFunc[0]) / np.log(batch.workFunc[1]/batch.workFunc[0])
+   batch.expCores = 1 - batch.expWt
+   batch.idealWt = batch.wtFunc[0] * (batch.work / batch.workFunc[0])**batch.expWt
+   batch.idealCores = batch.coresFunc[0] * (batch.work / batch.workFunc[0])**batch.expCores
 
 
 
 class Option():
-   def __init__(self,level,**kwargs):
+   def __init__(self,batch,**kwargs):
       if np.any([a<=0 for a in kwargs.values()]):
          self.rating=-1.
          self.valid=False
          return
       if "nSequentialRuns" in kwargs:
          self.nSequentialRuns = kwargs["nSequentialRuns"]
-         self.nParallelRuns = ( level.nParallelRunsPackage *   
-                                int(math.ceil(level.nCurrentSamples / (self.nSequentialRuns*level.nParallelRunsPackage))) )
+         self.nParallelRuns = ( batch.nParallelRunsPackage *   
+                                int(math.ceil(batch.samples.n / (self.nSequentialRuns*batch.nParallelRunsPackage))) )
       else:
          if "nParallelRuns" in kwargs:
             self.nParallelRuns = kwargs["nParallelRuns"]
          else:
-            self.nParallelRuns = level.nParallelRunsPackage*int(math.ceil(level.idealCores / level.nCoresPackage))
-         self.nSequentialRuns = int(math.ceil( level.nCurrentSamples / self.nParallelRuns ))
-      self.walltime = self.nSequentialRuns*level.scaledAvgWalltime
-      self.nCores= self.nParallelRuns*level.nCoresPerSample
+            self.nParallelRuns = batch.nParallelRunsPackage*int(math.ceil(batch.idealCores / batch.nCoresPackage))
+         self.nSequentialRuns = int(math.ceil( batch.samples.n / self.nParallelRuns ))
+      self.walltime = self.nSequentialRuns*batch.scaledAvgWalltime
+      self.nCores= self.nParallelRuns*batch.nCoresPerSample
 
-      self.Rating(level)
-      self.CheckValid(level)
-      Print("OPTION:")
-      Print("OPTION:")
-      Print("nParallelRuns = %i"%(self.nParallelRuns))
-      Print("nSequentialRuns = %i"%(self.nSequentialRuns))
-      Print("queueRating = %f"%(self.queueRating))
-      Print("effiencyRating = %f"%(self.effiencyRating))
-      Print("rating = %f"%(self.rating))
-      Print("valid = {}".format(self.valid))
+      self.Rating(batch)
+      self.CheckValid(batch)
 
 
-   def Rating(self,level): 
-      self.queueRating = min( level.idealCores / self.nCores , level.idealWt / self.walltime ) 
-      self.effiencyRating = level.nCurrentSamples / (self.nParallelRuns * self.nSequentialRuns)
+   def Rating(self,batch): 
+      self.queueRating = min( batch.idealCores / self.nCores , batch.idealWt / self.walltime ) 
+      self.effiencyRating = batch.samples.n / (self.nParallelRuns * self.nSequentialRuns)
       self.rating = self.effiencyRating ** 3. * self.queueRating
 
-   def CheckValid(self,level):
-      self.valid = ( ( level.boundsParallel[0]   <= self.nParallelRuns   <= level.boundsParallel[1]   ) and
-                     ( level.boundsSequential[0] <= self.nSequentialRuns <= level.boundsSequential[1] ) )
+   def CheckValid(self,batch):
+      self.valid = ( ( batch.boundsParallel[0]   <= self.nParallelRuns   <= batch.boundsParallel[1]   ) and
+                     ( batch.boundsSequential[0] <= self.nSequentialRuns <= batch.boundsSequential[1] ) )
 
-def SmallQueue(level):
-   level.wtFunc = [5.*60, 24.*60 ]
-   level.coresFunc = [1*24, 10*24]
-   level.boundsParallel = [level.nParallelRunsPackage, level.nParallelRunsMax]
-   level.boundsSequential = [1, level.nSequentialRunsMax]
+def SmallQueue(batch):
+   batch.queue = "small"
+   batch.wtFunc = [5.*60, 24.*60 ]
+   batch.coresFunc = [1*24, 10*24]
+   batch.boundsParallel = [batch.nParallelRunsPackage, batch.nParallelRunsMax]
+   batch.boundsSequential = [1, batch.nSequentialRunsMax]
 
-def MultiQueue(level):
-   level.wtFunc = [30.*60, 4.*3600 ]
-   level.coresFunc = [48*24, 192*24]
-   level.boundsParallel = [level.nParallelRunsMultiMin, level.nParallelRunsMax]
-   level.boundsSequential = [level.nSequentialRunsMultiMin, level.nSequentialRuns4hMax]
+def MultiQueue(batch):
+   batch.queue = "multi"
+   batch.wtFunc = [30.*60, 4.*3600 ]
+   batch.coresFunc = [48*24, 192*24]
+   batch.boundsParallel = [batch.nParallelRunsMultiMin, batch.nParallelRunsMax]
+   batch.boundsSequential = [batch.nSequentialRunsMultiMin, batch.nSequentialRuns4hMax]
 
-def LongQueue(level):
-   level.wtFunc = [4.*3600, 8.*3600 ]
-   level.coresFunc = [500*24, 500*24]
-   level.boundsParallel = [level.nParallelRunsMultiMin, level.nParallelRunsMax]
-   level.boundsSequential = [1, level.nSequentialRunsMax]
+def LongQueue(batch):
+   batch.queue = "long"
+   batch.wtFunc = [4.*3600, 8.*3600 ]
+   batch.coresFunc = [500*24, 500*24]
+   batch.boundsParallel = [batch.nParallelRunsMultiMin, batch.nParallelRunsMax]
+   batch.boundsSequential = [1, batch.nSequentialRunsMax]
+

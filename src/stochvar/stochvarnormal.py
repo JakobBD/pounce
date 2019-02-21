@@ -14,11 +14,6 @@ class StochVarNormal(StochVar):
    def DrawSamples(self,nSamples):
       return np.random.normal(self.mean,self.standardDeviation,nSamples) if nSamples >0 else []
 
-   def GetDistribution(self):
+   @property
+   def distribution(self):
       return cp.Normal(self.mean,self.standardDeviation)
-
-   def GetiOccurrence(self):
-      return self.iOccurrence
-
-   def GetiPos(self):
-      return self.iPos

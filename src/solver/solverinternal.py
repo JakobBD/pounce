@@ -11,33 +11,27 @@ class SolverInternal(Solver):
       "projectName" : "NODEFAULT"
       }
 
-   def PrepareSimulation(self,level,stochVars,fileNameSubStr,furtherAttrs):
+   def PrepareSimulations(self,batches,stochVars):
       """ Prepares the simulation by generating the runCommand 
       and writing the HDF5 file containing all samples of the current iteration
       and the current level.
       """
-      Print("Write HDF5 parameter file for simulation "+fileNameSubStr)
-      h5FileName = self.projectName+'_'+fileNameSubStr+'_StochInput.h5'
-      self.WriteHdf5(level,stochVars,fileNameSubStr,furtherAttrs)
-      runCommand=self.GenerateRunCommand(h5FileName)
-      return runCommand
+      for batch in batches:
+         Print("Write HDF5 parameter file for simulation "+batch.name)
+         h5FileName = self.projectName+'_'+batch.name+'_StochInput.h5'
+         self.WriteHdf5(batch,stochVars)
+         batch.runCommand='python '+self.exeSimulationPath+ ' -f '+h5FileName
 
-   def GenerateRunCommand(self,h5FileName):
-      """ Generates the run command which is executed by the machine.
-      """
-      runCommand='python '+self.exeSimulationPath+ ' -f '+h5FileName
-      return runCommand
-
-   def WriteHdf5(self,level,stochVars,fileNameSubStr,furtherAttrs):
+   def WriteHdf5(self,batch,stochVars):
       """ Writes the HDF5 file containing all necessary data for the internal 
       to run.
       """
-      h5f = h5py.File(self.projectName+'_'+fileNameSubStr+'_StochInput.h5', 'w')
-      h5f.create_dataset('Samples', data=level.samples)
-      h5f.create_dataset('Weights', data=level.weights)
+      h5f = h5py.File(self.projectName+'_'+batch.name+'_StochInput.h5', 'w')
+      h5f.create_dataset('Samples', data=batch.samples.nodes)
+      h5f.create_dataset('Weights', data=batch.sampes.weights)
       h5f.attrs.create('StochVarNames', [var.name for var in stochVars], (len(stochVars),) )
       h5f.attrs["Projectname"] = self.projectName
-      for key, value in furtherAttrs.items():
+      for key, value in batch.solverPrms.items():
          h5f.attrs[key] = value
       h5f.close()
 
@@ -64,3 +58,6 @@ class SolverInternal(Solver):
       quantity = np.array(h5f[quantityName])
       h5f.close()
       return quantity
+
+   def CheckFinished(self,batch):
+      return True

@@ -16,7 +16,7 @@ class UqMethod(BaseClass):
       self.filename = "pickle"
       self.doContinue = True
 
-   def SetupLevels(self):
+   def SetupBatches(self):
       pass
 
    def RunSimulation(self):
@@ -43,17 +43,17 @@ class UqMethod(BaseClass):
          Print(green("Skipping finished steps of iteration:"))
          [Print("  "+i) for i in iteration.finishedSteps]
 
-      iteration.RunStep(self,self.machine.AllocateResources,"Allocate resources",self)
+      iteration.RunStep(self,self.machine.AllocateResources,"Allocate resources",self.solverBatches)
 
       iteration.RunStep(self,self.GetNodesAndWeights,"Get samples")
 
-      iteration.RunStep(self,self.PrepareAllSimulations,"Prepare simulations")
+      iteration.RunStep(self,self.solver.PrepareSimulations,"Prepare simulations",self.solverBatches,self.stochVars)
 
-      iteration.RunStep(self,self.RunAllBatches,"Run simulations")
+      iteration.RunStep(self,self.machine.RunBatches,"Run simulations",self.solverBatches,self.solver)
 
-      iteration.RunStep(self,self.PrepareAllPostprocessing,"Prepare postprocessing")
+      iteration.RunStep(self,self.machine.PreparePostProc,"Prepare postprocessing",self.postprocBatches,self.solver)
 
-      iteration.RunStep(self,self.RunAllBatchesPostprocessing,"Run postprocessing")
+      iteration.RunStep(self,self.machine.RunBatches,"Run postprocessing",self.postprocBatches,self.solver,postProc=True)
 
       if len(self.iterations) == self.nMaxIter:
          self.doContinue=False
@@ -81,10 +81,10 @@ class Iteration():
       with open(uqMethod.filename, 'wb') as f:
          pickle.dump(uqMethod, f, 2)
 
-   def RunStep(self,uqMethod,func,description,*args):
+   def RunStep(self,uqMethod,func,description,*args,**kwargs):
       if description not in self.finishedSteps:
          PrintStep(description+":")
-         func(args) if args else func()
+         func(*args,**kwargs)
          self.UpdateStep(uqMethod,description)
 
 

@@ -17,7 +17,7 @@ class Mlmc(UqMethod):
       }
 
    levelDefaults={
-      "nCurrentSamples": "NODEFAULT",
+      "nWarmupSamples": "NODEFAULT",
       "solverPrms" : {},
       }
 
@@ -27,60 +27,43 @@ class Mlmc(UqMethod):
          Print("Reset RNG seed to 0")
          np.random.seed(0)
 
-   def SetupLevels(self):
+   def SetupBatches(self):
       self.allSublevels=[]
       for iLevel,level in enumerate(self.levels):
-         level.nFinishedSamples = 0
-         level.ind=iLevel+1
+         # level.ind=iLevel+1
+         level.name=str(iLevel+1)
+         level.samples=Empty()
+         level.samples.n=level.nWarmupSamples
+         level.samples.nPrevious = 0
          level.sublevels= [ SubLevel(level,level,'f') ]
          self.allSublevels.append(level.sublevels[-1])
          if iLevel > 0:
             level.sublevels.append(SubLevel(level,self.levels[iLevel-1],'c'))
             self.allSublevels.append(level.sublevels[-1])
-      self.activeSublevels=self.allSublevels.copy()
-      self.activeLevels=self.levels.copy()
+         level.postproc=Empty()
+         level.postproc.participants=level.sublevels
+         level.postproc.name="postproc_"+level.name
+      self.getActiveBatches()
+
+   def getActiveBatches(self):
+      self.activeSublevels=[sub for sub in self.allSublevels if sub.samples.n > 0]
+      self.activeLevels=[l for l in self.levels if l.samples.n > 0]
+      # external naming
+      self.solverBatches = self.activeSublevels
+      self.postprocBatches=[l.postproc for l in self.levels]
+
+      self.doContinue = len(self.activeLevels) > 0
 
    def GetNodesAndWeights(self):
       for level in self.activeLevels:
-         level.samples=[]
+         level.samples.nodes=[]
          for var in self.stochVars:
-            level.samples.append(var.DrawSamples(level.nCurrentSamples))
-         level.samples=np.transpose(level.samples)
-         level.weights=[]
+            level.samples.nodes.append(var.DrawSamples(level.samples.n))
+         level.samples.nodes=np.transpose(level.samples.nodes)
+         level.samples.weights=[]
       Print("Number of current samples for this iteration:")
-      [Print("  Level %2d: %6d samples"%(level.ind,level.nCurrentSamples)) for level in self.levels]
+      [Print("  Level %2s: %6d samples"%(level.name,level.samples.n)) for level in self.levels]
 
-   def PrepareAllSimulations(self):
-      for sublevel in self.activeSublevels:
-         furtherAttrs=sublevel.solverPrms
-         furtherAttrs.update({"Level":sublevel.level.ind})
-         furtherAttrs.update({"Sublevel":sublevel.subName})
-         sublevel.runCommand=self.solver.PrepareSimulation(sublevel.level,self.stochVars,sublevel.wholeName,furtherAttrs)
-      for level in self.activeLevels:
-         del level.samples
-
-   def RunAllBatches(self):
-      self.jobHandles=[]
-      for sublevel in self.activeSublevels:
-         fileNameStr = str(sublevel.level.ind) + sublevel.subName
-         jobHandle = self.machine.RunBatch(sublevel.runCommand,sublevel.nCoresPerSample,\
-                     sublevel.level.nCurrentSamples,sublevel.avgNodes,self.solver,fileNameStr)
-         self.jobHandles.append(jobHandle)
-      Print("Waiting for jobs to finish:")
-      if self.machine.WaitFinished(self.jobHandles): Print("Computations finished.")
-      if self.machine.CheckAllFinished(): Print("All jobs finished.")
-      for level in self.activeLevels:
-         level.nFinishedSamples += level.nCurrentSamples
-
-
-   def PrepareAllPostprocessing(self):
-      for level in self.activeLevels:
-         fileNameSubStr = [sublevel.wholeName for sublevel in level.sublevels]
-         level.runPostprocCommand=self.solver.PreparePostprocessing(fileNameSubStr)
-
-   def RunAllBatchesPostprocessing(self):
-      for level in self.activeLevels:
-         self.machine.RunBatch(level.runPostprocCommand,1,1,1,self.solver," ")
 
    def GetNewNCurrentSamples(self):
 
@@ -89,44 +72,44 @@ class Mlmc(UqMethod):
       # build sum over levels of sqrt(sigma^2/w)
       sumSigmaW = 0.
       for level in self.levels:
-         fileNameSubStr = str(level.ind)
-         if level.nCurrentSamples > 0:
-            level.sigmaSq = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"sigmaSq")
-            level.workMean = self.solver.GetPostProcQuantityFromFile(fileNameSubStr,"WorkMean")
-         sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
+         if level.samples.n > 0:
+            level.sigmaSq = self.solver.GetPostProcQuantityFromFile(level,"SigmaSq")
+            for sublevel in level.sublevels:
+               sublevel.workMean = self.solver.GetWorkMean(sublevel)
+            workMean=sum([sublevel.workMean for sublevel in level.sublevels])
+            if level.samples.nPrevious > 0:
+               level.workMean = (level.samples.nPrevious*level.workMean + level.samples.n*workMean)/\
+                                (level.samples.n+level.samples.nPrevious)
+            else: 
+               level.workMean = workMean
+         if level.samples.nPrevious+level.samples.n > 0:
+            sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
          stdoutTable.Update1(level)
 
       for level in self.levels:
          #TODO: add formula for given maxWork
          level.mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean) / (self.tolerance*self.tolerance/4.)
-         level.nCurrentSamples = max(int(np.ceil(level.mlopt))-level.nFinishedSamples , 0)
+         level.samples.nPrevious += level.samples.n
+         level.samples.n = max(int(np.ceil(level.mlopt))-level.samples.nPrevious , 0)
          stdoutTable.Update2(level)
 
       stdoutTable.Print()
 
-      self.activeLevels    = [i for i in self.levels if i.nCurrentSamples > 0]
-      self.activeSublevels = [i for i in self.allSublevels if i.level.nCurrentSamples > 0]
-      self.doContinue = len(self.activeLevels) > 0
+      self.getActiveBatches()
 
 
 class SubLevel():
    def __init__(self,diffLevel,resolutionLevel,name):
       self.solverPrms = resolutionLevel.solverPrms
       self.nCoresPerSample = resolutionLevel.nCoresPerSample
-      self.level = diffLevel
-      self.subName=name
-      self.wholeName=str(diffLevel.ind)+name
-      # self.avgNodes=resolutionLevel.avgNodes
-      # self.workMean=resolutionLevel.workMean
+      #todo: nicer
+      try:
+         self.avgWalltime = resolutionLevel.avgWalltime
+      except AttributeError: 
+         pass
+      self.samples=diffLevel.samples
+      self.name=diffLevel.name+name
 
-# class MlmcIteration(Iteration):
-
-   # def FillPrms(self,levels):
-      # self.sigmaSq          = [level.sigmaSq for level in levels]
-      # self.meanWork         = [level.meanWork for level in levels]
-      # self.mlopt            = [level.mlopt for level in levels]
-      # self.nFinishedSamples = [level.nFinishedSamples for level in levels]
-      # self.nSamplesNext     = [level.nCurrentSamples for level in levels]
 
 
 class StdOutTable():
@@ -144,14 +127,14 @@ class StdOutTable():
       self.newStr       = "     new Samples ║ "
 
    def Update1(self,level):
-      self.headerStr   += "     Level %2d ║ "%(level.ind)
+      self.headerStr   += "     Level %2s ║ "%(level.name)
       self.sigmaSqStr  +=         "%13.4e ║ "%(level.sigmaSq)
       self.meanWorkStr +=         "%13.4e ║ "%(level.workMean)
 
    def Update2(self,level):
       self.mloptStr     += "%13.3f ║ "%(level.mlopt)
-      self.fininshedStr +=   "%13d ║ "%(level.nFinishedSamples)
-      self.newStr       +=   "%13d ║ "%(level.nCurrentSamples)
+      self.fininshedStr +=   "%13d ║ "%(level.samples.nPrevious)
+      self.newStr       +=   "%13d ║ "%(level.samples.n)
 
    def Print(self):
       Print(self.headerStr)
@@ -162,3 +145,4 @@ class StdOutTable():
       Print(self.mloptStr)
       Print(self.fininshedStr)
       Print(self.newStr)
+

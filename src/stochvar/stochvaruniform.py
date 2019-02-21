@@ -13,11 +13,6 @@ class StochVarUniform(StochVar):
    def DrawSamples(self,nSamples):
       return np.random.uniform(self.bounds[0],self.bounds[1],nSamples) if nSamples >0 else []
 
-   def GetDistribution(self):
+   @property
+   def distribution(self):
       return cp.Uniform(self.bounds[0],self.bounds[1])
-
-   def GetiOccurrence(self):
-      return self.iOccurrence
-
-   def GetiPos(self):
-      return self.iPos

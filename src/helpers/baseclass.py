@@ -1,4 +1,5 @@
 from helpers.printtools import *
+from helpers.time import Time
 
 class BaseClass():
    """
@@ -37,7 +38,11 @@ class BaseClass():
             raise Exception("'"+prmName+"' is not set in parameter file and has no default value!")
 
       # convert dict to class attributes
-      [setattr(self,prmName,prmValue) for prmName,prmValue in attributes.items()]
+      for prmName,prmValue in attributes.items():
+         if "time" in prmName or "Time" in prmName: 
+            prmValue=Time(prmValue).sec
+         setattr(self,prmName,prmValue)
+      # [setattr(self,prmName,prmValue) for prmName,prmValue in attributes.items()]
 
    @classmethod
    def RegisterSubclass(cls, subclassKey):

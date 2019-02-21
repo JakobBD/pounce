@@ -1,13 +1,18 @@
 # global imports
 import sys,os
+if sys.version_info[0] < 3:
+   print('\nPOUNCE only works with Python 3!\n')
+   sys.exit()
 
 # local imports
 from helpers import config,printtools
 from helpers.printtools import *
 
+
 # parse commmand line arguments
 
 usage="""
+
 Allowed usage:
 python3 main.py parameter.yml
 python3 main.py -r

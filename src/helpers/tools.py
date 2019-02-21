@@ -18,3 +18,5 @@ def SafeSqrt(arg):
       IndentOut()
       return 0.
 
+class Empty():
+   pass

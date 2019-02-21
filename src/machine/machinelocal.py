@@ -15,34 +15,28 @@ class Local(Machine):
       "mpi" : "NODEFAULT"
       }
 
-   def RunBatch(self,runCommand,nCoresPerSample,nCurrentSamples,avgNodes,solver,fileNameStr):
+   def RunBatches(self,batches,solver,postProc=False):
       """Runs a job by calling a subprocess.
       """
-      self.SubmitJob(runCommand,nCoresPerSample,solver)
-
-   def SubmitJob(self,runCommand,nCoresPerSample,solver):
-      """Call the subprocess command to run the solver.
-      """
       # TODO: enable parallel runs of jobs
-      if self.mpi:
-         args=["mpirun", "-n %d"%(nCoresPerSample), runCommand]
-         Print("run command "+yellow(" ".join(args)))
-         subprocess.run(args)
-      else:
-         Print("run command "+yellow(runCommand))
-         subprocess.call(shlex.split(runCommand))
-      pass
+      for batch in batches: 
+         batch.logfileName="log_"+batch.name+".dat"
+         if self.mpi:
+            args=["mpirun", "-n %d"%(batch.nCoresPerSample), batch.runCommand]
+         else:
+            args=shlex.split(batch.runCommand)
+         Print("run command "+yellow(batch.runCommand))
+         with open(batch.logfileName,'w+') as f:
+            subprocess.run(args,stdout=f)
+      if not postProc:
+         solver.CheckAllFinished(batches)
 
-   def AllocateResources(self,uqMethod):
-      """Allocates the recources depending on the job to be executed.
-      """
-      pass
+   def AllocateResources(self,batches):
+      for batch in batches:
+         batch.nParallelRuns=1
+         # batch.nSequentialRuns=batch.samples.n
 
-   def WaitFinished(self,jobHandles):
-      """
-      Since we are on a local machine without submit script, all jobs are already finished.
-      """
-      return True
+   def PreparePostProc(self,batches,solver):
+      for batch in batches: 
+         solver.PreparePostprocessing(batch)
 
-   def CheckAllFinished(self):
-      return True

@@ -1,4 +1,5 @@
 import logging
+import textwrap
 
 class Bcolors :
    """color and font style definitions for changing output appearance"""
@@ -43,7 +44,7 @@ def IndentOut():
    indent=indent[:-2]
 
 def Print(msg):
-   print(indent+msg)
+   [print(line) for line in textwrap.wrap(msg, width=132, initial_indent=indent, subsequent_indent=indent+"   ")]
 
 def PrintStep(msg):
    print("-"*132)

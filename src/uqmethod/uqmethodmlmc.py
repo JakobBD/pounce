@@ -50,7 +50,7 @@ class Mlmc(UqMethod):
       self.activeLevels=[l for l in self.levels if l.samples.n > 0]
       # external naming
       self.solverBatches = self.activeSublevels
-      self.postprocBatches=[l.postproc for l in self.levels]
+      self.postprocBatches=[l.postproc for l in self.activeLevels]
 
       self.doContinue = len(self.activeLevels) > 0
 
@@ -73,10 +73,8 @@ class Mlmc(UqMethod):
       sumSigmaW = 0.
       for level in self.levels:
          if level.samples.n > 0:
-            level.sigmaSq = self.solver.GetPostProcQuantityFromFile(level,"SigmaSq")
-            for sublevel in level.sublevels:
-               sublevel.workMean = self.solver.GetWorkMean(sublevel)
-            workMean=sum([sublevel.workMean for sublevel in level.sublevels])
+            level.sigmaSq = self.solver.GetPostProcQuantityFromFile(level.postproc,"SigmaSq")
+            workMean = self.solver.GetWorkMean(level.postproc)
             if level.samples.nPrevious > 0:
                level.workMean = (level.samples.nPrevious*level.workMean + level.samples.n*workMean)/\
                                 (level.samples.n+level.samples.nPrevious)

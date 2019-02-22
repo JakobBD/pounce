@@ -1,0 +1,48 @@
+general:
+  outputLevel: debug #options: none, standard, debug
+
+uqMethod:
+  _type: mlmc
+  nMaxIter: 3
+  tolerance: 0.05
+levels:
+   - nWarmupSamples : 100
+     nCoresPerSample: 24
+     solverPrms:
+        nPoints: 8
+   - nWarmupSamples : 40
+     nCoresPerSample: 24
+     solverPrms:
+        nPoints: 16
+   - nWarmupSamples : 20
+     nCoresPerSample: 24
+     solverPrms:
+        nPoints: 32
+   - nWarmupSamples : 10
+     nCoresPerSample: 24
+     solverPrms:
+        nPoints: 64
+
+stochVars:
+- _type: uniform
+  bounds: [1.,2.]
+  name: RefState
+  iOccurrence: 1
+  iPos: 1
+
+- _type: normal
+  mean: 1.
+  standardDeviation: 0.1
+  name: b
+  iOccurrence: 1
+  iPos: 0
+
+machine:
+  _type: local
+  mpi: false
+
+solver:
+  _type: internal
+  projectName: integ
+  exeSimulationPath: ../../externals/integration/solver.py
+  exePostprocessingPath: ../../externals/integration/postproc_mlmc.py

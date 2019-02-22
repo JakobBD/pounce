@@ -18,46 +18,46 @@ class SolverInternal(Solver):
       """
       for batch in batches:
          Print("Write HDF5 parameter file for simulation "+batch.name)
-         h5FileName = self.projectName+'_'+batch.name+'_StochInput.h5'
+         batch.projectName = self.projectName+'_'+batch.name
+         batch.h5PrmFileName = 'input_'+batch.projectName+'.h5'
          self.WriteHdf5(batch,stochVars)
-         batch.runCommand='python '+self.exeSimulationPath+ ' -f '+h5FileName
+         batch.runCommand='python3 '+self.exeSimulationPath+ ' '+batch.h5PrmFileName
 
    def WriteHdf5(self,batch,stochVars):
       """ Writes the HDF5 file containing all necessary data for the internal 
       to run.
       """
-      h5f = h5py.File(self.projectName+'_'+batch.name+'_StochInput.h5', 'w')
+      h5f = h5py.File(batch.h5PrmFileName, 'w')
       h5f.create_dataset('Samples', data=batch.samples.nodes)
-      h5f.create_dataset('Weights', data=batch.sampes.weights)
-      h5f.attrs.create('StochVarNames', [var.name for var in stochVars], (len(stochVars),) )
-      h5f.attrs["Projectname"] = self.projectName
+      h5f.create_dataset('Weights', data=batch.samples.weights)
+      h5f.attrs["nPrevious"] = batch.samples.nPrevious
+      h5f.attrs["ProjectName"] = batch.projectName
       for key, value in batch.solverPrms.items():
          h5f.attrs[key] = value
       h5f.close()
 
-   def PreparePostprocessing(self,fileNameSubStr):
+   def PreparePostprocessing(self,postproc):
       """ Prepares the postprocessing by generating the runPostprocCommand.
       """
-      Print("Generate Post-proc command for simulation(s) "+", ".join(fileNameSubStr))
-      runPostprocCommand=self.GeneratePostprocessingCommand(fileNameSubStr)
-      return runPostprocCommand
+      names=[p.name for p in postproc.participants]
+      Print("Generate Post-proc command for simulation(s) "+", ".join(names))
+      postproc.runCommand = "python3 "+self.exePostprocessingPath
+      # this is a rather ugly current implementation
+      postproc.projectName = postproc.participants[0].projectName
+      for p in postproc.participants:
+         postproc.runCommand=postproc.runCommand+' '+p.projectName+"_State.h5"
 
-   def GeneratePostprocessingCommand(self,fileNameSubStr):
-      """ Generates the postprocessing command which is executed by the machine.
-      """
-      runPostprocCommand='python '+self.exePostprocessingPath+ ' -f '
-      for subStrs in fileNameSubStr:
-         runPostprocCommand=runPostprocCommand+self.projectName+'_'+subStrs+'_State.h5 '
-      return runPostprocCommand
+   def GetWorkMean(self,postproc):
+      return self.GetPostProcQuantityFromFile(postproc,"WorkMean")
 
-   def GetPostProcQuantityFromFile(self,fileNameSubStr,quantityName):
+   def GetPostProcQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq for MLMC.
       """
-      h5FileName = self.projectName+'_'+fileNameSubStr+'_Postproc.h5'
+      h5FileName = 'sums_'+postproc.participants[0].projectName+'.h5'
       h5f = h5py.File(h5FileName, 'r')
-      quantity = np.array(h5f[quantityName])
+      quantity = h5f.attrs[quantityName]
       h5f.close()
       return quantity
 
-   def CheckFinished(self,batch):
+   def CheckFinished(self,postproc):
       return True

@@ -1,0 +1,47 @@
+general:
+  outputLevel: debug #options: none, standard, debug
+
+uqMethod:
+  _type: mlmc
+  nMaxIter: 3
+  tolerance: 0.05
+levels:
+   - nWarmupSamples : 100
+     nCoresPerSample: 24
+     avgWalltime: [0,1,0]
+     solverPrms:
+        N: 2
+        MeshFile: mesh_1.h5
+
+   - nWarmupSamples : 20
+     nCoresPerSample: 24
+     avgWalltime: [0,5,0]
+     solverPrms:
+        N: 4
+        MeshFile: mesh_1.h5
+
+stochVars:
+- _type: uniform
+  bounds: [1.,2.]
+  name: RefState
+  iOccurrence: 1
+  iPos: 1
+
+- _type: normal
+  mean: 1.
+  standardDeviation: 0.1
+  name: b
+  iOccurrence: 1
+  iPos: 0
+
+machine:
+  _type: cray
+  username: iagduerr
+
+solver:
+  _type: flexi
+  projectName: cavity
+  prmfile: 'parameter_flexi.ini'
+  prmfilePostProc: 'parameter_postproc.ini'
+  exeSimulationPath: flexibatch
+  exePostprocessingPath: mlmc_estimatesigma

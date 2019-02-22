@@ -71,17 +71,17 @@ class SolverFlexi(Solver):
          filename=sorted(glob.glob(p.projectName+"_State_*.h5"))[-1]
          postproc.runCommand=postproc.runCommand+' '+filename
 
-   def GetPostProcQuantityFromFile(self,batch,quantityName):
+   def GetPostProcQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq or avgWalltime for MLMC.
       """
-      h5FileName = 'postproc_'+batch.postproc.projectName+'_state.h5'
+      h5FileName = 'postproc_'+postproc.participants[0].projectName+'_state.h5'
       h5f = h5py.File(h5FileName, 'r')
       quantity = h5f.attrs[quantityName]
       h5f.close()
       return quantity
 
-   def GetWorkMean(self,batch):
-      return batch.currentAvgWork
+   def GetWorkMean(self,postproc):
+      return sum(p.currentAvgWork for p in postproc.participants)
 
    def CheckFinished(self,batch):
       #TODO: some more checks, e.g. empty stderr

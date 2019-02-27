@@ -44,6 +44,6 @@ class Sc(UqMethod):
       Print("Number of current samples for this iteration:")
       [Print("  Level %2s: %6d samples"%(level.name,level.samples.n)) for level in self.levels]
 
-   def GetNewNSamples(self):
+   def GetNewNSamples(self,solver):
       raise Exception("the GetNewNSamples routine should not be called for stochastic collocation")
 

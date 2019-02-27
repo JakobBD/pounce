@@ -34,16 +34,19 @@ restartMode = sys.argv[1] in ['-r','--restart']
 
 if nArgs == 2 and lastArgIsPrmFile:
    PrintMajorSection("Start parameter readin and configuration")
-   uqMethod = config.Config(sys.argv[-1])
+   simulation = config.Config(sys.argv[-1])
 elif restartMode and nArgs == 2:
    PrintMajorSection("Restart simulation")
-   uqMethod = config.Restart()
+   simulation = config.Restart()
 elif restartMode and nArgs == 3 and lastArgIsPrmFile:
    PrintMajorSection("Restart simulation")
-   uqMethod = config.Restart(prmfile=sys.argv[-1])
+   simulation = config.Restart(prmfile=sys.argv[-1])
 else:
    raise Exception(usage)
 
 
 # run simulation
-uqMethod.RunSimulation()
+simulation.Run()
+
+
+

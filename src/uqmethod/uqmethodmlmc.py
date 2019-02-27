@@ -30,7 +30,6 @@ class Mlmc(UqMethod):
    def SetupBatches(self):
       self.allSublevels=[]
       for iLevel,level in enumerate(self.levels):
-         # level.ind=iLevel+1
          level.name=str(iLevel+1)
          level.samples=Empty()
          level.samples.n=level.nWarmupSamples
@@ -65,7 +64,7 @@ class Mlmc(UqMethod):
       [Print("  Level %2s: %6d samples"%(level.name,level.samples.n)) for level in self.levels]
 
 
-   def GetNewNCurrentSamples(self):
+   def GetNewNCurrentSamples(self,solver):
 
       stdoutTable=StdOutTable()
 
@@ -73,8 +72,8 @@ class Mlmc(UqMethod):
       sumSigmaW = 0.
       for level in self.levels:
          if level.samples.n > 0:
-            level.sigmaSq = self.solver.GetPostProcQuantityFromFile(level.postproc,"SigmaSq")
-            workMean = self.solver.GetWorkMean(level.postproc)
+            level.sigmaSq = solver.GetPostProcQuantityFromFile(level.postproc,"SigmaSq")
+            workMean = solver.GetWorkMean(level.postproc)
             if level.samples.nPrevious > 0:
                level.workMean = (level.samples.nPrevious*level.workMean + level.samples.n*workMean)/\
                                 (level.samples.n+level.samples.nPrevious)

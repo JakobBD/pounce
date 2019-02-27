@@ -5,6 +5,7 @@ import logging
 import copy
 import pickle
 # ---------- local imports -------------
+from simulation import Simulation
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
 from solver.solver import Solver
@@ -27,35 +28,36 @@ def Config(prmfile):
    GeneralConfig(prms["general"])
 
    # initialize classes according to chosen subclass
-   uqMethod = UqMethod.Create(prms["uqMethod"])
-   uqMethod.machine = Machine.Create(prms["machine"])
-   uqMethod.solver = Solver.Create(prms["solver"])
+   simulation = Simulation()
+   simulation.uqMethod = UqMethod.Create(prms["uqMethod"])
+   simulation.machine = Machine.Create(prms["machine"])
+   simulation.solver = Solver.Create(prms["solver"])
 
    # initialize lists of classes for all levels and all stochVars
-   uqMethod.stochVars = ConfigList("stochVars",prms,StochVar.Create,uqMethod.stochVarDefaults)
+   simulation.uqMethod.stochVars = ConfigList("stochVars",prms,StochVar.Create,simulation.uqMethod.stochVarDefaults)
    defaults = {}
-   [defaults.update(x.levelDefaults) for x in [uqMethod, uqMethod.machine] ]
-   uqMethod.levels = ConfigList("levels",prms,Level,defaults)
+   [defaults.update(x.levelDefaults) for x in [simulation.uqMethod, simulation.machine] ]
+   simulation.uqMethod.levels = ConfigList("levels",prms,Level,defaults)
 
    # in the multilevel case, some firther setup is needed for the levels (mainly sorting prms into sublevels f and c)
-   uqMethod.SetupBatches()
+   simulation.uqMethod.SetupBatches()
 
-   return uqMethod
+   return simulation
 
 def Restart(prmfile=None):
 
    f = open('pickle', 'rb')
-   uqMethod = pickle.load(f)
+   simulation = pickle.load(f)
    f.close()          
 
    if prmfile:
       raise Exception("Modifying parameters at restart is not yet implemented")
 
-   nFinishedIter = len(uqMethod.iterations) - (1 if uqMethod.doContinue else 0)
+   nFinishedIter = len(simulation.iterations) - (1 if simulation.doContinue else 0)
    if nFinishedIter > 0:
       Print(cyan("Skipping %i finished Iteration(s)."%(nFinishedIter)))
 
-   return uqMethod
+   return simulation
 
 
 def ConfigList(string,prms,classInit,defaults):

@@ -26,8 +26,9 @@ class UqMethod(BaseClass):
       while self.doContinue:
          self.RunIteration(self.iterations[-1])
 
-      PrintMajorSection("Last iteration finished. Exit loop.")
+      PrintMajorSection("Last iteration finished. Exit loop. Start Post-Processing")
       # self.machine.runBatch(postprocSolver)
+      PrintMajorSection("POUNCE Finished")
 
 
    def RunIteration(self,iteration):
@@ -38,28 +39,60 @@ class UqMethod(BaseClass):
       3. Compute samples on system
       """
 
+      # Prepare next iteration
+
       PrintMajorSection("Start iteration %d"%(len(self.iterations)))
       if iteration.finishedSteps:
          Print(green("Skipping finished steps of iteration:"))
          [Print("  "+i) for i in iteration.finishedSteps]
 
-      iteration.RunStep(self,self.machine.AllocateResources,"Allocate resources",self.solverBatches)
+      iteration.RunStep("Get samples",
+                        self.GetNodesAndWeights,
+                        self)
 
-      iteration.RunStep(self,self.GetNodesAndWeights,"Get samples")
+      # Simulations 
 
-      iteration.RunStep(self,self.solver.PrepareSimulations,"Prepare simulations",self.solverBatches,self.stochVars)
+      iteration.RunStep("Allocate resources",
+                        self.machine.AllocateResources,
+                        self,
+                        self.solverBatches)
 
-      iteration.RunStep(self,self.machine.RunBatches,"Run simulations",self.solverBatches,self.solver)
+      iteration.RunStep("Prepare simulations",
+                        self.solver.PrepareSimulations,
+                        self,
+                        self.solverBatches,self.stochVars)
 
-      iteration.RunStep(self,self.machine.PreparePostProc,"Prepare postprocessing",self.postprocBatches,self.solver)
+      iteration.RunStep("Run simulations",
+                        self.machine.RunBatches,
+                        self,
+                        self.solverBatches,self.solver)
 
-      iteration.RunStep(self,self.machine.RunBatches,"Run postprocessing",self.postprocBatches,self.solver,postProc=True)
+      # Post-Processing
+
+      iteration.RunStep("Allocate resources Postproc",
+                        self.machine.AllocateResourcesPostproc,
+                        self,
+                        self.postprocBatches)
+
+      iteration.RunStep("Prepare postprocessing",
+                        self.solver.PreparePostprocessing,
+                        self,
+                        self.postprocBatches)
+
+      iteration.RunStep("Run postprocessing",
+                        self.machine.RunBatches,
+                        self,
+                        self.postprocBatches,self.solver,postProc=True)
+
+      # Prepare next iteration
 
       if len(self.iterations) == self.nMaxIter:
          self.doContinue=False
          return
 
-      iteration.RunStep(self,self.GetNewNCurrentSamples,"Get number of samples for next iteration")
+      iteration.RunStep("Get number of samples for next iteration",
+                        self.GetNewNCurrentSamples,
+                        self)
 
       if self.doContinue:
          self.iterations.append(Iteration())
@@ -77,11 +110,10 @@ class Iteration():
 
    def UpdateStep(self,uqMethod,string):
       self.finishedSteps.append(string)
-
       with open(uqMethod.filename, 'wb') as f:
          pickle.dump(uqMethod, f, 2)
 
-   def RunStep(self,uqMethod,func,description,*args,**kwargs):
+   def RunStep(self,description,func,uqMethod,*args,**kwargs):
       if description not in self.finishedSteps:
          PrintStep(description+":")
          func(*args,**kwargs)

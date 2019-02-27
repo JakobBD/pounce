@@ -59,17 +59,18 @@ class SolverFlexi(Solver):
 
       h5f.close()
 
-   def PreparePostprocessing(self,postproc):
+   def PreparePostprocessing(self,postprocBatches):
       """ Prepares the postprocessing by generating the runPostprocCommand.
       """
-      names=[p.name for p in postproc.participants]
-      Print("Generate Post-proc command for simulation(s) "+", ".join(names))
-      postproc.runCommand = self.exePostprocessingPath + " " + self.prmfilePostProc
-      # this is a rather ugly current flexi implementation
-      postproc.projectName = postproc.participants[0].projectName
-      for p in postproc.participants:
-         filename=sorted(glob.glob(p.projectName+"_State_*.h5"))[-1]
-         postproc.runCommand=postproc.runCommand+' '+filename
+      for postproc in postprocBatches: 
+         names=[p.name for p in postproc.participants]
+         Print("Generate Post-proc command for simulation(s) "+", ".join(names))
+         postproc.runCommand = self.exePostprocessingPath + " " + self.prmfilePostProc
+         # this is a rather ugly current flexi implementation
+         postproc.projectName = postproc.participants[0].projectName
+         for p in postproc.participants:
+            filename=sorted(glob.glob(p.projectName+"_State_*.h5"))[-1]
+            postproc.runCommand=postproc.runCommand+' '+filename
 
    def GetPostProcQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq or avgWalltime for MLMC.

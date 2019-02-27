@@ -41,5 +41,5 @@ solver:
   projectName: cavity
   prmfile: 'parameter_flexi.ini'
   prmfilePostProc: 'parameter_postproc.ini'
-  exeSimulationPath: flexibatch
-  exePostprocessingPath: mlmc_estimatesigma
+  exeSimulationPath: ./flexibatch
+  exePostprocessingPath: ./mlmc_estimatesigma

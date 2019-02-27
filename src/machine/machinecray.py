@@ -32,11 +32,10 @@ class Cray(Machine):
       super().__init__(classDict)
 
 
-   def PreparePostProc(self,batches,solver):
+   def AllocateResourcesPostproc(self,batches):
       for batch in batches: 
          batch.nCores=self.nCoresPerNode
          batch.walltime=120.
-         solver.PreparePostprocessing(batch)
 
 
    def RunBatches(self,batches,solver,postProc=False):

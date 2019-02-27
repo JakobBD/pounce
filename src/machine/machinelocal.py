@@ -34,7 +34,7 @@ class Local(Machine):
    def AllocateResources(self,batches):
       for batch in batches:
          batch.nParallelRuns=1
-         # batch.nSequentialRuns=batch.samples.n
+         batch.nSequentialRuns=batch.samples.n
 
    def PreparePostProc(self,batches,solver):
       for batch in batches: 

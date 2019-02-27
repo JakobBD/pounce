@@ -6,4 +6,7 @@ class Machine(BaseClass):
    stochVarDefaults={}
    levelDefaults={}
 
+   def AllocateResourcesPostproc(self,batches):
+      pass
+
 from . import *

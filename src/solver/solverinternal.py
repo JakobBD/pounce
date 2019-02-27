@@ -36,16 +36,17 @@ class SolverInternal(Solver):
          h5f.attrs[key] = value
       h5f.close()
 
-   def PreparePostprocessing(self,postproc):
+   def PreparePostprocessing(self,postprocBatches):
       """ Prepares the postprocessing by generating the runPostprocCommand.
       """
-      names=[p.name for p in postproc.participants]
-      Print("Generate Post-proc command for simulation(s) "+", ".join(names))
-      postproc.runCommand = "python3 "+self.exePostprocessingPath
-      # this is a rather ugly current implementation
-      postproc.projectName = postproc.participants[0].projectName
-      for p in postproc.participants:
-         postproc.runCommand=postproc.runCommand+' '+p.projectName+"_State.h5"
+      for postproc in postprocBatches: 
+         names=[p.name for p in postproc.participants]
+         Print("Generate Post-proc command for simulation(s) "+", ".join(names))
+         postproc.runCommand = "python3 "+self.exePostprocessingPath
+         # this is a rather ugly current implementation
+         postproc.projectName = postproc.participants[0].projectName
+         for p in postproc.participants:
+            postproc.runCommand=postproc.runCommand+' '+p.projectName+"_State.h5"
 
    def GetWorkMean(self,postproc):
       return self.GetPostProcQuantityFromFile(postproc,"WorkMean")

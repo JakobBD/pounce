@@ -55,7 +55,7 @@ class SolverFlexi(Solver):
 
       h5f.close()
 
-   def PreparePostprocessing(self,postprocBatches):
+   def PreparePostproc(self,postprocBatches):
       """ Prepares the postprocessing by generating the runPostprocCommand.
       """
       for postproc in postprocBatches: 
@@ -69,11 +69,11 @@ class SolverFlexi(Solver):
             filename=sorted(glob.glob(p.projectName+"_State_*.h5"))[-1]
             postproc.runCommand=postproc.runCommand+' '+filename
 
-   def PrepareSimuPostprocessing(self,simuPostproc):
+   def PrepareSimuPostproc(self,simuPostproc):
       simuPostproc.args=[p.postproc.outputFilename for p in simuPostproc.participants]
       simuPostproc.runCommand=self.exePaths["simulationPostproc"] + " " + " ".join(simuPostproc.args)
 
-   def GetPostProcQuantityFromFile(self,postproc,quantityName):
+   def GetPostprocQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq or avgWalltime for MLMC.
       """
       h5f = h5py.File(postproc.outputFilename, 'r')

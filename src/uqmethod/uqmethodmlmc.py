@@ -78,7 +78,7 @@ class Mlmc(UqMethod):
       sumSigmaW = 0.
       for level in self.levels:
          if level.samples.n > 0:
-            level.sigmaSq = solver.GetPostProcQuantityFromFile(level.postproc,"SigmaSq")
+            level.sigmaSq = solver.GetPostprocQuantityFromFile(level.postproc,"SigmaSq")
             workMean = solver.GetWorkMean(level.postproc)
             if level.samples.nPrevious > 0:
                level.workMean = (level.samples.nPrevious*level.workMean + level.samples.n*workMean)/\

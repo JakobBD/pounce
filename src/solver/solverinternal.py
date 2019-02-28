@@ -33,7 +33,7 @@ class SolverInternal(Solver):
          h5f.attrs[key] = value
       h5f.close()
 
-   def PreparePostprocessing(self,postprocBatches):
+   def PreparePostproc(self,postprocBatches):
       """ Prepares the postprocessing by generating the runPostprocCommand.
       """
       for postproc in postprocBatches: 
@@ -46,9 +46,9 @@ class SolverInternal(Solver):
             postproc.runCommand=postproc.runCommand+' '+p.projectName+"_State.h5"
 
    def GetWorkMean(self,postproc):
-      return self.GetPostProcQuantityFromFile(postproc,"WorkMean")
+      return self.GetPostprocQuantityFromFile(postproc,"WorkMean")
 
-   def GetPostProcQuantityFromFile(self,postproc,quantityName):
+   def GetPostprocQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq for MLMC.
       """
       h5FileName = 'sums_'+postproc.participants[0].projectName+'.h5'

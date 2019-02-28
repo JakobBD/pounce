@@ -25,8 +25,8 @@ class Simulation():
 
    def SimulationPostproc(self):
       self.machine.AllocateResourcesSimuPostproc(self.uqMethod.simuPostproc)
-      self.solver.PrepareSimuPostprocessing(self.uqMethod.simuPostproc)
-      self.machine.RunBatches([self.uqMethod.simuPostproc],self,self.solver,postProc="simu")
+      self.solver.PrepareSimuPostproc(self.uqMethod.simuPostproc)
+      self.machine.RunBatches([self.uqMethod.simuPostproc],self,self.solver,postprocType="simu")
 
 
    def RunIteration(self,iteration):
@@ -73,14 +73,14 @@ class Simulation():
                         self.uqMethod.postprocBatches)
 
       iteration.RunStep("Prepare postprocessing",
-                        self.solver.PreparePostprocessing,
+                        self.solver.PreparePostproc,
                         self,
                         self.uqMethod.postprocBatches)
 
       iteration.RunStep("Run postprocessing",
                         self.machine.RunBatches,
                         self,
-                        self.uqMethod.postprocBatches,self,self.solver,postProc="iter")
+                        self.uqMethod.postprocBatches,self,self.solver,postprocType="iter")
 
       # Prepare next iteration
 

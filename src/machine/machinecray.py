@@ -38,7 +38,7 @@ class Cray(Machine):
          batch.nCores=self.nCoresPerNode
 
 
-   def RunBatches(self,batches,simulation,solver,postProc=False):
+   def RunBatches(self,batches,simulation,solver,postprocType=False):
       """Runs a job by generating the necessary jobfile
           and submitting it.
       """
@@ -48,7 +48,7 @@ class Cray(Machine):
             self.SubmitJob(batch,solver,simulation)
       self.WaitFinished(batches,simulation)
 
-      if not postProc:
+      if not postprocType:
          solver.CheckAllFinished(batches)
       # reset for next iteration
       for batch in batches:

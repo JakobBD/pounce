@@ -17,8 +17,16 @@ class Simulation():
          self.RunIteration(self.iterations[-1])
 
       PrintMajorSection("Last iteration finished. Exit loop. Start Post-Processing")
-      # self.machine.runBatch(postprocSolver)
+       
+      if self.uqMethod.hasSimulationPostproc:
+         self.SimulationPostproc()
+
       PrintMajorSection("POUNCE Finished")
+
+   def SimulationPostproc(self):
+      self.machine.AllocateResourcesSimuPostproc(self.uqMethod.simuPostproc)
+      self.solver.PrepareSimuPostprocessing(self.uqMethod.simuPostproc)
+      self.machine.RunBatches([self.uqMethod.simuPostproc],self,self.solver,postProc="simu")
 
 
    def RunIteration(self,iteration):
@@ -72,7 +80,7 @@ class Simulation():
       iteration.RunStep("Run postprocessing",
                         self.machine.RunBatches,
                         self,
-                        self.uqMethod.postprocBatches,self,self.solver,postProc=True)
+                        self.uqMethod.postprocBatches,self,self.solver,postProc="iter")
 
       # Prepare next iteration
 

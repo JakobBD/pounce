@@ -6,9 +6,6 @@ from helpers.printtools import *
 @Solver.RegisterSubclass('internal')
 class SolverInternal(Solver):
    subclassDefaults={
-      "exeSimulationPath" : "NODEFAULT",
-      "exePostprocessingPath" : "NODEFAULT",
-      "projectName" : "NODEFAULT"
       }
 
    def PrepareSimulations(self,batches,stochVars):
@@ -21,7 +18,7 @@ class SolverInternal(Solver):
          batch.projectName = self.projectName+'_'+batch.name
          batch.h5PrmFileName = 'input_'+batch.projectName+'.h5'
          self.WriteHdf5(batch,stochVars)
-         batch.runCommand='python3 '+self.exeSimulationPath+ ' '+batch.h5PrmFileName
+         batch.runCommand='python3 '+self.exePaths["mainSolver"] + ' '+batch.h5PrmFileName
 
    def WriteHdf5(self,batch,stochVars):
       """ Writes the HDF5 file containing all necessary data for the internal 
@@ -42,7 +39,7 @@ class SolverInternal(Solver):
       for postproc in postprocBatches: 
          names=[p.name for p in postproc.participants]
          Print("Generate Post-proc command for simulation(s) "+", ".join(names))
-         postproc.runCommand = "python3 "+self.exePostprocessingPath
+         postproc.runCommand = "python3 "+self.exePaths["iterationPostproc"]
          # this is a rather ugly current implementation
          postproc.projectName = postproc.participants[0].projectName
          for p in postproc.participants:

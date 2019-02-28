@@ -19,6 +19,7 @@ class Sc(UqMethod):
 
    def __init__(self,inputPrmDict):
       super().__init__(inputPrmDict)
+      self.hasSimulationPostproc=False
       self.nMaxIter=1
 
    def SetupBatches(self):

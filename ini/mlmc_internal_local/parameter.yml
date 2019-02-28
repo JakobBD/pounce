@@ -44,5 +44,6 @@ machine:
 solver:
   _type: internal
   projectName: integ
-  exeSimulationPath: ../../externals/integration/solver.py
-  exePostprocessingPath: ../../externals/integration/postproc_mlmc.py
+  exePaths: 
+    mainSolver: ../../externals/integration/solver.py
+    iterationPostproc: ../../externals/integration/postproc_mlmc.py

@@ -9,11 +9,7 @@ from helpers.printtools import *
 @Solver.RegisterSubclass('flexi')
 class SolverFlexi(Solver):
    subclassDefaults={
-      "exeSimulationPath" : "NODEFAULT",
-      "exePostprocessingPath" : "NODEFAULT",
-      "projectName" : "NODEFAULT",
-      "prmfile" : "NODEFAULT",
-      "prmfilePostProc" : "NODEFAULT"
+         "prmfiles" : {"mainSolver": "","iterationPostproc": ""}
       }
 
    def PrepareSimulations(self,batches,stochVars):
@@ -26,7 +22,7 @@ class SolverFlexi(Solver):
          batch.projectName = self.projectName+'_'+batch.name
          batch.h5PrmFileName = 'input_'+batch.projectName+'.h5'
          self.WriteHdf5(batch,stochVars)
-         batch.runCommand = self.exeSimulationPath + ' ' + batch.h5PrmFileName + ' ' + self.prmfile
+         batch.runCommand = self.exePaths["mainSolver"] + ' ' + batch.h5PrmFileName + ' ' + self.prmfiles["mainSolver"]
 
 
    def WriteHdf5(self,batch,stochVars):
@@ -65,18 +61,22 @@ class SolverFlexi(Solver):
       for postproc in postprocBatches: 
          names=[p.name for p in postproc.participants]
          Print("Generate Post-proc command for simulation(s) "+", ".join(names))
-         postproc.runCommand = self.exePostprocessingPath + " " + self.prmfilePostProc
+         postproc.runCommand = self.exePaths["iterationPostproc"] + " " + self.prmfiles["iterationPostproc"]
          # this is a rather ugly current flexi implementation
          postproc.projectName = postproc.participants[0].projectName
+         postproc.outputFilename = 'postproc_'+postproc.projectName+'_state.h5'
          for p in postproc.participants:
             filename=sorted(glob.glob(p.projectName+"_State_*.h5"))[-1]
             postproc.runCommand=postproc.runCommand+' '+filename
 
+   def PrepareSimuPostprocessing(self,simuPostproc):
+      simuPostproc.args=[p.postproc.outputFilename for p in simuPostproc.participants]
+      simuPostproc.runCommand=self.exePaths["simulationPostproc"] + " " + " ".join(simuPostproc.args)
+
    def GetPostProcQuantityFromFile(self,postproc,quantityName):
       """ Readin sigmaSq or avgWalltime for MLMC.
       """
-      h5FileName = 'postproc_'+postproc.participants[0].projectName+'_state.h5'
-      h5f = h5py.File(h5FileName, 'r')
+      h5f = h5py.File(postproc.outputFilename, 'r')
       quantity = h5f.attrs[quantityName]
       h5f.close()
       return quantity

@@ -39,4 +39,3 @@ class Local(Machine):
    def PreparePostProc(self,batches,solver):
       for batch in batches:
          solver.PreparePostprocessing(batch)
-

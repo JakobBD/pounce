@@ -6,7 +6,8 @@ from helpers.printtools import *
 class Solver(BaseClass):
    subclasses = {}
    classDefaults = {
-      "projectName":"NODEFAULT"
+      "projectName":"NODEFAULT",
+      "exePaths": {"mainSolver": "","iterationPostproc": "", "simulationPostproc": ""}
       }
 
    def CheckAllFinished(self,batches):

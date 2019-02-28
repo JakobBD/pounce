@@ -23,6 +23,7 @@ class Mlmc(UqMethod):
 
    def __init__(self,inputPrmDict):
       super().__init__(inputPrmDict)
+      self.hasSimulationPostproc=True
       if self.resetSeed:
          Print("Reset RNG seed to 0")
          np.random.seed(0)
@@ -44,6 +45,9 @@ class Mlmc(UqMethod):
          level.postproc.name="postproc_"+level.name
          level.postproc.avgWalltime=getattr(level,"avgWalltimePostproc",None)
       self.getActiveBatches()
+      self.simuPostproc=Empty()
+      self.simuPostproc.name="combinelevels"
+      self.simuPostproc.participants=self.levels
 
    def getActiveBatches(self):
       self.activeSublevels=[sub for sub in self.allSublevels if sub.samples.n > 0]

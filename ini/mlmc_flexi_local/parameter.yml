@@ -4,7 +4,7 @@ general:
 uqMethod:
   _type: mlmc
   nMaxIter: 3
-  tolerance: 0.05
+  tolerance: 0.1
 levels:
    - nWarmupSamples : 100
      nCoresPerSample: 24
@@ -39,7 +39,10 @@ machine:
 solver:
   _type: flexi
   projectName: cavity
-  prmfile: 'parameter_flexi.ini'
-  prmfilePostProc: 'parameter_postproc.ini'
-  exeSimulationPath: ./flexibatch
-  exePostprocessingPath: ./mlmc_estimatesigma
+  prmfiles: 
+    mainSolver: 'parameter_flexi.ini'
+    iterationPostproc: 'parameter_estimatesigma.ini'
+  exePaths: 
+    mainSolver: ./flexibatch
+    iterationPostproc: ./mlmc_estimatesigma
+    simulationPostproc: ./mlmc_combinelevels

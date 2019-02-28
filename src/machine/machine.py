@@ -9,4 +9,7 @@ class Machine(BaseClass):
    def AllocateResourcesPostproc(self,batches):
       pass
 
+   def AllocateResourcesSimuPostproc(self,batch):
+      pass
+
 from . import *

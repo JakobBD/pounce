@@ -136,7 +136,7 @@ class Cray(Machine):
    def AllocateResources(self,batches):
       """Takes the properties of the batch (number of current samples, walltime and cores of current sample)
       as well as the machine properties or machine input (number of cores per node, max nodes etc.)
-      and outputs number of cores and number of parallel runs for
+      and outputs number of cores and number of parallel runs for this batch.
       """
 
       self.walltimeFactor = 1.2
@@ -144,14 +144,16 @@ class Cray(Machine):
          batch.scaledAvgWalltime=self.walltimeFactor*batch.avgWalltime
          batch.work=batch.scaledAvgWalltime*batch.nCoresPerSample*batch.samples.n
 
+         # make sure to fill a node
          self.GetPackageProperties(batch)
 
-         self.GetNRunsMax(batch)
-
+         # decide which queue to use 
          GetQueue(batch)
 
+         # get nParallelRuns and nSequentialRuns (core of this routine)
          self.GetBestOption(batch)
 
+         # some serived quantities
          batch.nCores = batch.nParallelRuns * batch.nCoresPerSample
          batch.batchWalltime = batch.nSequentialRuns * batch.scaledAvgWalltime
          batch.nNodes = batch.nCores / self.nCoresPerNode
@@ -161,6 +163,7 @@ class Cray(Machine):
             raise Exception("Max total core hours exceeded!")
 
          Print("")
+         Print("Job %s"%(batch.name))
          Print("Queue = %s"%(batch.queue))
          Print("Rating = %s"%(batch.maxRating))
          Print("nParallelRuns = %i"%(batch.nParallelRuns))
@@ -171,6 +174,9 @@ class Cray(Machine):
 
 
    def GetPackageProperties(self,batch):
+      """define a "package" of runs to fill a node, e.g. 4 parallel runs with nCoresPerSample=6.
+      trivial if nCoresPerSample >= 24.
+      """
       batch.nParallelRunsPackage = max( 1, self.nCoresPerNode // batch.nCoresPerSample)
       batch.nCoresPackage = batch.nCoresPerSample*batch.nParallelRunsPackage
       if batch.nCoresPackage%self.nCoresPerNode:
@@ -178,43 +184,66 @@ class Cray(Machine):
       if batch.nCoresPackage > self.nMaxCores:
          raise Exception("nMaxCores (%i) too small for smallest batch nCores (%i)"%(self.nMaxCores,nCores))
 
-   def GetNRunsMax(self,batch):
-      batch.nSequentialRunsMax = batch.scaledAvgWalltime * ( self.maxWalltime // batch.scaledAvgWalltime )
-      if batch.nSequentialRunsMax == 0:
-         raise Exception("A single job takes longer than the set walltime maximum. I cannot work like this.")
-
-      batch.nParallelRunsMax = ( batch.nCoresPackage * (self.nMaxCores // batch.nCoresPackage) ) / batch.nCoresPerSample
-      if batch.nParallelRunsMax*batch.nSequentialRunsMax < batch.samples.n:
-         PrintWarning("The limits set for #Cores and walltime are too small for this batch. nSamples is reduced.")
-
 
    def GetBestOption(self,batch):
-      baseOpt = Option(batch)
-      batch.nParallelRuns = baseOpt.nParallelRuns
-      batch.nSequentialRuns = baseOpt.nSequentialRuns
+      """Loop over all possible combinations of nParallelRuns and nSequentialRuns.
+      Get Rating for all of them. Pick the best one.
+      """
+      batch.maxRating = -1.
+      nMax=int(math.ceil(np.sqrt(batch.samples.n/batch.nParallelRunsPackage)))
 
-      furtherOpts = []
-      for i in range(-50,50):
-         furtherOpts.append( Option( batch,nParallelRuns=batch.nParallelRuns+i*batch.nParallelRunsPackage) )
-         furtherOpts.append( Option( batch,nSequentialRuns=batch.nSequentialRuns+i) )
+      for i in range(1,nMax+1):
+         opt1 = Option( batch,nParallelRuns=i*batch.nParallelRunsPackage)
+         opt2 = Option( batch,nSequentialRuns=i)
 
-      if baseOpt.valid:
-         batch.maxRating = baseOpt.rating
-      else:
-         batch.nParallelRuns = -1
-         batch.nSequentialRuns = -1
-         batch.maxRating = -1.
+         for opt in [opt1,opt2]:
+            if opt.valid and (opt.rating > batch.maxRating):
+               batch.maxRating = opt.rating
+               batch.nParallelRuns = opt.nParallelRuns
+               batch.nSequentialRuns = opt.nSequentialRuns
 
-      for opt in furtherOpts:
-         if opt.valid and (opt.rating > batch.maxRating):
-            batch.maxRating = opt.rating
-            batch.nParallelRuns = opt.nParallelRuns
-            batch.nSequentialRuns = opt.nSequentialRuns
       if batch.maxRating <= 0.:
          raise Exception("Something went wrong in AllocateResources. No valid option found")
 
 
+class Option():
+   """One combination of nParallelRuns and nSequentialRuns. 
+   Has a Rating based on efficiency (few idling cores) and expcted queuing time.
+   Invalid if does not match criteria of selected queue.
+   """
+
+   def __init__(self,batch,nSequentialRuns=None,nParallelRuns=None):
+      if nSequentialRuns:
+         self.nSequentialRuns = nSequentialRuns
+         self.nParallelRuns = ( batch.nParallelRunsPackage *
+                                int(math.ceil(batch.samples.n / (self.nSequentialRuns*batch.nParallelRunsPackage))) )
+      elif nParallelRuns:
+         self.nParallelRuns = nParallelRuns
+         self.nSequentialRuns = int(math.ceil( batch.samples.n / self.nParallelRuns ))
+      self.walltime = self.nSequentialRuns*batch.scaledAvgWalltime
+      self.nCores= self.nParallelRuns*batch.nCoresPerSample
+
+      self.Rating(batch)
+      self.CheckValid(batch)
+
+   def Rating(self,batch):
+      """Rating based on efficiency (few idling cores) and expcted queuing time.
+      """
+      self.queueRating = min( batch.idealCores / self.nCores , batch.idealWt / self.walltime )
+      self.effiencyRating = batch.samples.n / (self.nParallelRuns * self.nSequentialRuns)
+      self.rating = self.effiencyRating ** 3. * self.queueRating
+
+   def CheckValid(self,batch):
+      """Invalid if does not match criteria of selected queue.
+      """
+      self.valid = ( ( batch.boundsParallel[0]   <= self.nParallelRuns   <= batch.boundsParallel[1]   ) and
+                     ( batch.boundsSequential[0] <= self.nSequentialRuns <= batch.boundsSequential[1] ) )
+
+
 def GetQueue(batch):
+   """check which queue the job is eligible for: 
+   if possible, run on multi. If too small, run on small. If too large, run on long (>4h)
+   """
    # in order for the multi queue to be used, nParallelRunsMultiMin
    batch.nSequentialRunsMultiMin = int(math.ceil( 5*60 / batch.scaledAvgWalltime  ))
    batch.nParallelRunsMultiMin = batch.nParallelRunsPackage * int(math.ceil( 48*24 / batch.nCoresPackage ))
@@ -242,40 +271,9 @@ def GetQueue(batch):
    batch.idealCores = batch.coresFunc[0] * (batch.work / batch.workFunc[0])**batch.expCores
 
 
-
-class Option():
-   def __init__(self,batch,**kwargs):
-      if np.any([a<=0 for a in kwargs.values()]):
-         self.rating=-1.
-         self.valid=False
-         return
-      if "nSequentialRuns" in kwargs:
-         self.nSequentialRuns = kwargs["nSequentialRuns"]
-         self.nParallelRuns = ( batch.nParallelRunsPackage *
-                                int(math.ceil(batch.samples.n / (self.nSequentialRuns*batch.nParallelRunsPackage))) )
-      else:
-         if "nParallelRuns" in kwargs:
-            self.nParallelRuns = kwargs["nParallelRuns"]
-         else:
-            self.nParallelRuns = batch.nParallelRunsPackage*int(math.ceil(batch.idealCores / batch.nCoresPackage))
-         self.nSequentialRuns = int(math.ceil( batch.samples.n / self.nParallelRuns ))
-      self.walltime = self.nSequentialRuns*batch.scaledAvgWalltime
-      self.nCores= self.nParallelRuns*batch.nCoresPerSample
-
-      self.Rating(batch)
-      self.CheckValid(batch)
-
-
-   def Rating(self,batch):
-      self.queueRating = min( batch.idealCores / self.nCores , batch.idealWt / self.walltime )
-      self.effiencyRating = batch.samples.n / (self.nParallelRuns * self.nSequentialRuns)
-      self.rating = self.effiencyRating ** 3. * self.queueRating
-
-   def CheckValid(self,batch):
-      self.valid = ( ( batch.boundsParallel[0]   <= self.nParallelRuns   <= batch.boundsParallel[1]   ) and
-                     ( batch.boundsSequential[0] <= self.nSequentialRuns <= batch.boundsSequential[1] ) )
-
 def SmallQueue(batch):
+   """multi queue cannot be filled with walltime > 5 min
+   """
    batch.queue = "small"
    batch.wtFunc = [5.*60, 24.*60 ]
    batch.coresFunc = [1*24, 10*24]
@@ -283,6 +281,8 @@ def SmallQueue(batch):
    batch.boundsSequential = [1, batch.nSequentialRunsMax]
 
 def MultiQueue(batch):
+   """preferred queue: nNodes>=48, walltime < 4h
+   """
    batch.queue = "multi"
    batch.wtFunc = [30.*60, 4.*3600 ]
    batch.coresFunc = [48*24, 192*24]
@@ -290,6 +290,8 @@ def MultiQueue(batch):
    batch.boundsSequential = [batch.nSequentialRunsMultiMin, batch.nSequentialRuns4hMax]
 
 def LongQueue(batch):
+   """with maxCores, walltime exceeds 4h
+   """
    batch.queue = "long"
    batch.wtFunc = [4.*3600, 8.*3600 ]
    batch.coresFunc = [500*24, 500*24]

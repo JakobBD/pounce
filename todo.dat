@@ -1,21 +1,9 @@
-- in Internal solver postproc in der 1. Iteration die vorhandenen Dateien ignorieren
 - Nomenklatur Runs vs Samples (Auch in Flexi)
-- Trenne StochInteg (Level) von SampleBatch (Sublevel) oder so ähnlich 
-    Vorschlag: Es gibt 
-       sampleSet: enthält samples, weights, nSamples, stochVarNames?!
-       batch:     enthält sampleSet, solverPrms, walltime, nCores, name
-       diffLevel: enthält sampleSet, batches, postProcCommand, meanWork, sigmaSq, nFinishedSamples
-
-, fidelityLevel, SampleSet und 
-
 - Trenne nLevel von Sampling Methode
 - Verallgemeinerung für MFMC, MLMF, MIMC
 - Machine: Nomenklatur einheitlich (avgWork,avgNodes etc.)
-- MachineCray aufräumen
-- AllocateResources für Cray: nicht mehr Fallunterscheidung nach queue, sondern alle Options durchprobieren, nSequential und nParallel jeweils von 1 bis SQRT(nSequential*nParallel), rating=f(ExpectedQueueTime,Efficiency)
-- Restart von Archiv, Restart innerhalb RunAllBatches ermöglichen
+- Restart von Archiv
 - PEP 8 
-- internal solver schön
 - QoI Klasse
 - one file for all levels and one data set per level? (for flexi, postproc, stochVars, ...)
 

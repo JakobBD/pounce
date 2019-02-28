@@ -23,7 +23,7 @@ class Simulation():
 
    def RunIteration(self,iteration):
       """General procedure:
-      
+
       1. Let machine decide how many samples to compute.
       2. Generate samples and weights.
       3. Compute samples on system
@@ -40,7 +40,7 @@ class Simulation():
                         self.uqMethod.GetNodesAndWeights,
                         self)
 
-      # Simulations 
+      # Simulations
 
       iteration.RunStep("Allocate resources",
                         self.machine.AllocateResources,
@@ -55,7 +55,7 @@ class Simulation():
       iteration.RunStep("Run simulations",
                         self.machine.RunBatches,
                         self,
-                        self.uqMethod.solverBatches,self.solver)
+                        self.uqMethod.solverBatches,self,self.solver)
 
       # Post-Processing
 
@@ -72,7 +72,7 @@ class Simulation():
       iteration.RunStep("Run postprocessing",
                         self.machine.RunBatches,
                         self,
-                        self.uqMethod.postprocBatches,self.solver,postProc=True)
+                        self.uqMethod.postprocBatches,self,self.solver,postProc=True)
 
       # Prepare next iteration
 
@@ -93,12 +93,13 @@ class Simulation():
 
 
 class Iteration():
-   
+
    def __init__(self):
       self.finishedSteps=[]
 
-   def UpdateStep(self,simulation,string):
-      self.finishedSteps.append(string)
+   def UpdateStep(self,simulation,string=None):
+      if string:
+         self.finishedSteps.append(string)
       with open(simulation.filename, 'wb') as f:
          pickle.dump(simulation, f, 2)
 

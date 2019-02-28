@@ -15,11 +15,11 @@ class Local(Machine):
       "mpi" : "NODEFAULT"
       }
 
-   def RunBatches(self,batches,solver,postProc=False):
+   def RunBatches(self,batches,simulation,solver,postProc=False):
       """Runs a job by calling a subprocess.
       """
       # TODO: enable parallel runs of jobs
-      for batch in batches: 
+      for batch in batches:
          batch.logfileName="log_"+batch.name+".dat"
          if self.mpi:
             args=["mpirun", "-n %d"%(batch.nCoresPerSample), batch.runCommand]
@@ -37,6 +37,6 @@ class Local(Machine):
          batch.nSequentialRuns=batch.samples.n
 
    def PreparePostProc(self,batches,solver):
-      for batch in batches: 
+      for batch in batches:
          solver.PreparePostprocessing(batch)
 

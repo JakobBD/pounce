@@ -42,6 +42,7 @@ class Mlmc(UqMethod):
          level.postproc=Empty()
          level.postproc.participants=level.sublevels
          level.postproc.name="postproc_"+level.name
+         level.postproc.avgWalltime=getattr(level,"avgWalltimePostproc",None)
       self.getActiveBatches()
 
    def getActiveBatches(self):
@@ -77,7 +78,7 @@ class Mlmc(UqMethod):
             if level.samples.nPrevious > 0:
                level.workMean = (level.samples.nPrevious*level.workMean + level.samples.n*workMean)/\
                                 (level.samples.n+level.samples.nPrevious)
-            else: 
+            else:
                level.workMean = workMean
          if level.samples.nPrevious+level.samples.n > 0:
             sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
@@ -102,7 +103,7 @@ class SubLevel():
       #todo: nicer
       try:
          self.avgWalltime = resolutionLevel.avgWalltime
-      except AttributeError: 
+      except AttributeError:
          pass
       self.samples=diffLevel.samples
       self.name=diffLevel.name+name

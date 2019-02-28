@@ -24,6 +24,7 @@ class Cray(Machine):
 
    levelDefaults={
       "avgWalltime" : "NODEFAULT",
+      "avgWalltimePostproc" : 120.
       }
 
    def __init__(self,classDict):
@@ -33,29 +34,32 @@ class Cray(Machine):
 
 
    def AllocateResourcesPostproc(self,batches):
-      for batch in batches: 
+      for batch in batches:
          batch.nCores=self.nCoresPerNode
-         batch.walltime=120.
 
 
-   def RunBatches(self,batches,solver,postProc=False):
+   def RunBatches(self,batches,simulation,solver,postProc=False):
       """Runs a job by generating the necessary jobfile
           and submitting it.
       """
-      self.unfinished_batches=batches
-      for batch in self.unfinished_batches:
-         batch.jobfile=self.GenerateJobFile(batch,solver)
-         batch.jobID=self.SubmitJob(batch.jobfile)
-      self.waitingForJobs=True
-      self.unfinished_batches=self.WaitFinished(self.unfinished_batches)
-      self.waitingForJobs=False
+      # in case of a restart, only submit
+      for batch in self.Unfinished(batches):
+         if not getattr(batch,"queueStatus",None):
+            self.SubmitJob(batch,solver,simulation)
+      self.WaitFinished(batches,simulation)
+
       if not postProc:
          solver.CheckAllFinished(batches)
-      #TODO: restart unfinished jobs
+      # reset for next iteration
+      for batch in batches:
+         batch.finished=False
+
+   def Unfinished(self,batches):
+      return [batch for batch in batches if not getattr(batch,"finished",False)]
 
 
-   def GenerateJobFile(self,batch,solver):
-      """Generates the necessary jobfile.
+   def SubmitJob(self,batch,solver,simulation):
+      """Generates the necessary jobfile and submits job.
       """
       jobfileString = (
         '#!/bin/bash\n'
@@ -65,90 +69,74 @@ class Cray(Machine):
       + 'cd $PBS_O_WORKDIR\n\n'
       + 'aprun -n  {}  -N 24 {}  &> calc_{}.log\n'.format(batch.nCores,batch.runCommand,batch.name)
       )
-      jobfileName = 'jobfile_{}'.format(batch.name)
-      with open(jobfileName,'w+') as jf:
+      batch.jobfileName = 'jobfile_{}'.format(batch.name)
+      with open(batch.jobfileName,'w+') as jf:
          jf.write(jobfileString)
-      return jobfileName
-
-
-   def SubmitJob(self,jobfile):
-      """Submits a job into the Cray Hazelhen HPC queue.
-      """
+      # submit job
       job = subprocess.run(['qsub',jobfile],stdout=subprocess.PIPE,universal_newlines=True)
-      return int(job.stdout.read().split(".")[0])
+      batch.jobID=int(job.stdout.read().split(".")[0])
+      batch.queueStatus="submitted"
+      simulation.iterations[-1].UpdateStep(simulation)
 
 
-   def WaitFinished(self,batches):
+   def WaitFinished(self,batches,simulation):
       """Monitors all jobs on Cray Hazelhen HPC queue. Checks if jobfile finished.
       """
-      jobHandles=[batch.jobID for batch in batches]
-      status_list=[]
-      comp_finished=None
-      unfinished_jobs=None
-      n_remain=len(jobHandles)
-      while not comp_finished:
-         job = subprocess.Popen(['qstat','-u',self.username],stdout=subprocess.PIPE\
-                                                            ,universal_newlines=True)
-         status_tmp = str(job.stdout.read())
-         status_tmp = status_tmp.split('\n')
-         if len(status_tmp)<4:
-            jobs_in_queue=None
-         else:
-            jobs_in_queue=True
-            status_tmp = status_tmp[5:]
-            del status_tmp[-1]
-         for index,i in enumerate(jobHandles):
-            if i > 0:
-               found=None
-               if jobs_in_queue:
-                  for line in status_tmp:
-                     id = int(line.split(".")[0])
-                     if i==id:
-                        found=True
-                        status = line.split()[9]
-                        if status=='C':
-                           [jobHandles,unfinished_jobs,n_remain]=self.CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
-                        else:
-                           status_string="id {} has status {}".format(i,status)
-                           if not status_string in status_list:
-                              status_list.append(status_string)
-                              print("Job with {}!".format(status_string))
-               if not found: # jobID is not in st: pretend it is finished
-                  [jobHandles,unfinished_jobs,n_remain]=self.CheckErrorfile(i,jobHandles,unfinished_jobs,index,n_remain)
-         if sum(jobHandles)==0:
-            comp_finished=True
-         else:
-            time.sleep(1)
-      return([batch for batch in batches if batch.jobID in unfinished_jobs])
+      while True:
+         statuses=self.ReadQstat()
+         for batch in self.Unfinished(batches):
+            if batch.jobID in statuses:
+               queueStatus = statuses[batch.jobID]
+            else:
+               queueStatus = "C"
+            if not queueStatus == batch.queueStatus:
+               Print("Job {} with ID {} has status {}.".format(batch.name,batch.jobID,queueStatus))
+               batch.queueStatus=queueStatus
+            if queueStatus=='C':
+               self.CheckErrorfile(batch,batches,simulation)
+         if not self.Unfinished(batches):
+            return
+         time.sleep(1)
 
 
-   def CheckErrorfile(self,i,jobID,unfinished_jobs,index,n_remain):
-      with open(glob.glob('*.e{}'.format(i))[0]) as f:
+   def ReadQstat(self):
+      """run 'qstat' on cray and read output
+      """
+      job = subprocess.Popen(['qstat','-u',self.username],stdout=subprocess.PIPE,universal_newlines=True)
+      lines = str(job.stdout.read()).split('\n')
+      if len(lines)<4:
+         return {}
+      else:
+         return {int(line.split(".")[0]): line.split()[9] for line in lines[5:-1]}
+
+
+   def CheckErrorfile(self,batch,batches,simulation):
+      """open error file and parse errrors. Well, parse is a strong word here.
+      """
+      with open(glob.glob('*.e{}'.format(batch.jobID))[0]) as f:
          lines = f.read().splitlines()
-         if len(lines)==0:
-            error=None
-         else:
-            error=True
-            for errortext in lines:
-               errortext=errortext.split()
-               if len(errortext)>=7:
-                  if errortext[4]=='walltime' and errortext[6]=='exceeded':
-                     error=None
-                     unfinished_jobs=True
-                     break
-      if error:
-         print('\nWARNING: Error in jobfile execution! See file *.e{} for details.\n'.format(i))
-         unfinished_jobs=True
-      jobID[index]=0
-      n_remain-=1
-      print('job ID {} is now complete! {} jobs remaining'.format(i,n_remain))
-      return(jobID,unfinished_jobs,n_remain)
+      # empty error file: all good
+      if len(lines)==0:
+         batch.finished=True
+         batch.queueStatus=None
+         Print('job ID {} is now complete! {} jobs remaining'.format(batch.jobID,len(self.Unfinished(batches))))
+         return
+      # check if walltime excced in error file (also means that solver did not otherwise crash)
+      longlines=[line.split() for line in lines if len(line.split())>=7]
+      for words in longlines:
+         if words[4]=='walltime' and words[6]=='exceeded':
+            Print("Job {} exceeded walltime ({}). Re-submit with double walltime.".format(batch.name,Time(batch.walltime).str))
+            batch.walltime *= 2
+            self.SubmitJob(batch,solver,simulation)
+            return
+      # non-empty error file and not walltime excceded: other error
+      raise Exception('Error in jobfile execution! See file *.e{} for details.\n'.format(batch.jobID))
 
 
    def AllocateResources(self,batches):
-      """Takes the properties of the batch (number of current samples, walltime and cores of current sample) 
-      as well as the machine properties or machine input (number of cores per node, max nodes etc.) 
-      and outputs number of cores and number of parallel runs for 
+      """Takes the properties of the batch (number of current samples, walltime and cores of current sample)
+      as well as the machine properties or machine input (number of cores per node, max nodes etc.)
+      and outputs number of cores and number of parallel runs for
       """
 
       self.walltimeFactor = 1.2
@@ -159,7 +147,7 @@ class Cray(Machine):
          self.GetPackageProperties(batch)
 
          self.GetNRunsMax(batch)
-         
+
          GetQueue(batch)
 
          self.GetBestOption(batch)
@@ -185,18 +173,18 @@ class Cray(Machine):
    def GetPackageProperties(self,batch):
       batch.nParallelRunsPackage = max( 1, self.nCoresPerNode // batch.nCoresPerSample)
       batch.nCoresPackage = batch.nCoresPerSample*batch.nParallelRunsPackage
-      if batch.nCoresPackage%self.nCoresPerNode: 
+      if batch.nCoresPackage%self.nCoresPerNode:
          raise Exception("nCoresPerSample has to be multiple of nCoresPerNode or vice versa")
       if batch.nCoresPackage > self.nMaxCores:
          raise Exception("nMaxCores (%i) too small for smallest batch nCores (%i)"%(self.nMaxCores,nCores))
 
    def GetNRunsMax(self,batch):
       batch.nSequentialRunsMax = batch.scaledAvgWalltime * ( self.maxWalltime // batch.scaledAvgWalltime )
-      if batch.nSequentialRunsMax == 0: 
+      if batch.nSequentialRunsMax == 0:
          raise Exception("A single job takes longer than the set walltime maximum. I cannot work like this.")
 
       batch.nParallelRunsMax = ( batch.nCoresPackage * (self.nMaxCores // batch.nCoresPackage) ) / batch.nCoresPerSample
-      if batch.nParallelRunsMax*batch.nSequentialRunsMax < batch.samples.n: 
+      if batch.nParallelRunsMax*batch.nSequentialRunsMax < batch.samples.n:
          PrintWarning("The limits set for #Cores and walltime are too small for this batch. nSamples is reduced.")
 
 
@@ -206,11 +194,11 @@ class Cray(Machine):
       batch.nSequentialRuns = baseOpt.nSequentialRuns
 
       furtherOpts = []
-      for i in range(-50,50): 
+      for i in range(-50,50):
          furtherOpts.append( Option( batch,nParallelRuns=batch.nParallelRuns+i*batch.nParallelRunsPackage) )
          furtherOpts.append( Option( batch,nSequentialRuns=batch.nSequentialRuns+i) )
 
-      if baseOpt.valid: 
+      if baseOpt.valid:
          batch.maxRating = baseOpt.rating
       else:
          batch.nParallelRuns = -1
@@ -235,15 +223,15 @@ def GetQueue(batch):
    efficiencyVsQueueFactor = 0.9
    nSamplesMulti = (
    efficiencyVsQueueFactor     *max( batch.nParallelRunsMultiMin   *(batch.nSequentialRunsMultiMin-1),
-                                    (batch.nParallelRunsMultiMin-1)* batch.nSequentialRunsMultiMin    ) + 
+                                    (batch.nParallelRunsMultiMin-1)* batch.nSequentialRunsMultiMin    ) +
    (1.-efficiencyVsQueueFactor)*min( batch.nParallelRunsMultiMin   *(batch.nSequentialRunsMultiMin-1),
                                     (batch.nParallelRunsMultiMin-1)* batch.nSequentialRunsMultiMin    ) )
 
    if nSamplesMulti >= batch.samples.n:
       SmallQueue(batch)
-   elif batch.nSequentialRuns4hMax*batch.nParallelRunsMax < batch.samples.n: 
+   elif batch.nSequentialRuns4hMax*batch.nParallelRunsMax < batch.samples.n:
       LongQueue(batch)
-   else: 
+   else:
       MultiQueue(batch)
 
    #fill ideal values according to queue
@@ -263,7 +251,7 @@ class Option():
          return
       if "nSequentialRuns" in kwargs:
          self.nSequentialRuns = kwargs["nSequentialRuns"]
-         self.nParallelRuns = ( batch.nParallelRunsPackage *   
+         self.nParallelRuns = ( batch.nParallelRunsPackage *
                                 int(math.ceil(batch.samples.n / (self.nSequentialRuns*batch.nParallelRunsPackage))) )
       else:
          if "nParallelRuns" in kwargs:
@@ -278,8 +266,8 @@ class Option():
       self.CheckValid(batch)
 
 
-   def Rating(self,batch): 
-      self.queueRating = min( batch.idealCores / self.nCores , batch.idealWt / self.walltime ) 
+   def Rating(self,batch):
+      self.queueRating = min( batch.idealCores / self.nCores , batch.idealWt / self.walltime )
       self.effiencyRating = batch.samples.n / (self.nParallelRuns * self.nSequentialRuns)
       self.rating = self.effiencyRating ** 3. * self.queueRating
 

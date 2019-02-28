@@ -28,10 +28,14 @@ class Sc(UqMethod):
          level.postproc=Empty()
          level.postproc.participants=[level]
          level.postproc.name="postproc_"+level.name
+         try:
+            level.postproc.avgWalltime=level.avgWalltimePostproc
+         except:
+            AttributeError
          level.samples.nPrevious = 0
       self.solverBatches=self.levels
       self.postprocBatches=[l.postproc for l in self.levels]
-       
+
    def GetNodesAndWeights(self):
       distributions=[var.distribution for var in self.stochVars]
       for level in self.levels:

@@ -140,6 +140,9 @@ class Cray(Machine):
       """
 
       self.walltimeFactor = 1.2
+      stdoutTable=StdOutTable( "queue","rating","nParallelRuns","nSequentialRuns","nCores","nNodes","batchWalltime")
+      stdoutTable.Descriptions("Queue","Rating","nParallelRuns","nSequentialRuns","nCores","nNodes","batchWalltime")
+
       for batch in batches:
          batch.scaledAvgWalltime=self.walltimeFactor*batch.avgWalltime
          batch.work=batch.scaledAvgWalltime*batch.nCoresPerSample*batch.samples.n
@@ -162,15 +165,8 @@ class Cray(Machine):
          if self.totalWork > self.maxTotalWork:
             raise Exception("Max total core hours exceeded!")
 
-         Print("")
-         Print("Job %s"%(batch.name))
-         Print("Queue = %s"%(batch.queue))
-         Print("Rating = %s"%(batch.maxRating))
-         Print("nParallelRuns = %i"%(batch.nParallelRuns))
-         Print("nSequentialRuns = %i"%(batch.nSequentialRuns))
-         Print("nCores = %i"%(batch.nCores))
-         Print("nNodes = %i"%(batch.nNodes))
-         Print("batchWalltime = %f"%(batch.batchWalltime))
+         stdoutTable.Update(batch)
+      stdoutTable.Print("Batch")
 
 
    def GetPackageProperties(self,batch):

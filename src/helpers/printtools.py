@@ -1,5 +1,6 @@
 import logging
 import textwrap
+import numpy as np
 
 class Bcolors :
    """color and font style definitions for changing output appearance"""
@@ -83,6 +84,59 @@ def Debug(msg):
 
 
 
+
+class StdOutTable():
+   """
+   Helper class for GetNewNCurrentSamples routine.
+   Outsourced for improved readability.
+   Prints values for each level in ordered table to stdout.
+   """
+   def __init__(self,*args):
+      self.strs=[]
+      for arg in args:
+         self.strs.append(TableString(arg))
+         self.names=[]
+
+   def Descriptions(self,*args):
+      for iArg,arg in enumerate(args):
+         self.strs[iArg].description=arg
+
+   def Update(self,level):
+      self.names.append(level.name)
+      attrNames=[s.attr for s in self.strs]
+      for attrName in attrNames:
+         attr=level
+         for word in attrName.split("__"):
+            attr=getattr(attr,word)
+         for s in self.strs: 
+            if s.attr==attrName:
+               s.values.append(attr)
+
+   def Print(self,batchStr):
+      descriptionLength=max([len(s.description) for s in self.strs])
+      nEntries=len(self.names)
+      Print(" "*descriptionLength+" ║ "+"".join(["%11s ║ "%(batchStr+" "+n) for n in self.names]))
+      sepStr="═"*11+"═╬═"
+      Print("═"*descriptionLength+"═╬═"+sepStr*nEntries)
+      for s in self.strs:
+         s.strOut=" "*(descriptionLength-len(s.description))+s.description+" ║ "
+         for value in s.values: 
+            if isinstance(value,str): 
+               s.strOut=s.strOut+"%11s ║ "%(value)
+            elif isinstance(value,int): 
+               s.strOut=s.strOut+"%11d ║ "%(value)
+            elif isinstance(value,(float,np.ndarray)): 
+               s.strOut=s.strOut+"%11.4e ║ "%(value)
+            else:
+               raise Exception("unknown type",type(value))
+         Print(s.strOut)
+
+
+
+class TableString():
+   def __init__(self,attr):
+      self.attr=attr
+      self.values=[]
 
 
 

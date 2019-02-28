@@ -67,7 +67,8 @@ class Mlmc(UqMethod):
 
    def GetNewNCurrentSamples(self,solver):
 
-      stdoutTable=StdOutTable()
+      stdoutTable=StdOutTable( "sigmaSq","workMean" ,"mlopt" ,"samples__nPrevious","samples__n")
+      stdoutTable.Descriptions("SigmaSq","mean work","ML_opt","finished Samples"  ,"new Samples")
 
       # build sum over levels of sqrt(sigma^2/w)
       sumSigmaW = 0.
@@ -82,16 +83,15 @@ class Mlmc(UqMethod):
                level.workMean = workMean
          if level.samples.nPrevious+level.samples.n > 0:
             sumSigmaW += SafeSqrt(level.sigmaSq*level.workMean)
-         stdoutTable.Update1(level)
 
       for level in self.levels:
          #TODO: add formula for given maxWork
          level.mlopt = sumSigmaW * SafeSqrt(level.sigmaSq/level.workMean) / (self.tolerance*self.tolerance/4.)
          level.samples.nPrevious += level.samples.n
          level.samples.n = max(int(np.ceil(level.mlopt))-level.samples.nPrevious , 0)
-         stdoutTable.Update2(level)
+         stdoutTable.Update(level)
 
-      stdoutTable.Print()
+      stdoutTable.Print("Level")
 
       self.getActiveBatches()
 
@@ -108,39 +108,4 @@ class SubLevel():
       self.samples=diffLevel.samples
       self.name=diffLevel.name+name
 
-
-
-class StdOutTable():
-   """
-   Helper class for GetNewNCurrentSamples routine.
-   Outsourced for improved readability.
-   Prints values for each level in ordered table to stdout.
-   """
-   def __init__(self):
-      self.headerStr    = "                 ║ "
-      self.sigmaSqStr   = "         SigmaSq ║ "
-      self.meanWorkStr  = "       mean work ║ "
-      self.mloptStr     = "          ML_opt ║ "
-      self.fininshedStr = "finished Samples ║ "
-      self.newStr       = "     new Samples ║ "
-
-   def Update1(self,level):
-      self.headerStr   += "     Level %2s ║ "%(level.name)
-      self.sigmaSqStr  +=         "%13.4e ║ "%(level.sigmaSq)
-      self.meanWorkStr +=         "%13.4e ║ "%(level.workMean)
-
-   def Update2(self,level):
-      self.mloptStr     += "%13.3f ║ "%(level.mlopt)
-      self.fininshedStr +=   "%13d ║ "%(level.samples.nPrevious)
-      self.newStr       +=   "%13d ║ "%(level.samples.n)
-
-   def Print(self):
-      Print(self.headerStr)
-      sepStr="═"*14+"╬═"
-      Print("═══"+sepStr*int(len(self.headerStr)/len(sepStr)))
-      Print(self.sigmaSqStr)
-      Print(self.meanWorkStr)
-      Print(self.mloptStr)
-      Print(self.fininshedStr)
-      Print(self.newStr)
 

@@ -35,6 +35,7 @@ class SolverFlexi(Solver):
         h5f.attrs.create('StochVarNames', [var.name.ljust(255) for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
         h5f.attrs.create('iOccurrence', [var.i_occurrence for var in stoch_vars], (len(stoch_vars),) )
         h5f.attrs.create('iArray', [var.i_pos for var in stoch_vars], (len(stoch_vars),) )
+        h5f.attrs.create('ProjectName', self.project_name.ljust(255), dtype='S255')
         h5f.attrs.create('Distributions', [var._type for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
         h5f.create_dataset('DistributionProps', data= [var.parameters for var in stoch_vars])
         h5f.attrs["nStochVars"] = len(stoch_vars)

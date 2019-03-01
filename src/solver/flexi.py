@@ -35,6 +35,9 @@ class Flexi(Solver):
         h5f.attrs.create('StochVarNames', [var.name.ljust(255) for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
         h5f.attrs.create('iOccurrence', [var.i_occurrence for var in stoch_vars], (len(stoch_vars),) )
         h5f.attrs.create('iArray', [var.i_pos for var in stoch_vars], (len(stoch_vars),) )
+        h5f.attrs.create('ProjectName', self.project_name.ljust(255), dtype='S255')
+        h5f.attrs.create('Distributions', [var._type for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
+        h5f.create_dataset('DistributionProps', data= [var.parameters for var in stoch_vars])
         h5f.attrs["nStochVars"] = len(stoch_vars)
         h5f.attrs["nGlobalRuns"] = batch.samples.n
         h5f.attrs["nPreviousRuns"] = batch.samples.n_previous
@@ -45,7 +48,7 @@ class Flexi(Solver):
                   ( "Str",     str,     "S255",  lambda x:x.ljust(255)),
                   ( "Real",    float,  None,     lambda x:x)]
 
-        for         dtype_name,dtype_in,dtype_out,func in dtypes: 
+        for         dtype_name,dtype_in,dtype_out,func in dtypes:
             names=[ key.ljust(255) for key, value in batch.solver_prms.items() if isinstance(value,dtype_in)]
             values=[ func(value) for value in batch.solver_prms.values() if isinstance(value,dtype_in)]
             n_vars=len(names)
@@ -58,7 +61,7 @@ class Flexi(Solver):
     def prepare_postproc(self,postproc_batches):
         """ Prepares the postprocessing by generating the run_postproc_command.
         """
-        for postproc in postproc_batches: 
+        for postproc in postproc_batches:
             names=[p.name for p in postproc.participants]
             p_print("Generate postproc command for simulation(s) "+", ".join(names))
             postproc.run_command = self.exe_paths["iteration_postproc"] + " " + self.prmfiles["iteration_postproc"]
@@ -92,7 +95,7 @@ class Flexi(Solver):
             output=output.stdout.decode("utf-8").splitlines()
             batch.current_avg_work=float(output[2])
             return output[0]=="FLEXIBATCH FINISHED"
-        except: 
+        except:
             return False
 
 

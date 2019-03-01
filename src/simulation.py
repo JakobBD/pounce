@@ -22,6 +22,7 @@ class Simulation():
 
         print_major_section("POUNCE Finished")
 
+
     def simulation_postproc(self):
         self.machine.allocate_resources_simu_postproc(self.uq_method.simu_postproc)
         self.solver.prepare_simu_postproc(self.uq_method.simu_postproc)

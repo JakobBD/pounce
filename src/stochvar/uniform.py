@@ -3,7 +3,7 @@ import chaospy as cp
 from .stochvar import StochVar
 
 @StochVar.register_subclass('uniform')
-class StochVarUniform(StochVar):
+class Uniform(StochVar):
     subclass_defaults={
         'bounds' : 'NODEFAULT',
         'i_occurrence': {},

@@ -3,7 +3,7 @@ import chaospy as cp
 from .stochvar import StochVar
 
 @StochVar.register_subclass('normal')
-class StochVarNormal(StochVar):
+class Normal(StochVar):
     subclass_defaults={
         'mean' : 'NODEFAULT',
         'standard_deviation' : 'NODEFAULT',
@@ -20,4 +20,4 @@ class StochVarNormal(StochVar):
 
     @property
     def parameters(self):
-        return [self.mean self.standard_deviation]
+        return [self.mean, self.standard_deviation]

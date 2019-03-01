@@ -3,9 +3,4 @@
 - Verallgemeinerung für MFMC, MLMF, MIMC
 - Machine: Nomenklatur einheitlich (avgWork,avgNodes etc.)
 - Restart von Archiv
-- PEP 8 
 - QoI Klasse
-- one file for all levels and one data set per level? (for flexi, postproc, stochVars, ...)
-
-- Kopplung flexi: 
-  - übergebe state files an postproc-command

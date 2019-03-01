@@ -4,7 +4,7 @@ import numpy as np
 from helpers.printtools import *
 
 @Solver.register_subclass('internal')
-class SolverInternal(Solver):
+class Internal(Solver):
     subclass_defaults={
         }
 

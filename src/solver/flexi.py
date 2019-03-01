@@ -7,7 +7,7 @@ from .solver import Solver
 from helpers.printtools import *
 
 @Solver.register_subclass('flexi')
-class SolverFlexi(Solver):
+class Flexi(Solver):
     subclass_defaults={
             "prmfiles" : {"main_solver": "","iteration_postproc": ""}
         }

@@ -27,7 +27,7 @@ class BaseClass():
 
         # overwrite defaults with custom input prms
         for input_prm_name,input_value in input_prm_dict.items():
-            if input_prm_name not in attributes:
+            if input_prm_name not in attributes and not input_prm_name.startswith("_"):
                 raise Exception("'"+input_prm_name+"' is not a valid input parameter name!")
             else:
                 attributes[input_prm_name]=input_value

@@ -62,7 +62,7 @@ class BaseClass():
         The further user input for this class is passed to init as a dict
         """
         subclass_key=class_dict["_type"]
-        del class_dict["_type"]
+        # del class_dict["_type"]
         if subclass_key not in cls.subclasses:
             raise ValueError("'{}' is not a valid {}".format(subclass_key,cls.__name__))
         p_print("Chosen subclass of "+yellow(cls.__name__)+" is "+yellow(subclass_key)+".")

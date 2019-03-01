@@ -20,4 +20,4 @@ class StochVarNormal(StochVar):
 
     @property
     def parameters(self):
-        return [self.mean self.standard_deviation]
+        return [self.mean, self.standard_deviation]

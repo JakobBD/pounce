@@ -35,7 +35,6 @@ class Flexi(Solver):
         h5f.attrs.create('StochVarNames', [var.name.ljust(255) for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
         h5f.attrs.create('iOccurrence', [var.i_occurrence for var in stoch_vars], (len(stoch_vars),) )
         h5f.attrs.create('iArray', [var.i_pos for var in stoch_vars], (len(stoch_vars),) )
-        h5f.attrs.create('ProjectName', self.project_name.ljust(255), dtype='S255')
         h5f.attrs.create('Distributions', [var._type for var in stoch_vars], (len(stoch_vars),), dtype='S255' )
         h5f.create_dataset('DistributionProps', data= [var.parameters for var in stoch_vars])
         h5f.attrs["nStochVars"] = len(stoch_vars)
@@ -44,17 +43,17 @@ class Flexi(Solver):
         h5f.attrs["nParallelRuns"] = batch.n_parallel_runs
 
         batch.solver_prms.update({"ProjectName":self.project_name+"_"+batch.name})
-        dtypes=[( "Int",     int,     None,     lambda x:x),
-                  ( "Str",     str,     "S255",  lambda x:x.ljust(255)),
-                  ( "Real",    float,  None,     lambda x:x)]
+        dtypes=[("Int",     int,     None,     lambda x:x),
+                ("Str",     str,     "S255",   lambda x:x.ljust(255)),
+                ("Real",    float,   None,     lambda x:x)]
 
-        for         dtype_name,dtype_in,dtype_out,func in dtypes:
+        for      dtype_name,dtype_in,dtype_out,func in dtypes:
             names=[ key.ljust(255) for key, value in batch.solver_prms.items() if isinstance(value,dtype_in)]
             values=[ func(value) for value in batch.solver_prms.values() if isinstance(value,dtype_in)]
             n_vars=len(names)
             h5f.attrs["nLevelVars"+dtype_name]=n_vars
             h5f.attrs.create('LevelVarNames'+dtype_name, names,  shape=(n_vars,), dtype='S255' )
-            h5f.attrs.create('LevelVars'+dtype_name,      values, shape=(n_vars,), dtype=dtype_out )
+            h5f.attrs.create('LevelVars'+dtype_name,     values, shape=(n_vars,), dtype=dtype_out )
 
         h5f.close()
 

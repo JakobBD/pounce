@@ -67,7 +67,7 @@ def config_list(string,prms,class_init,defaults):
     if string not in prms:
         raise Exception("Required parameter '"+string+"' is not set in parameter file!")
     if not isinstance(prms[string],list):
-        raise Exception(" Parameter'"+string+"' needs to be defined as a list!")
+        raise Exception("Parameter'"+string+"' needs to be defined as a list!")
     p_print("Setup "+yellow(string)+" - Number of " + string + " is " + yellow(str(len(prms[string]))) + ".")
     indent_in()
     classes = [ class_init(sub_dict,defaults) for sub_dict in prms[string] ]
@@ -131,8 +131,8 @@ def print_default_yml_file():
     all_defaults={}
 
     parent_classes={"uq_method": UqMethod,
-                        "machine": Machine,
-                        "solver": Solver }
+                    "machine": Machine,
+                    "solver": Solver }
     subclasses={}
 
     # First, get defaults for parent classes uq_method, machine and solver.

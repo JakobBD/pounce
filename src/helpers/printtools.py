@@ -57,14 +57,14 @@ def print_major_section(msg,color="stdcolor"):
     print("="*132)
 
 def print_header():
-    msg1="""                                        `7_mM***Mq.    .g8**8q. `7_mMF'    `7_mF'`7_mN.    `7_mF' .g8***bgd `7_mM***YMM 
-                                          MM    `MM..d_p'     `YM. MM         M     MMN.     M .d_p'      `M    MM     `7 
-                                          MM    ,M9 d_m'        `MM MM         M     M YMb    M d_m'         `    MM    d    
-                                          MMmmdM9  MM          MM MM         M     M  `MN. M MM                MMmmMM    
-                                          MM         MM.        ,MP MM         M     M    `MM.M MM.              MM    Y  ,
-                                          MM         `Mb.     ,d_p' YM.      ,M     M      YMM `Mb.      ,'    MM      ,M
-                                        .JMML.         `*bmmd*'     `bmmmmd*'  .JML.     YM    `*bmmmd'  .JMMmmmmMMM"""
-    msg2="""                                            Propagation of Uncertainty - Framework for HPC UQ implementations"""
+    msg1="""                              `7MM***Mq.   .g8**8q. `7MMF'   `7MF'`7MN.   `7MF' .g8***bgd `7MM***YMM 
+                                MM   `MM..dP'    `YM. MM       M    MMN.    M .dP'     `M   MM    `7 
+                                MM   ,M9 dM'      `MM MM       M    M YMb   M dM'       `   MM   d   
+                                MMmmdM9  MM        MM MM       M    M  `MN. M MM            MMmmMM   
+                                MM       MM.      ,MP MM       M    M   `MM.M MM.           MM   Y  ,
+                                MM       `Mb.    ,dP' YM.     ,M    M     YMM `Mb.     ,'   MM     ,M
+                              .JMML.       `*bmmd*'    `bmmmmd*'  .JML.    YM   `*bmmmd'  .JMMmmmmMMM"""
+    msg2="""                                 Propagation of Uncertainty - Framework for HPC UQ implementations"""
     print("="*132)
     print(yellow(msg1))
     print("="*132)

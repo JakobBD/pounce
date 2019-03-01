@@ -1,7 +1,7 @@
 # global imports
 import sys,os
 if sys.version_info[0] < 3:
-   print('\nPOUNCE only works with Python 3!\n')
+   print('\n_c_e only works with Python 3!\n')
    sys.exit()
 
 # local imports
@@ -19,34 +19,34 @@ python3 main.py -r
 python3 main.py -r parameter.yml
 python3 main.py --help>
 """
-nArgs=len(sys.argv)
+n_args=len(sys.argv)
 
-if nArgs < 2:
+if n_args < 2:
    raise Exception(usage)
 
-if nArgs == 2 and sys.argv[1] in ['-h','--help']:
+if n_args == 2 and sys.argv[1] in ['-h','--help']:
    config.PrintDefaultYMLFile()
 
-PrintHeader()
+print_header()
 
-lastArgIsPrmFile = sys.argv[-1].endswith(('yml','yaml'))
-restartMode = sys.argv[1] in ['-r','--restart']
+is_prm_file = sys.argv[-1].endswith(('yml','yaml'))
+restart_mode = sys.argv[1] in ['-r','--restart']
 
-if nArgs == 2 and lastArgIsPrmFile:
-   PrintMajorSection("Start parameter readin and configuration")
-   simulation = config.Config(sys.argv[-1])
-elif restartMode and nArgs == 2:
-   PrintMajorSection("Restart simulation")
-   simulation = config.Restart()
-elif restartMode and nArgs == 3 and lastArgIsPrmFile:
-   PrintMajorSection("Restart simulation")
-   simulation = config.Restart(prmfile=sys.argv[-1])
+if n_args == 2 and is_prm_file:
+   print_major_section("Start parameter readin and configuration")
+   simulation = config.config(sys.argv[-1])
+elif restart_mode and n_args == 2:
+   print_major_section("Restart simulation")
+   simulation = config.restart()
+elif restart_mode and n_args == 3 and is_prm_file:
+   print_major_section("Restart simulation")
+   simulation = config.restart(prmfile=sys.argv[-1])
 else:
    raise Exception(usage)
 
 
 # run simulation
-simulation.Run()
+simulation.run()
 
 
 

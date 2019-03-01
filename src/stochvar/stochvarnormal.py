@@ -2,18 +2,18 @@ import numpy as np
 import chaospy as cp
 from .stochvar import StochVar
 
-@StochVar.RegisterSubclass('normal')
+@StochVar.register_subclass('normal')
 class StochVarNormal(StochVar):
-   subclassDefaults={
+   subclass_defaults={
       'mean' : 'NODEFAULT',
-      'standardDeviation' : 'NODEFAULT',
-      'iOccurrence': {},
-      'iPos': {}
+      'standard_deviation' : 'NODEFAULT',
+      'i_occurrence': {},
+      'i_pos': {}
       }
 
-   def DrawSamples(self,nSamples):
-      return np.random.normal(self.mean,self.standardDeviation,nSamples) if nSamples >0 else []
+   def draw_samples(self,n_samples):
+      return np.random.normal(self.mean,self.standard_deviation,n_samples) if n_samples >0 else []
 
    @property
    def distribution(self):
-      return cp.Normal(self.mean,self.standardDeviation)
+      return cp.Normal(self.mean,self.standard_deviation)

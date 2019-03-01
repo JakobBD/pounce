@@ -1,30 +1,30 @@
 general:
-  outputLevel: debug #options: none, standard, debug
+  output_level: debug #options: none, standard, debug
 
-uqMethod:
+uq_method:
   _type: sc
-  sparseGrid: True
+  sparse_grid: True
 
 levels:
-   - polyDeg : 5
-     nCoresPerSample: 24
-     solverPrms:
+   - poly_deg : 5
+     cores_per_sample: 24
+     solver_prms:
         N: 2
         MeshFile: mesh_1.h5
 
-stochVars:
+stoch_vars:
 - _type: uniform
   bounds: [1.,2.]
   name: RefState
-  iOccurrence: 1
-  iPos: 1
+  i_occurrence: 1
+  i_pos: 1
 
 - _type: normal
   mean: 1.
-  standardDeviation: 0.1
+  standard_deviation: 0.1
   name: b
-  iOccurrence: 1
-  iPos: 0
+  i_occurrence: 1
+  i_pos: 0
 
 machine:
   _type: local
@@ -32,10 +32,10 @@ machine:
 
 solver:
   _type: flexi
-  projectName: cavity
+  project_name: cavity
   prmfiles: 
-    mainSolver: 'parameter_flexi.ini'
-    iterationPostproc: 'parameter_estimatesigma.ini'
-  exePaths: 
-    mainSolver: ./flexibatch
-    iterationPostproc: ./mlmc_estimatesigma
+    main_solver: 'parameter_flexi.ini'
+    iteration_postproc: 'parameter_estimatesigma.ini'
+  exe_paths: 
+    main_solver: ./flexibatch
+    iteration_postproc: ./mlmc_estimatesigma

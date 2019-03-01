@@ -3,13 +3,13 @@ from helpers.baseclass import BaseClass
 class Machine(BaseClass):
 
    subclasses = {}
-   stochVarDefaults={}
-   levelDefaults={}
+   stoch_var_defaults={}
+   level_defaults={}
 
-   def AllocateResourcesPostproc(self,batches):
+   def allocate_resources_postproc(self,batches):
       pass
 
-   def AllocateResourcesSimuPostproc(self,batch):
+   def allocate_resources_simu_postproc(self,batch):
       pass
 
 from . import *

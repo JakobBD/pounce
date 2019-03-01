@@ -2,16 +2,16 @@ import numpy as np
 import chaospy as cp
 from .stochvar import StochVar
 
-@StochVar.RegisterSubclass('uniform')
+@StochVar.register_subclass('uniform')
 class StochVarUniform(StochVar):
-   subclassDefaults={
+   subclass_defaults={
       'bounds' : 'NODEFAULT',
-      'iOccurrence': {},
-      'iPos': {}
+      'i_occurrence': {},
+      'i_pos': {}
       }
 
-   def DrawSamples(self,nSamples):
-      return np.random.uniform(self.bounds[0],self.bounds[1],nSamples) if nSamples >0 else []
+   def draw_samples(self,n_samples):
+      return np.random.uniform(self.bounds[0],self.bounds[1],n_samples) if n_samples >0 else []
 
    @property
    def distribution(self):

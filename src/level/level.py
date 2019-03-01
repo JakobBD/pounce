@@ -2,12 +2,12 @@ from helpers.baseclass import BaseClass
 
 class Level(BaseClass):
    subclasses = {}
-   classDefaults={
-      'nCoresPerSample' : 'NODEFAULT'
+   class_defaults={
+      'cores_per_sample' : 'NODEFAULT'
       }
 
-   def __init__(self,inputPrmDict,*args):
+   def __init__(self,input_prm_dict,*args):
       for arg in args:
-         self.classDefaults.update(arg)
-      super().__init__(inputPrmDict)
+         self.class_defaults.update(arg)
+      super().__init__(input_prm_dict)
 

@@ -5,17 +5,17 @@ from helpers.printtools import *
 
 class Solver(BaseClass):
    subclasses = {}
-   classDefaults = {
-      "projectName":"NODEFAULT",
-      "exePaths": {"mainSolver": "","iterationPostproc": "", "simulationPostproc": ""}
+   class_defaults = {
+      "project_name":"NODEFAULT",
+      "exe_paths": {"main_solver": "","iteration_postproc": "", "simulation_postproc": ""}
       }
 
-   def CheckAllFinished(self,batches):
-      finished = [self.CheckFinished(batch) for batch in batches]
+   def check_all_finished(self,batches):
+      finished = [self.check_finished(batch) for batch in batches]
       if all(finished): 
-            Print("All jobs finished.")
+            p_print("All jobs finished.")
       else:
-         tmp=[batch.name for batch,isFinished in zip(batches,finished) if not isFinished]
+         tmp=[batch.name for batch,is_finished in zip(batches,finished) if not is_finished]
          raise Exception("not all jobs finished. Problems with batch(es) "+", ".join(tmp)+".")
 
 from . import *

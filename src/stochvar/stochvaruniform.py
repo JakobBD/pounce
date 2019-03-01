@@ -16,3 +16,7 @@ class StochVarUniform(StochVar):
     @property
     def distribution(self):
         return cp.Uniform(self.bounds[0],self.bounds[1])
+
+    @property
+    def parameters(self):
+        return self.bounds

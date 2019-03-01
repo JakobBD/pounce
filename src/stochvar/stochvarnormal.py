@@ -17,3 +17,7 @@ class StochVarNormal(StochVar):
     @property
     def distribution(self):
         return cp.Normal(self.mean,self.standard_deviation)
+
+    @property
+    def parameters(self):
+        return [self.mean self.standard_deviation]

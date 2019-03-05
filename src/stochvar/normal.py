@@ -11,13 +11,10 @@ class Normal(StochVar):
         'i_pos': {}
         }
 
+    def __init__(self,input_prm_dict,*args):
+        super().__init__(input_prm_dict,*args)
+        self.distribution=cp.Normal(self.mean,self.standard_deviation)
+        self.parameters = [self.mean, self.standard_deviation]
+
     def draw_samples(self,n_samples):
         return np.random.normal(self.mean,self.standard_deviation,n_samples) if n_samples >0 else []
-
-    @property
-    def distribution(self):
-        return cp.Normal(self.mean,self.standard_deviation)
-
-    @property
-    def parameters(self):
-        return [self.mean, self.standard_deviation]

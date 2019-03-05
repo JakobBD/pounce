@@ -13,6 +13,7 @@ from stochvar.stochvar import StochVar
 from level.level import Level
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
+from helpers.tools import *
 
 
 def config(prmfile):
@@ -70,7 +71,7 @@ def config_list(string,prms,class_init,defaults):
         raise Exception("Parameter'"+string+"' needs to be defined as a list!")
     p_print("Setup "+yellow(string)+" - Number of " + string + " is " + yellow(str(len(prms[string]))) + ".")
     indent_in()
-    classes = [ class_init(sub_dict,defaults) for sub_dict in prms[string] ]
+    classes = ListAndArrays([ class_init(sub_dict,defaults) for sub_dict in prms[string] ])
     indent_out()
     return classes
 
@@ -93,10 +94,10 @@ class GeneralConfig(BaseClass):
         
         Three different logging levels:
 
-             - none      : print no logging messages
+             - none     : print no logging messages
              - standard : print information messages (i.e. print all messages invoked with "log.info(message)")
-             - debug     : print debug + information messages (i.e. print all messages invoked with "log.info(message)"
-                              or "log.debug(message)")
+             - debug    : print debug + information messages (i.e. print all messages invoked with "log.info(message)"
+                          or "log.debug(message)")
         """
 
         if self.output_level == "none" :         # no logging

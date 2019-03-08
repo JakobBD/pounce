@@ -18,7 +18,7 @@ from helpers.tools import *
 
 def config(prmfile):
     """
-    Reads all user input and sets up (sub-)classes according to this 
+    Reads all user input and sets up (sub-)classes according to this
     input
     """
     # read user input to dict
@@ -50,7 +50,7 @@ def config(prmfile):
     simulation.solver.qois = config_list(
         "qois",prms,QoI.create,simulation.uq_method.qoi_defaults)
 
-    # in the multilevel case, some firther setup is needed for the 
+    # in the multilevel case, some firther setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
     simulation.uq_method.setup_batches(simulation.solver.qois)
 
@@ -60,13 +60,13 @@ def restart(prmfile=None):
 
     f = open('pickle', 'rb')
     simulation = pickle.load(f)
-    f.close()             
+    f.close()
 
     if prmfile:
         raise Exception("Modifying parameters at restart is not yet "
                         "implemented")
 
-    n_finished_iter = (len(simulation.iterations) 
+    n_finished_iter = (len(simulation.iterations)
                        - (1 if simulation.do_continue else 0))
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
@@ -76,7 +76,7 @@ def restart(prmfile=None):
 
 def config_list(string,prms,class_init,defaults=None):
     """
-    Checks for correct input format for list type input and 
+    Checks for correct input format for list type input and
     initializes (sub-) class for given input
     """
     if string not in prms:
@@ -84,7 +84,7 @@ def config_list(string,prms,class_init,defaults=None):
                         +string+"' is not set in parameter file!")
     if not isinstance(prms[string],list):
         raise Exception("Parameter'"+string+"' needs to be defined as a list!")
-    p_print("Setup "+yellow(string)+" - Number of " + string + " is " 
+    p_print("Setup "+yellow(string)+" - Number of " + string + " is "
             + yellow(str(len(prms[string]))) + ".")
     indent_in()
     classes = ListAndArrays(
@@ -96,12 +96,12 @@ def config_list(string,prms,class_init,defaults=None):
 class GeneralConfig(BaseClass):
     """
     This class consists mainly of attributes.
-    Its purpose is to ease general parameter readin and default value 
+    Its purpose is to ease general parameter readin and default value
     handling.
     """
     class_defaults={"archive_level" : "standard",
-                    # to keep parameter files compatible 
-                    "output_level" : "dummy"} 
+                    # to keep parameter files compatible
+                    "output_level" : "dummy"}
 
     def __init__(self,input_prm_dict):
         super().__init__(input_prm_dict)
@@ -114,7 +114,7 @@ class GeneralConfig(BaseClass):
 def print_default_yml_file():
     """
     Asks for user input to choose one of the available subclasses,
-    builds up dictionary of defaults for all variables for this sub 
+    builds up dictionary of defaults for all variables for this sub
     class combinatiion, then prints default YML file using yaml.dump.
     """
 
@@ -129,7 +129,7 @@ def print_default_yml_file():
     # Get defaults for parent classes uq_method, machine and solver.
     for parent_class_name,parent_class in parent_classes.items():
 
-        # Inquire user input to choose subclass for which defaults are 
+        # Inquire user input to choose subclass for which defaults are
         # to be printed
         subclass_name, class_defaults, subclass \
             = inquire_subclass(parent_class_name,parent_class)
@@ -153,7 +153,7 @@ def print_default_yml_file():
         subclasses["uq_method"].level_defaults,
         subclasses["machine"].level_defaults)
 
-    # we update the large defaults dict with a list containing our 
+    # we update the large defaults dict with a list containing our
     # level dict.
     # This outputs the defaults for n_levels = 1 in the correct format
     all_defaults.update({"levels" : [level_defaults_tmp]})
@@ -171,13 +171,20 @@ def print_default_yml_file():
     # add general config parameters
     all_defaults.update({"general" : GeneralConfig.class_defaults})
 
-    print("\n_default YML File:\n"+"-"*132+"\n")
+    msg="Enter file name for output (press enter for stdout):\n"
+    filename_out=input(msg)
+    if filename_out:
+        sys.stdout = open(filename_out, 'w')
+    else:
+        print("\n_default YML File:\n"+"-"*132+"\n")
     print(yaml.dump(all_defaults, default_flow_style=False))
     sys.exit()
 
 
 def get_list_defaults(Class,further_defaults):
-    # output a list of all implemented types
+    """ output a list of all implemented types of list-input items
+    (e.g. stoch_var, qoi)
+    """
     defaults_out=[]
     # loop over all implemented types
     for name,subclass in Class.subclasses.items():
@@ -193,6 +200,7 @@ def get_defaults(subclass_name,subclass):
         subclass.class_defaults,
         subclass.subclass_defaults)
 
+
 def inquire_subclass(parent_class_name,parent_class):
     """
     Asks for user input to choose one of the available subclasses
@@ -204,8 +212,8 @@ def inquire_subclass(parent_class_name,parent_class):
         subclass_name=input(msg[:-2]+"\n")
         # check if user input is a valid option
         if subclass_name in parent_class.subclasses:
-            return(subclass_name, 
-                   parent_class.class_defaults, 
+            return(subclass_name,
+                   parent_class.class_defaults,
                    parent_class.subclasses[subclass_name])
         else:
             print("Wrong input. Repeat.")

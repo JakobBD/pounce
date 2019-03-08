@@ -22,20 +22,19 @@ class Sc(UqMethod):
         self.has_simulation_postproc=False
         self.n_max_iter=1
 
-    def setup_batches(self):
+    def setup_batches(self,qois):
         for i_level,level in enumerate(self.levels):
             level.name=str(i_level+1)
             level.samples=Empty()
-            level.postproc=Empty()
-            level.postproc.participants=[level]
-            level.postproc.name="postproc_"+level.name
-            try:
-                level.postproc.avg_walltime=level.avg_walltime_postproc
-            except:
-                AttributeError
             level.samples.n_previous = 0
+            level.qois=[copy.deepcopy(qoi) for qoi in qois]
+            for qoi in level.qois:
+                qoi.participants=[level]
+                qoi.name="postproc_"+level.name
+                qoi.avg_walltime=level.avg_walltime_postproc
         self.solver_batches=self.levels
-        self.postproc_batches=[l.postproc for l in self.levels]
+        self.postproc_batches = \
+            [qoi for level in self.levels for qoi in level.qois]
 
     def get_nodes_and_weights(self):
         distributions=[var.distribution for var in self.stoch_vars]

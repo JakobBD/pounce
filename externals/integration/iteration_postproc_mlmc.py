@@ -35,7 +35,8 @@ if n_previous > 0:
         UCoarseSum   += h5f.attrs["UCoarseSum"]
         UCoarseSqSum += h5f.attrs["UCoarseSqSum"]
         DUSqSum      += h5f.attrs["DUSqSum"]
-        work_mean     = (n_samples*work_mean + n_previous*h5f.attrs['WorkMean']) / (n_samples+n_previous)
+        work_mean     = (n_samples*work_mean+n_previous*h5f.attrs['WorkMean'])\
+                        / (n_samples+n_previous)
         n_samples    += n_previous
 
 # Get SigmaSq

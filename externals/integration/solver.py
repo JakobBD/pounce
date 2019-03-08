@@ -4,7 +4,7 @@ import h5py
 import time
 
 # function to integrate: 
-# f = prod over i of sin((x-xi_i)/i), i = 1, ..., nVar
+# f = prod over i of sin(x/i-xi_i), i = 1, ..., nVar
 def f(x,xi_vec):
     #add some computation time
     for k in range(1000):

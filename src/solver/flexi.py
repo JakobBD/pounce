@@ -14,7 +14,7 @@ class Flexi(Solver):
 
     def prepare_simulations(self,batches,stoch_vars):
         """ Prepares the simulation by generating the run_command
-        and writing the HDF5 file containing all samples of the current 
+        and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
         """
         for batch in batches:
@@ -29,7 +29,7 @@ class Flexi(Solver):
 
 
     def write_hdf5(self,batch,stoch_vars):
-        """ Writes the HDF5 file containing all necessary data for 
+        """ Writes the HDF5 file containing all necessary data for
         flexi run to run.
         """
         prms= {'Samples'          : batch.samples.nodes,
@@ -75,7 +75,7 @@ class Flexi(Solver):
             elif isinstance(prm[0],list):
                 h5f.create_dataset(name, data=np.array(prm))
             elif isinstance(prm[0],str):
-                h5f.attrs.create(name, [e.ljust(255) for e in prm], 
+                h5f.attrs.create(name, [e.ljust(255) for e in prm],
                                  (len(prm),), dtype='S255' )
             else:
                 h5f.attrs.create(name, prm, (len(prm),))
@@ -86,7 +86,7 @@ class Flexi(Solver):
 
 
     def prepare_postproc(self,qois):
-        """ Prepares the postprocessing by generating the 
+        """ Prepares the postprocessing by generating the
         run_postproc_command.
         """
         for qoi in qois:
@@ -145,5 +145,28 @@ class FieldSolution(QoI):
 
 @QoI.register_subclass('flexi','recordpoints')
 class RecordPoints(QoI):
-    pass
+
+    subclass_defaults={"prmfiles": {"iteration_postproc": "",
+                                    "simulation_postproc":""},
+                       "time_span": [0.,1.E10]
+            }
+
+    def prepare(self):
+        self.run_command = self.exe_paths["iteration_postproc"] \
+                           + " " + self.prmfiles["iteration_postproc"]
+        # this is a rather ugly current flexi implementation
+        self.project_name = self.participants[0].project_name
+        self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
+        for ip,p in enumerate(self.participants):
+            fn_add=[]
+            filenames=sorted(glob.glob(p.project_name+"_RecordPoints_*.h5"))
+            for fn in filenames:
+                time=float(fn.split("_")[-1][:-3])
+                if time_span[0] <= time <= time_span[1]:
+                    fn_add.append(" "+fn)
+            if ip==0:
+                self.run_command=self.run_command+" -n "+str(len(fn_add))
+            self.run_command=self.run_command+"".join(fn_add)
+
+
 

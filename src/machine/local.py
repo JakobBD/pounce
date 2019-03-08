@@ -31,7 +31,8 @@ class Local(Machine):
         for batch in batches:
             batch.logfile_name="log_"+batch.name+".dat"
             if self.mpi and not postproc_type:
-                args="mpirun -np {} {}".format(batch.cores_per_sample, batch.run_command)
+                args="mpirun -np {} {}".format(
+                    batch.cores_per_sample, batch.run_command)
             else:
                 args=batch.run_command
             p_print("run command "+yellow(args))

@@ -4,10 +4,11 @@ import logging
 class Time():
     """
     A Time object stores time data both in [h, m, s] and in sec format.
-    It can be initialized with instance=helpers.Time(input), where input can either be a scalar
-    or a tuple or list of length 3.
-    Its value can be retrieved with time_in_sec = instance.sec() and time_as_list = instance.list().
-    Mathematical operations can be carried out with an instance of the class and either another
+    It can be initialized with instance=helpers.Time(input), where input
+    can either be a scalar or a tuple or list of length 3.
+    Its value can be retrieved with time_in_sec = instance.sec() and 
+    time_as_list = instance.list(). Mathematical operations can be 
+    carried out with an instance of the class and either another
     instance of the class, a scalar or a list / tuple.
     """
 
@@ -18,7 +19,8 @@ class Time():
         if len(args) == 1:
             self.set(args[0])
         elif args:
-            raise TypeError("__init__() takes at most one argument. {} given".format(len(args)))
+            raise TypeError("__init__() takes at most one argument. "
+                            +"{} given".format(len(args)))
 
     @property
     def sec(self):
@@ -34,7 +36,8 @@ class Time():
 
     def set(self,*args):
         if len(args) != 1:
-            raise TypeError("set() takes exactly one argument. {} given".format(len(args)))
+            raise TypeError("set() takes exactly one argument. "
+                            +"{} given".format(len(args)))
         if self.islist(args[0]):
             self.list_ = list(args[0])
             self.sec_ = 3600*args[0][0] + 60*args[0][1] + args[0][2]
@@ -42,14 +45,16 @@ class Time():
             self.sec_ = args[0]
             self.list_[0] = int(int(args[0])/3600)
             self.list_[1] = int(int(args[0])/60 - 60*self.list_[0])
-            self.list_[2] = int(args[0] - 3600*self.list_[0]  - 60*self.list_[1])
+            self.list_[2] = int(
+                args[0] - 3600*self.list_[0]  - 60*self.list_[1])
 
     def islist(self, obj):
         if isinstance(obj,(list,tuple)):
             if len(obj) == 3:
                 return True
             else:
-                raise TypeError("List or tuple has to have length 3, but is {}.".format(len(obj)))
+                raise TypeError("List or tuple has to have length 3, "
+                                +"but is {}.".format(len(obj)))
         else:
             return False
 

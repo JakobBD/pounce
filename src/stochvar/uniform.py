@@ -16,4 +16,5 @@ class Uniform(StochVar):
         self.parameters = self.bounds
 
     def draw_samples(self,n_samples):
-        return np.random.uniform(self.bounds[0],self.bounds[1],n_samples) if n_samples >0 else []
+        return np.random.uniform(self.bounds[0],self.bounds[1],n_samples) \
+               if n_samples >0 else []

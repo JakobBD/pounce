@@ -14,8 +14,8 @@ class Flexi(Solver):
 
     def prepare_simulations(self,batches,stoch_vars):
         """ Prepares the simulation by generating the run_command
-        and writing the HDF5 file containing all samples of the current iteration
-        and the current samples.
+        and writing the HDF5 file containing all samples of the current 
+        iteration and the current samples.
         """
         for batch in batches:
             p_print("Write HDF5 parameter file for simulation "+batch.name)
@@ -24,12 +24,13 @@ class Flexi(Solver):
 
             self.write_hdf5(batch,stoch_vars)
 
-            batch.run_command = self.exe_path + ' ' + batch.prm_file_name + ' ' + self.prmfile
+            batch.run_command = self.exe_path + ' ' \
+                                + batch.prm_file_name + ' ' + self.prmfile
 
 
     def write_hdf5(self,batch,stoch_vars):
-        """ Writes the HDF5 file containing all necessary data for flexi run
-        to run.
+        """ Writes the HDF5 file containing all necessary data for 
+        flexi run to run.
         """
         prms= {'Samples'          : batch.samples.nodes,
                'Weights'          : batch.samples.weights,
@@ -48,12 +49,15 @@ class Flexi(Solver):
         for name,prm in prms.items():
             self.h5write(h5f,name,prm)
 
-        batch.solver_prms.update({"ProjectName":self.project_name+"_"+batch.name})
+        batch.solver_prms.update(
+            {"ProjectName":self.project_name+"_"+batch.name})
         dtypes=[("Int", int), ("Str", str), ("Real", float)]
 
         for suffix,type_in in dtypes:
-            names=[ key for key, value in batch.solver_prms.items() if isinstance(value,type_in)]
-            values=[ value for value in batch.solver_prms.values() if isinstance(value,type_in)]
+            names=[key for key, value in batch.solver_prms.items() \
+                   if isinstance(value,type_in)]
+            values=[value for value in batch.solver_prms.values() \
+                    if isinstance(value,type_in)]
             n_vars=len(names)
             self.h5write(h5f,'nLevelVars'   +suffix,n_vars)
             self.h5write(h5f,'LevelVarNames'+suffix,names)
@@ -71,7 +75,8 @@ class Flexi(Solver):
             elif isinstance(prm[0],list):
                 h5f.create_dataset(name, data=np.array(prm))
             elif isinstance(prm[0],str):
-                h5f.attrs.create(name, [e.ljust(255) for e in prm], (len(prm),), dtype='S255' )
+                h5f.attrs.create(name, [e.ljust(255) for e in prm], 
+                                 (len(prm),), dtype='S255' )
             else:
                 h5f.attrs.create(name, prm, (len(prm),))
         elif isinstance(prm,str):
@@ -81,7 +86,8 @@ class Flexi(Solver):
 
 
     def prepare_postproc(self,qois):
-        """ Prepares the postprocessing by generating the run_postproc_command.
+        """ Prepares the postprocessing by generating the 
+        run_postproc_command.
         """
         for qoi in qois:
             p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
@@ -92,7 +98,8 @@ class Flexi(Solver):
     def prepare_simu_postproc(self,qois):
         for i,qoi in enumerate(qois):
             qoi.args=[p.qois[i].output_filename for p in qoi.participants]
-            qoi.run_command=qoi.exe_paths["simulation_postproc"] + " " + " ".join(qoi.args)
+            qoi.run_command = qoi.exe_paths["simulation_postproc"] \
+                              + " " + " ".join(qoi.args)
 
     def get_postproc_quantity_from_file(self,qoi,quantity_name):
         """ Readin sigma_sq or avg_walltime for MLMC.
@@ -118,14 +125,16 @@ class Flexi(Solver):
 
 
 
-@QoI.register_subclass('flexi_fieldsolution')
+@QoI.register_subclass('flexi','fieldsolution')
 class FieldSolution(QoI):
 
-    subclass_defaults={"prmfiles": {"iteration_postproc": "", "simulation_postproc":""}
+    subclass_defaults={"prmfiles": {"iteration_postproc": "",
+                                    "simulation_postproc":""}
             }
 
     def prepare(self):
-        self.run_command = self.exe_paths["iteration_postproc"] + " " + self.prmfiles["iteration_postproc"]
+        self.run_command = self.exe_paths["iteration_postproc"] \
+                           + " " + self.prmfiles["iteration_postproc"]
         # this is a rather ugly current flexi implementation
         self.project_name = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_state.h5'
@@ -134,7 +143,7 @@ class FieldSolution(QoI):
             self.run_command=self.run_command+' '+filename
 
 
-@QoI.register_subclass('flexi_recordpoints')
+@QoI.register_subclass('flexi','recordpoints')
 class RecordPoints(QoI):
     pass
 

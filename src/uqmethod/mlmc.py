@@ -43,7 +43,8 @@ class Mlmc(UqMethod):
             level.sublevels= [ SubLevel(level,level,'f') ]
             self.all_sublevels.append(level.sublevels[-1])
             if i_level > 0:
-                level.sublevels.append(SubLevel(level,self.levels[i_level-1],'c'))
+                level.sublevels.append(
+                    SubLevel(level,self.levels[i_level-1],'c'))
                 self.all_sublevels.append(level.sublevels[-1])
             self.setup_qois(qois,level)
             for qoi in level.qois:
@@ -69,11 +70,13 @@ class Mlmc(UqMethod):
             raise Exception("Please specify exactly one QoI to optimize")
 
     def get_active_batches(self):
-        self.active_sublevels=[sub for sub in self.all_sublevels if sub.samples.n > 0]
-        self.active_levels=[l for l in self.levels if l.samples.n > 0]
+        self.active_sublevels = \
+            [sub for sub in self.all_sublevels if sub.samples.n > 0]
+        self.active_levels = [l for l in self.levels if l.samples.n > 0]
         # external naming
         self.solver_batches = self.active_sublevels
-        self.postproc_batches=[qoi for level in self.active_levels for qoi in level.qois]
+        self.postproc_batches = \
+            [qoi for level in self.active_levels for qoi in level.qois]
 
         self.do_continue = len(self.active_levels) > 0
 
@@ -85,23 +88,28 @@ class Mlmc(UqMethod):
             level.samples.nodes=np.transpose(level.samples.nodes)
             level.samples.weights=[]
         p_print("Number of current samples for this iteration:")
-        [p_print("  Level %2s: %6d samples"%(level.name,level.samples.n)) for level in self.levels]
+        for level in self.levels:
+            p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
 
     def get_new_n_current_samples(self,solver):
 
-        stdout_table=StdOutTable( "sigma_sq","work_mean" ,"mlopt" ,"samples__n_previous","samples__n")
-        stdout_table.descriptions("SigmaSq","mean work","ML_opt","finished Samples"  ,"new Samples")
+        stdout_table=StdOutTable("sigma_sq","work_mean" ,"mlopt" ,
+                                 "samples__n_previous","samples__n")
+        stdout_table.descriptions("SigmaSq","mean work","ML_opt",
+                                  "finished Samples"  ,"new Samples")
 
         # build sum over levels of sqrt(sigma^2/w)
         sum_sigma_w = 0.
         for level in self.levels:
             if level.samples.n > 0:
-                level.sigma_sq = solver.get_postproc_quantity_from_file(level.qoi_optimize,"SigmaSq")
+                level.sigma_sq = solver.get_postproc_quantity_from_file(
+                    level.qoi_optimize,"SigmaSq")
                 work_mean = solver.get_work_mean(level.qoi_optimize)
                 if level.samples.n_previous > 0:
-                    level.work_mean = (level.samples.n_previous*level.work_mean + level.samples.n*work_mean)/\
-                                          (level.samples.n+level.samples.n_previous)
+                    level.work_mean=((level.samples.n_previous*level.work_mean
+                                      + level.samples.n*work_mean)/
+                                    (level.samples.n+level.samples.n_previous))
                 else:
                     level.work_mean = work_mean
             if level.samples.n_previous+level.samples.n > 0:
@@ -109,9 +117,11 @@ class Mlmc(UqMethod):
 
         for level in self.levels:
             #TODO: add formula for given max_work
-            level.mlopt = sum_sigma_w * safe_sqrt(level.sigma_sq/level.work_mean) / (self.tolerance*self.tolerance/4.)
+            level.mlopt=(sum_sigma_w*safe_sqrt(level.sigma_sq/level.work_mean)
+                         /(self.tolerance*self.tolerance/4.))
             level.samples.n_previous += level.samples.n
-            level.samples.n = max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
+            level.samples.n = \
+                max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
             stdout_table.update(level)
 
         stdout_table.p_print("Level")

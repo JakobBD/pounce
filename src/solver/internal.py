@@ -11,19 +11,19 @@ class Internal(Solver):
 
     def prepare_simulations(self,batches,stoch_vars):
         """ Prepares the simulation by generating the run_command 
-        and writing the HDF5 file containing all samples of the current iteration
-        and the current level.
+        and writing the HDF5 file containing all samples of the current 
+        iteration and the current level.
         """
         for batch in batches:
             p_print("Write HDF5 parameter file for simulation "+batch.name)
             batch.project_name = self.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
             self.write_hdf5(batch,stoch_vars)
-            batch.run_command='python3 '+self.exe_path + ' '+batch.prm_file_name
+            batch.run_command='python3 '+self.exe_path+' '+batch.prm_file_name
 
     def write_hdf5(self,batch,stoch_vars):
-        """ Writes the HDF5 file containing all necessary data for the internal 
-        to run.
+        """ Writes the HDF5 file containing all necessary data for the 
+        internal to run.
         """
         h5f = h5py.File(batch.prm_file_name, 'w')
         h5f.create_dataset('Samples', data=batch.samples.nodes)
@@ -35,7 +35,8 @@ class Internal(Solver):
         h5f.close()
 
     def prepare_postproc(self,qois):
-        """ Prepares the postprocessing by generating the run_postproc_command.
+        """ Prepares the postprocessing by generating the 
+        run_postproc_command.
         """
         for qoi in qois: 
             p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
@@ -46,7 +47,8 @@ class Internal(Solver):
     def prepare_simu_postproc(self,qois):
         for i,qoi in enumerate(qois):
             qoi.args=[p.qois[i].output_filename for p in qoi.participants]
-            qoi.run_command="python3 " + qoi.exe_paths["simulation_postproc"] + " " + " ".join(qoi.args)
+            qoi.run_command="python3 " + qoi.exe_paths["simulation_postproc"] \
+                            + " " + " ".join(qoi.args)
 
     def get_work_mean(self,qoi):
         return self.get_postproc_quantity_from_file(qoi,"WorkMean")
@@ -63,7 +65,7 @@ class Internal(Solver):
         return True
 
 
-@QoI.register_subclass('internal_integral')
+@QoI.register_subclass('internal','integral')
 class Integral(QoI):
 
     def prepare(self):

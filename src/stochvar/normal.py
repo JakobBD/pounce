@@ -17,4 +17,5 @@ class Normal(StochVar):
         self.parameters = [self.mean, self.standard_deviation]
 
     def draw_samples(self,n_samples):
-        return np.random.normal(self.mean,self.standard_deviation,n_samples) if n_samples >0 else []
+        return np.random.normal(self.mean,self.standard_deviation,n_samples) \
+               if n_samples >0 else []

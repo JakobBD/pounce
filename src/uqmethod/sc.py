@@ -40,15 +40,18 @@ class Sc(UqMethod):
     def get_nodes_and_weights(self):
         distributions=[var.distribution for var in self.stoch_vars]
         for level in self.levels:
-            nodes,level.samples.weights = cp.generate_quadrature(level.poly_deg,
-                                                                                  cp.J(*distributions),
-                                                                                  rule='G',
-                                                                                  sparse=self.sparse_grid)
+            nodes,level.samples.weights = \
+                cp.generate_quadrature(level.poly_deg,
+                                       cp.J(*distributions),
+                                       rule='G',
+                                       sparse=self.sparse_grid)
             level.samples.nodes=np.transpose(nodes)
             level.samples.n = len(level.samples.nodes)
         p_print("Number of current samples for this iteration:")
-        [p_print("  Level %2s: %6d samples"%(level.name,level.samples.n)) for level in self.levels]
+        for level in self.levels:
+            p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
     def get_new_n_samples(self,solver):
-        raise Exception("the GetNewNSamples routine should not be called for stochastic collocation")
+        raise Exception("the GetNewNSamples routine should not be called for"
+                        " stochastic collocation")
 

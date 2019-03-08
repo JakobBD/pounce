@@ -3,18 +3,19 @@ import textwrap
 import numpy as np
 
 class Bcolors :
-    """color and font style definitions for changing output appearance"""
+    """color and font style definitions for changing output appearance
+    """
     # Reset (user after applying a color to return to normal coloring)
-    ENDC    ='\033[0m'     
+    ENDC   ='\033[0m'     
 
     # Regular Colors
     BLACK  ='\033[0;30m' 
-    RED     ='\033[0;31m' 
+    RED    ='\033[0;31m' 
     GREEN  ='\033[0;32m' 
     YELLOW ='\033[0;33m' 
-    BLUE    ='\033[0;34m' 
+    BLUE   ='\033[0;34m' 
     PURPLE ='\033[0;35m' 
-    CYAN    ='\033[0;36m' 
+    CYAN   ='\033[0;36m' 
     WHITE  ='\033[0;37m' 
 
     # Text Style
@@ -22,17 +23,12 @@ class Bcolors :
     UNDERLINE = '\033[4m'
     
 
-def red    (text): return Bcolors.RED    +text+Bcolors.ENDC
+def red   (text): return Bcolors.RED   +text+Bcolors.ENDC
 def green (text): return Bcolors.GREEN +text+Bcolors.ENDC
 def blue  (text): return Bcolors.BLUE  +text+Bcolors.ENDC
 def yellow(text): return Bcolors.YELLOW+text+Bcolors.ENDC
 def cyan  (text): return Bcolors.CYAN  +text+Bcolors.ENDC
 
-colors={"red"      :red,
-          "green"    :green,
-          "blue"     :blue,
-          "yellow"  :yellow,
-          "cyan"     :cyan}
 
 indent=" "
 
@@ -45,7 +41,10 @@ def indent_out():
     indent=indent[:-2]
 
 def p_print(msg):
-    [print(line) for line in textwrap.wrap(msg, width=132, initial_indent=indent, subsequent_indent=indent+"    ")]
+    lines=textwrap.wrap(msg, width=132, initial_indent=indent, 
+                        subsequent_indent=indent+"    ")
+    for line in lines:
+        print(line) 
 
 def print_step(msg):
     print("-"*132)
@@ -70,18 +69,6 @@ def print_header():
     print("="*132)
     print(yellow(msg2))
     print("="*132)
-
-
-
-def log(msg):
-    log = logging.get_logger('logger')
-    log.info(msg)
-
-def debug(msg):
-    log = logging.get_logger('logger')
-    log.debug(msg)
-
-
 
 
 
@@ -115,11 +102,13 @@ class StdOutTable():
     def p_print(self,batch_str):
         description_length=max([len(s.description) for s in self.strs])
         n_entries=len(self.names)
-        p_print(" "*description_length+" ║ "+"".join(["%11s ║ "%(batch_str+" "+n) for n in self.names]))
+        p_print(" "*description_length+" ║ "
+                +"".join(["%11s ║ "%(batch_str+" "+n) for n in self.names]))
         sep_str="═"*11+"═╬═"
         p_print("═"*description_length+"═╬═"+sep_str*n_entries)
         for s in self.strs:
-            s.str_out=" "*(description_length-len(s.description))+s.description+" ║ "
+            s.str_out=" "*(description_length-len(s.description))\
+                      +s.description+" ║ "
             for value in s.values: 
                 if isinstance(value,str): 
                     s.str_out=s.str_out+"%11s ║ "%(value)

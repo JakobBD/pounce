@@ -9,7 +9,7 @@ levels:
 - poly_deg : 5
   cores_per_sample: 24
   solver_prms:
-     nPoints: 10
+     nPoints: 64
 
 stoch_vars:
 - _type: uniform

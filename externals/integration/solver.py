@@ -3,24 +3,25 @@ import numpy as np
 import h5py
 import time
 
-#integrates sin(x-xi) from 0 to pi/i_var using the midpoint rule
-def int1_d(n_points,i_var,xi):
-    # half_space=0.5*np.pi/(i_var*n_points)
-    half_space=0.
-    x=np.linspace(xi/i_var+half_space,(xi+np.pi)/i_var-half_space,n_points)
+# function to integrate: 
+# f = prod over i of sin((x-xi_i)/i), i = 1, ..., nVar
+def f(x,xi_vec):
     #add some computation time
-    for i in range(n_points):
-        for j in range(n_points): 
-            for k in range(100):
-                s="hello"
-    return sum(np.sin(xx) for xx in x)*(np.pi/i_var)/n_points
+    for k in range(1000):
+        s="hello"
+    return np.prod([np.sin(x/(i+1)-xi) for i,xi in enumerate(xi_vec)])
 
-# multiplies 1_d integrals in all dimensions
-def intn_d(n_points,xi_vec):
-    return np.product(
-        [int1_d(n_points,i_var+1,xi) for i_var,xi in enumerate(xi_vec)])
+# integrates f over x from 0 to pi with 1st or 2nd order accuracy
+def integ(n_points,xi_vec):
+    dx=np.pi/n_points
+    half_space=0.5*dx # second order
+    # half_space=0.     # first order
+    x_vec=np.linspace(0.,np.pi-dx,n_points)+half_space
+    return np.sum([f(x,xi_vec)*dx for x in x_vec])
 
-#read input
+# ----------------------------------------------------------------------
+
+# read input
 with h5py.File(sys.argv[1], 'r') as h5f: 
     projectname = h5f.attrs['ProjectName']
     n_points      = h5f.attrs['nPoints']
@@ -28,14 +29,14 @@ with h5py.File(sys.argv[1], 'r') as h5f:
     samples      = np.array(h5f['Samples'])
     weights      = np.array(h5f['Weights'])
 
-# ACTUAL SIMULATION STARTS HERE
+# ACTUAL SIMULATION
 start_time = time.clock()
 # performs integration for all samples
-all_integs = list(map(lambda xi : intn_d(n_points,xi) , samples ))
+all_integs = list(map(lambda xi : integ(n_points,xi) , samples ))
 end_time = time.clock()
 work_mean =  (end_time - start_time)/len(samples)
 
-#write output
+# write output
 with h5py.File(projectname+'_State.h5', 'w') as h5f:
     h5f.create_dataset('Integral', data=all_integs)
     h5f.create_dataset('Weights', data=weights)

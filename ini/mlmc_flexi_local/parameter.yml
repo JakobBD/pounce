@@ -36,13 +36,19 @@ machine:
   _type: local
   mpi: false
 
+qois:
+  - _type: fieldsolution
+    exe_paths:
+      iteration_postproc: ./mlmc_estimatesigma
+      simulation_postproc: ./mlmc_combinelevels
+    optimize: True
+    prmfiles:
+      iteration_postproc: 'parameter_estimatesigma.ini'
+      simulation_postproc: ''
+
 solver:
   _type: flexi
   project_name: cavity
-  prmfiles: 
-    main_solver: 'parameter_flexi.ini'
-    iteration_postproc: 'parameter_estimatesigma.ini'
-  exe_paths: 
-    main_solver: ./flexibatch
-    iteration_postproc: ./mlmc_estimatesigma
-    simulation_postproc: ./mlmc_combinelevels
+  prmfile: 'parameter_flexi.ini'
+  exe_path: ./flexibatch
+

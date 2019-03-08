@@ -1,5 +1,6 @@
 import numpy as np
 import inspect
+import copy
 
 from helpers.printtools import *
 
@@ -34,6 +35,13 @@ class ListAndArrays():
 
     def __len__(self):
         return len(self._list)
+
+def deepmerge(*args): 
+    out=args[0]
+    for arg in args[1:]: 
+        out.update(copy.deepcopy(arg))
+    return out
+
 
 
 

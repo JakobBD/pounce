@@ -9,33 +9,28 @@ levels:
    - n_warmup_samples : 100
      cores_per_sample: 24
      solver_prms:
-        n_points: 8
+        nPoints: 8
    - n_warmup_samples : 40
      cores_per_sample: 24
      solver_prms:
-        n_points: 16
+        nPoints: 16
    - n_warmup_samples : 20
      cores_per_sample: 24
      solver_prms:
-        n_points: 32
+        nPoints: 32
    - n_warmup_samples : 10
      cores_per_sample: 24
      solver_prms:
-        n_points: 64
+        nPoints: 64
 
 stoch_vars:
 - _type: uniform
   bounds: [1.,2.]
   name: RefState
-  i_occurrence: 1
-  i_pos: 1
-
 - _type: normal
   mean: 1.
   standard_deviation: 0.1
   name: b
-  i_occurrence: 1
-  i_pos: 0
 
 machine:
   _type: local
@@ -44,6 +39,11 @@ machine:
 solver:
   _type: internal
   project_name: integ
-  exe_paths: 
-    main_solver: ../../externals/integration/solver.py
-    iteration_postproc: ../../externals/integration/postproc_mlmc.py
+  exe_path: ../../externals/integration/solver.py
+
+qois:
+- _type: integral
+  exe_paths:
+    iteration_postproc: ../../externals/integration/iteration_postproc_mlmc.py
+    simulation_postproc: ../../externals/integration/simulation_postproc_mlmc.py
+  optimize: True

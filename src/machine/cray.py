@@ -23,7 +23,6 @@ class Cray(Machine):
         }
 
     level_defaults={
-        "avg_walltime" : "NODEFAULT",
         "avg_walltime_postproc" : 120.
         }
 

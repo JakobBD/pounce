@@ -8,7 +8,7 @@ import pickle
 from simulation import Simulation
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
-from solver.solver import Solver
+from solver.solver import Solver,QoI
 from stochvar.stochvar import StochVar
 from level.level import Level
 from helpers.baseclass import BaseClass
@@ -40,8 +40,12 @@ def config(prmfile):
     [defaults.update(x.level_defaults) for x in [simulation.uq_method, simulation.machine] ]
     simulation.uq_method.levels = config_list("levels",prms,Level,defaults)
 
+    solver_type=prms["solver"]["_type"]+"_"
+    QoI.subclasses={ delete_prefix(k,solver_type) : v for k,v in QoI.subclasses.items() if k.startswith(solver_type) }
+    simulation.solver.qois = config_list("qois",prms,QoI.create,simulation.uq_method.qoi_defaults)
+
     # in the multilevel case, some firther setup is needed for the levels (mainly sorting prms into sublevels f and c)
-    simulation.uq_method.setup_batches()
+    simulation.uq_method.setup_batches(simulation.solver.qois)
 
     return simulation
 
@@ -61,7 +65,7 @@ def restart(prmfile=None):
     return simulation
 
 
-def config_list(string,prms,class_init,defaults):
+def config_list(string,prms,class_init,defaults=None):
     """
     Checks for correct input format for list type input and initializes (sub-) class for given input
     """
@@ -143,9 +147,7 @@ def print_default_yml_file():
         subclass_name, class_defaults, subclass = inquire_subclass(parent_class_name,parent_class)
 
         # build up dictionary with defaults for this parent class.
-        class_dict={"_type" : subclass_name}
-        class_dict.update(class_defaults)
-        class_dict.update(subclass.subclass_defaults)
+        class_dict=get_defaults(subclass_name,subclass)
 
         # add defaults for this class to dict with all defaults
         all_defaults.update({parent_class_name : class_dict})
@@ -156,10 +158,11 @@ def print_default_yml_file():
 
 
     # build defaults per level
-    level_defaults_tmp = Level.class_defaults
-
-    # some defaults set per level depend on the chosen uq_method
-    level_defaults_tmp.update(subclasses["uq_method"].level_defaults)
+    level_defaults_tmp = deepmerge(
+        Level.class_defaults,
+        # some defaults set per level depend on the chosen uq_method
+        subclasses["uq_method"].level_defaults,
+        subclasses["machine"].level_defaults)
 
     # we update the large defaults dict with a list containing our level dict.
     # This outputs the defaults for n_levels = 1 in the correct format
@@ -170,16 +173,27 @@ def print_default_yml_file():
     var_defaults_tmp=[]
     # loop over all implemented stoch_var types (normal, uniform, ...)
     for stoch_var_name,stoch_var in StochVar.subclasses.items():
-        stoch_var_dict={"_type" : stoch_var_name} # name of stoch_var (e.g. normal)
-        stoch_var_dict.update(stoch_var.class_defaults.copy())
-        stoch_var_dict.update(stoch_var.subclass_defaults)
-
-        # some defaults set per stoch_var depend on the chosen uq_method and are defined in the uq_method subclass
-        stoch_var_dict.update(subclasses["uq_method"].stoch_var_defaults)
+        stoch_var_dict=get_defaults(stoch_var_name,stoch_var)
+        # some defaults set per stoch_var depend on the chosen 
+        # uq_method and are defined in the uq_method subclass
+        stoch_var_dict=deepmerge(stoch_var_dict,
+                                 subclasses["uq_method"].stoch_var_defaults)
 
         # add dict for thi soch_var to list of all stoch_vars
         var_defaults_tmp.append(stoch_var_dict)
     all_defaults.update({"stoch_vars" : var_defaults_tmp})
+
+    # QoIs
+    qoi_defaults_tmp=[]
+    solver_type=all_defaults["solver"]["_type"]+"_"
+    for qoi_name,qoi in QoI.subclasses.items():
+        if not qoi_name.startswith(solver_type):
+            continue
+        qoi_dict=get_defaults(delete_prefix(qoi_name,solver_type),qoi)
+        qoi_dict=deepmerge(qoi_dict,subclasses["uq_method"].qoi_defaults)
+        qoi_defaults_tmp.append(qoi_dict)
+
+    all_defaults.update({"qois" : qoi_defaults_tmp})
 
     # add general config parameters
     all_defaults.update({"general" : GeneralConfig.class_defaults})
@@ -188,6 +202,14 @@ def print_default_yml_file():
     print(yaml.dump(all_defaults, default_flow_style=False))
     sys.exit()
 
+def get_defaults(subclass_name,subclass):
+    return deepmerge(
+        {"_type" : subclass_name},
+        subclass.class_defaults,
+        subclass.subclass_defaults)
+
+def delete_prefix(str_,prefix):
+    return str_.replace(prefix,"",1)
 
 def inquire_subclass(parent_class_name,parent_class):
     """

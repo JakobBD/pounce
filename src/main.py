@@ -25,7 +25,7 @@ if n_args < 2:
     raise Exception(usage)
 
 if n_args == 2 and sys.argv[1] in ['-h','--help']:
-    config.PrintDefaultYMLFile()
+    config.print_default_yml_file()
 
 print_header()
 

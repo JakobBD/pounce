@@ -16,7 +16,7 @@ class Simulation():
             self.run_iteration(self.iterations[-1])
 
         print_major_section("Last iteration finished. Exit loop. Start Post-Processing")
-         
+
         if self.uq_method.has_simulation_postproc:
             self.simulation_postproc()
 
@@ -24,9 +24,9 @@ class Simulation():
 
 
     def simulation_postproc(self):
-        self.machine.allocate_resources_simu_postproc(self.uq_method.simu_postproc)
-        self.solver.prepare_simu_postproc(self.uq_method.simu_postproc)
-        self.machine.run_batches([self.uq_method.simu_postproc],self,self.solver,postproc_type="simu")
+        self.machine.allocate_resources_simu_postproc(self.uq_method.qois)
+        self.solver.prepare_simu_postproc(self.uq_method.qois)
+        self.machine.run_batches(self.uq_method.qois,self,self.solver,postproc_type="simu")
 
 
     def run_iteration(self,iteration):

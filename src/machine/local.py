@@ -15,15 +15,23 @@ class Local(Machine):
         "mpi" : "NODEFAULT"
         }
 
+    class_defaults={
+        'cores_per_sample' : 2
+        }
+
+    level_defaults={
+        'avg_walltime' : "dummy_unused",
+        'avg_walltime_postproc' : "dummy_unused"
+        }
+
     def run_batches(self,batches,simulation,solver,postproc_type=False):
         """Runs a job by calling a subprocess.
         """
         # TODO: enable parallel runs of jobs
         for batch in batches:
             batch.logfile_name="log_"+batch.name+".dat"
-            if self.mpi:
-                if postproc_type: args="{}".format(batch.run_command)
-                else: args="mpirun -np {} {}".format(batch.cores_per_sample, batch.run_command)
+            if self.mpi and not postproc_type:
+                args="mpirun -np {} {}".format(batch.cores_per_sample, batch.run_command)
             else:
                 args=batch.run_command
             p_print("run command "+yellow(args))

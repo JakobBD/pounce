@@ -6,6 +6,7 @@ class UqMethod(BaseClass):
     subclasses={}
     stoch_var_defaults={}
     level_defaults={}
+    qoi_defaults={}
 
     def __init__(self,input_prm_dict):
         super().__init__(input_prm_dict)

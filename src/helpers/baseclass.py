@@ -1,5 +1,8 @@
+import copy
+
 from helpers.printtools import *
 from helpers.time import Time
+
 
 class BaseClass():
     """
@@ -9,7 +12,9 @@ class BaseClass():
     class_defaults={}
     subclass_defaults={}
 
-    def __init__(self,class_dict):
+    def __init__(self,class_dict,*further_defaults):
+        for dict_ in further_defaults:
+            self.class_defaults.update(dict_)
         self.read_prms(class_dict)
 
     def read_prms(self,input_prm_dict):
@@ -22,8 +27,8 @@ class BaseClass():
         p_print("  Setup class "+yellow(self.__class__.__name__))
         # initialize attribute dict with default values
         attributes={}
-        attributes.update(self.class_defaults)
-        attributes.update(self.subclass_defaults)
+        attributes.update(copy.deepcopy(self.class_defaults))
+        attributes.update(copy.deepcopy(self.subclass_defaults))
 
         # overwrite defaults with custom input prms
         for input_prm_name,input_value in input_prm_dict.items():
@@ -39,8 +44,6 @@ class BaseClass():
 
         # convert dict to class attributes
         for prm_name,prm_value in attributes.items():
-            if "time" in prm_name or "Time" in prm_name: 
-                prm_value=Time(prm_value).sec
             setattr(self,prm_name,prm_value)
         # [setattr(self,prm_name,prm_value) for prm_name,prm_value in attributes.items()]
 

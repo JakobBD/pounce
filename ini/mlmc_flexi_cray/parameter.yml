@@ -36,7 +36,6 @@ stoch_vars:
 
 machine:
   _type: cray
-  username: iagduerr
 
 solver:
   _type: flexi

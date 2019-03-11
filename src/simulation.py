@@ -105,7 +105,7 @@ class Simulation(BaseClass):
         iteration.run_step("Archive",
                            iteration.archive,
                            self,
-                           self.archive_level)
+                           self.archive_level,self)
 
         if self.uq_method.do_continue:
             self.iterations.append(Iteration(iteration.n+1))
@@ -121,31 +121,41 @@ class Iteration():
         self.finished_steps=[]
         self.n=n
 
-    def update_step(self,simulation,string=None):
+    def update_step(self,simulation,string=None,filename=None):
         if string:
             self.finished_steps.append(string)
-        with open(simulation.filename, 'wb') as f:
+        if not filename: 
+            filename=simulation.filename
+        with open(filename, 'wb') as f:
             pickle.dump(simulation, f, 2)
 
     def run_step(self,description,func,simulation,*args,**kwargs):
         if description not in self.finished_steps:
             print_step(description+":")
             func(*args,**kwargs)
-            self.update_step(simulation,description)
+            self.update_step(simulation,string=description)
 
-    def archive(self,archive_level): 
+    def archive(self,archive_level,simulation): 
         if archive_level == 0: 
             return
         if not os.path.isdir('archive'): 
             os.mkdir('archive')
         self.archive_name='archive/iter_%d.tar.gz'%(self.n)
-        self.files=glob.glob('.')
+        self.files=glob.glob('*')
+        # prevent simulations restarted from archive from
+        # writing the very same data to archive again.
+        pf_temp='.temp.pickle'
+        self.update_step(simulation,filename=pf_temp)
         p_print("Write to file "+yellow(self.archive_name))
         with tarfile.open(self.archive_name, "w:gz") as tar:
             for fn in self.files: 
-                if not fn=="archive":
+                print(fn)
+                if os.path.islink(fn): 
+                    print(fn)
+                if fn not in [simulation.filename,"archive"] \
+                        and not os.path.islink(fn):
                     tar.add(fn)
-
-
+            tar.add(pf_temp,arcname=simulation.filename)
+        os.remove(pf_temp)
 
 

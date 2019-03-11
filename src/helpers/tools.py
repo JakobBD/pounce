@@ -23,20 +23,6 @@ def safe_sqrt(arg):
 class Empty():
     pass
 
-class ListAndArrays():
-
-    def __init__(self,list_in):
-        self._list=list_in
-
-    def __getattr__(self,key):
-        return [getattr(e,key) for e in self._list]
-
-    def __getitem__(self,index):
-        return self._list[index]
-
-    def __len__(self):
-        return len(self._list)
-
 def deepmerge(*args): 
     out=args[0]
     for arg in args[1:]: 

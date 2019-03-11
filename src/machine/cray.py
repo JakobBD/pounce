@@ -63,11 +63,11 @@ class Cray(Machine):
         jobfile_string = (
               '#!/bin/bash\n'
             + '#PBS -N {}\n'.format(solver.project_name)
-            + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_cores)
+            + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+Time(batch.batch_walltime).str+"\n\n"
             + 'cd $PBS_O_WORKDIR\n\n'
-            + 'aprun -n  {}  -N 24 {}  &> calc_{}.log\n'.format(
-                batch.n_cores,batch.run_command,batch.name))
+            + 'aprun -n  {}  -N 24 {}\n'.format(batch.n_cores,
+                                                batch.run_command))
         batch.jobfile_name = 'jobfile_{}'.format(batch.name)
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
@@ -182,7 +182,7 @@ class Cray(Machine):
             batch.n_cores = batch.n_parallel_runs * batch.cores_per_sample
             batch.batch_walltime = batch.n_sequential_runs \
                 * batch.scaled_avg_walltime
-            batch.n_nodes = batch.n_cores / self.cores_per_node
+            batch.n_nodes = batch.n_cores // self.cores_per_node
 
             self.total_work += batch.n_cores * batch.batch_walltime
             if self.total_work > self.max_total_work:

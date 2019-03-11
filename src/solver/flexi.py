@@ -34,11 +34,11 @@ class Flexi(Solver):
         """
         prms= {'Samples'          : batch.samples.nodes,
                'Weights'          : batch.samples.weights,
-               'StochVarNames'    : stoch_vars.name,
-               'iOccurrence'      : stoch_vars.i_occurrence,
-               'iArray'           : stoch_vars.i_pos,
-               'Distributions'    : stoch_vars._type,
-               'DistributionProps': stoch_vars.parameters,
+               'StochVarNames'    : [i.name         for i in stoch_vars],
+               'iOccurrence'      : [i.i_occurrence for i in stoch_vars],
+               'iArray'           : [i.i_pos        for i in stoch_vars],
+               'Distributions'    : [i._type        for i in stoch_vars],
+               'DistributionProps': [i.parameters   for i in stoch_vars],
                "nStochVars"       : len(stoch_vars),
                "nGlobalRuns"      : batch.samples.n,
                "nPreviousRuns"    : batch.samples.n_previous,
@@ -64,6 +64,10 @@ class Flexi(Solver):
             self.h5write(h5f,'LevelVars'    +suffix,values)
 
         h5f.close()
+
+    @staticmethod
+    def getlist(list_,key):
+        return [getattr(e,key) for e in list_]
 
 
     def h5write(self,h5f,name,prm):

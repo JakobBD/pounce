@@ -6,7 +6,7 @@ class Simulation():
 
     def __init__(self):
         self.iterations=[Iteration()]
-        self.filename = "pickle"
+        self.filename = "pounce.pickle"
 
     def run(self):
         """Main Loop for UQMethod.
@@ -41,46 +41,46 @@ class Simulation():
 
         print_major_section("Start iteration %d"%(len(self.iterations)))
         if iteration.finished_steps:
-            PPrint(green("Skipping finished steps of iteration:"))
-            [PPrint("  "+i) for i in iteration.finished_steps]
+            p_print(green("Skipping finished steps of iteration:"))
+            [p_print("  "+i) for i in iteration.finished_steps]
 
         iteration.run_step("Get samples",
-                                self.uq_method.get_nodes_and_weights,
-                                self)
+                           self.uq_method.get_nodes_and_weights,
+                           self)
 
         # Simulations
 
         iteration.run_step("Allocate resources",
-                                self.machine.allocate_resources,
-                                self,
-                                self.uq_method.solver_batches)
+                           self.machine.allocate_resources,
+                           self,
+                           self.uq_method.solver_batches)
 
         iteration.run_step("Prepare simulations",
-                                self.solver.prepare_simulations,
-                                self,
-                                self.uq_method.solver_batches,self.uq_method.stoch_vars)
+                           self.solver.prepare_simulations,
+                           self,
+                           self.uq_method.solver_batches,self.uq_method.stoch_vars)
 
         iteration.run_step("Run simulations",
-                                self.machine.run_batches,
-                                self,
-                                self.uq_method.solver_batches,self,self.solver)
+                           self.machine.run_batches,
+                           self,
+                           self.uq_method.solver_batches,self,self.solver)
 
         # Post-Processing
 
         iteration.run_step("Allocate resources Postproc",
-                                self.machine.allocate_resources_postproc,
-                                self,
-                                self.uq_method.postproc_batches)
+                           self.machine.allocate_resources_postproc,
+                           self,
+                           self.uq_method.postproc_batches)
 
         iteration.run_step("Prepare postprocessing",
-                                self.solver.prepare_postproc,
-                                self,
-                                self.uq_method.postproc_batches)
+                           self.solver.prepare_postproc,
+                           self,
+                           self.uq_method.postproc_batches)
 
         iteration.run_step("Run postprocessing",
-                                self.machine.run_batches,
-                                self,
-                                self.uq_method.postproc_batches,self,self.solver,postproc_type="iter")
+                           self.machine.run_batches,
+                           self,
+                           self.uq_method.postproc_batches,self,self.solver,postproc_type="iter")
 
         # Prepare next iteration
 
@@ -89,9 +89,9 @@ class Simulation():
             return
 
         iteration.run_step("Get number of samples for next iteration",
-                                self.uq_method.get_new_n_current_samples,
-                                self,
-                                self.solver)
+                           self.uq_method.get_new_n_current_samples,
+                           self,
+                           self.solver)
 
         if self.uq_method.do_continue:
             self.iterations.append(Iteration())

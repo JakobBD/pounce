@@ -58,7 +58,7 @@ def config(prmfile):
 
 def restart(prmfile=None):
 
-    f = open('pickle', 'rb')
+    f = open('pounce.pickle', 'rb')
     simulation = pickle.load(f)
     f.close()
 
@@ -67,7 +67,7 @@ def restart(prmfile=None):
                         "implemented")
 
     n_finished_iter = (len(simulation.iterations)
-                       - (1 if simulation.do_continue else 0))
+                       - (1 if simulation.uq_method.do_continue else 0))
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 
@@ -87,8 +87,7 @@ def config_list(string,prms,class_init,defaults=None):
     p_print("Setup "+yellow(string)+" - Number of " + string + " is "
             + yellow(str(len(prms[string]))) + ".")
     indent_in()
-    classes = ListAndArrays(
-        [class_init(sub_dict,defaults) for sub_dict in prms[string]])
+    classes = [class_init(sub_dict,defaults) for sub_dict in prms[string]]
     indent_out()
     return classes
 

@@ -19,7 +19,8 @@ class Cray(Machine):
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
         "max_walltime" : 86400, # 24h
-        "max_total_work" : 36e5  # 1.000 CoreH
+        "max_total_work" : 36e5,  # 1.000 CoreH
+        "from_home" : False
         }
 
     level_defaults={
@@ -72,14 +73,18 @@ class Cray(Machine):
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
         # submit job
-        job = subprocess.run(
-            ['qsub',batch.jobfile_name],stdout=subprocess.PIPE,
-            universal_newlines=True)
+        args=['qsub',batch.jobfile_name]
+        if self.from_home: 
+           args=self.to_ssh(args)
+        job = subprocess.run(args,stdout=subprocess.PIPE,
+                             universal_newlines=True)
         batch.job_id=int(job.stdout.split(".")[0])
         p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
         simulation.iterations[-1].update_step(simulation)
-
+    
+    def to_ssh(self,args): 
+       return ['ssh',self.username+"@hazelhen.hww.de"," ".join(args)]
 
     def wait_finished(self,batches,simulation):
         """Monitors all jobs on Cray Hazelhen HPC queue. 
@@ -106,8 +111,11 @@ class Cray(Machine):
     def read_qstat(self):
         """run 'qstat' on cray and read output
         """
-        job = subprocess.Popen(['qstat','-u',self.username],
-                               stdout=subprocess.PIPE,universal_newlines=True)
+        args=['qstat','-u',self.username]
+        if self.from_home: 
+           args=self.to_ssh(args)
+        job = subprocess.Popen(args,stdout=subprocess.PIPE,
+                               universal_newlines=True)
         lines = str(job.stdout.read()).split('\n')
         if len(lines)<4:
             return {}

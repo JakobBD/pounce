@@ -12,10 +12,7 @@ class Local(Machine):
     Returns:
     """
     subclass_defaults={
-        "mpi" : "NODEFAULT"
-        }
-
-    class_defaults={
+        "mpi" : "NODEFAULT",
         'cores_per_sample' : 2
         }
 
@@ -45,3 +42,5 @@ class Local(Machine):
         for batch in batches:
             batch.n_parallel_runs=1
             batch.n_sequential_runs=batch.samples.n
+
+    run_batches_external=staticmethod(run_batches)

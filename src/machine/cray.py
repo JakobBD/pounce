@@ -11,6 +11,7 @@ from .machine import Machine
 from helpers.time import *
 from helpers.printtools import *
 from helpers.tools import *
+from .local import Local
 
 @Machine.register_subclass('cray')
 class Cray(Machine):
@@ -20,7 +21,8 @@ class Cray(Machine):
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
         "max_walltime" : 86400, # 24h
-        "max_total_work" : 36e5  # 1.000 CoreH
+        "max_total_work" : 36e5, # 1.000 CoreH
+        "local_postproc" : False
         }
 
     level_defaults={
@@ -28,6 +30,7 @@ class Cray(Machine):
         }
 
     def __init__(self,class_dict):
+        super().__init__(class_dict)
         self.cores_per_node = 24
         self.total_work = 0.
         self.remote = not socket.gethostname().startswith('eslogin')
@@ -43,7 +46,9 @@ class Cray(Machine):
             self.dir_on_cray=mount_dir_on_cray+cwd.replace(mount_dir_local,"")
         else: 
             self.cray_username = getpass.getuser()
-        super().__init__(class_dict)
+            if self.local_postproc: 
+                raise Exception("Local postproc is only possible if POUNCE is "
+                                "run on remote machine.")
 
 
     def allocate_resources_postproc(self,batches):
@@ -55,6 +60,14 @@ class Cray(Machine):
         """Runs a job by generating the necessary jobfile
              and submitting it.
         """
+
+        # local_postproc means that postproc is carried out
+        if self.local_postproc and postproc_type: 
+            self.mpi=False
+            self.cores_per_sample=2
+            return Local.run_batches_external(self,simulation,solver,
+                                              postproc_type)
+
         # in case of a restart, only submit
         for batch in self.unfinished(batches):
             if not getattr(batch,"queue_status",None):

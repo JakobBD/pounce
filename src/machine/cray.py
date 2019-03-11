@@ -4,6 +4,8 @@ import os
 import math
 import numpy as np
 import subprocess
+import socket
+import getpass
 
 from .machine import Machine
 from helpers.time import *
@@ -15,12 +17,10 @@ class Cray(Machine):
     """Definition of Cray Hazelhen machine.
     """
     subclass_defaults={
-        "username" : "NODEFAULT",
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
         "max_walltime" : 86400, # 24h
-        "max_total_work" : 36e5,  # 1.000 CoreH
-        "from_home" : False
+        "max_total_work" : 36e5  # 1.000 CoreH
         }
 
     level_defaults={
@@ -30,6 +30,19 @@ class Cray(Machine):
     def __init__(self,class_dict):
         self.cores_per_node = 24
         self.total_work = 0.
+        self.remote = not socket.gethostname().startswith('eslogin')
+        if self.remote: 
+            args = "df -P .".split()
+            job = subprocess.run(args,stdout=subprocess.PIPE,
+                                 universal_newlines=True)
+            line = job.stdout.split('\n')[1]
+            self.cray_username = line.split("@")[0]
+            mount_dir_on_cray = line.split()[0].split(":")[1]
+            mount_dir_local = line.split()[-1]
+            cwd = os.getcwd()
+            self.dir_on_cray=mount_dir_on_cray+cwd.replace(mount_dir_local,"")
+        else: 
+            self.cray_username = getpass.getuser()
         super().__init__(class_dict)
 
 
@@ -74,7 +87,7 @@ class Cray(Machine):
             jf.write(jobfile_string)
         # submit job
         args=['qsub',batch.jobfile_name]
-        if self.from_home: 
+        if self.remote: 
            args=self.to_ssh(args)
         job = subprocess.run(args,stdout=subprocess.PIPE,
                              universal_newlines=True)
@@ -84,7 +97,8 @@ class Cray(Machine):
         simulation.iterations[-1].update_step(simulation)
     
     def to_ssh(self,args): 
-       return ['ssh',self.username+"@hazelhen.hww.de"," ".join(args)]
+        command = "cd "+self.dir_on_cray+" && "+" ".join(args)
+        return ['ssh',self.cray_username+"@hazelhen.hww.de",command]
 
     def wait_finished(self,batches,simulation):
         """Monitors all jobs on Cray Hazelhen HPC queue. 
@@ -111,12 +125,12 @@ class Cray(Machine):
     def read_qstat(self):
         """run 'qstat' on cray and read output
         """
-        args=['qstat','-u',self.username]
-        if self.from_home: 
+        args=['qstat','-u',self.cray_username]
+        if self.remote: 
            args=self.to_ssh(args)
-        job = subprocess.Popen(args,stdout=subprocess.PIPE,
-                               universal_newlines=True)
-        lines = str(job.stdout.read()).split('\n')
+        job = subprocess.run(args,stdout=subprocess.PIPE,
+                             universal_newlines=True)
+        lines = job.stdout.split('\n')
         if len(lines)<4:
             return {}
         else:
@@ -140,7 +154,8 @@ class Cray(Machine):
             p_print('job ID {} is now complete! {} jobs remaining'.format(
                 batch.job_id,len(self.unfinished(batches))))
             return
-        # check if walltime excced in error file (also means that solver did not otherwise crash)
+        # check if walltime excced in error file (also means that 
+        # solver did not otherwise crash)
         longlines=[line.split() for line in lines if len(line.split())>=7]
         for words in longlines:
             if words[4]=='walltime' and words[6]=='exceeded':

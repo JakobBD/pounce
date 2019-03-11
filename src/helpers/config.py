@@ -61,6 +61,7 @@ def restart(prmfile=None):
     f = open('pounce.pickle', 'rb')
     simulation = pickle.load(f)
     f.close()
+    simulation.machine.from_home=True
 
     if prmfile:
         raise Exception("Modifying parameters at restart is not yet "

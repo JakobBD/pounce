@@ -1,11 +1,20 @@
 import pickle
+import os
+import tarfile
+import glob
 
 from helpers.printtools import *
+from helpers.baseclass import BaseClass
 
-class Simulation():
+class Simulation(BaseClass):
 
-    def __init__(self):
-        self.iterations=[Iteration()]
+    class_defaults={"archive_level" : 0,
+                    # to keep parameter files compatible
+                    "output_level" : "dummy"}
+
+    def __init__(self,class_dict):
+        super().__init__(class_dict)
+        self.iterations=[Iteration(1)]
         self.filename = "pounce.pickle"
 
     def run(self):
@@ -39,7 +48,7 @@ class Simulation():
 
         # Prepare next iteration
 
-        print_major_section("Start iteration %d"%(len(self.iterations)))
+        print_major_section("Start iteration %d"%(iteration.n))
         if iteration.finished_steps:
             p_print(green("Skipping finished steps of iteration:"))
             [p_print("  "+i) for i in iteration.finished_steps]
@@ -84,7 +93,7 @@ class Simulation():
 
         # Prepare next iteration
 
-        if len(self.iterations) == self.uq_method.n_max_iter:
+        if iteration.n == self.uq_method.n_max_iter:
             self.uq_method.do_continue=False
             return
 
@@ -93,8 +102,14 @@ class Simulation():
                            self,
                            self.solver)
 
+        iteration.run_step("Archive",
+                           iteration.archive,
+                           self,
+                           self.archive_level)
+
         if self.uq_method.do_continue:
-            self.iterations.append(Iteration())
+            self.iterations.append(Iteration(iteration.n+1))
+
 
         return
 
@@ -102,8 +117,9 @@ class Simulation():
 
 class Iteration():
 
-    def __init__(self):
+    def __init__(self,n):
         self.finished_steps=[]
+        self.n=n
 
     def update_step(self,simulation,string=None):
         if string:
@@ -116,3 +132,20 @@ class Iteration():
             print_step(description+":")
             func(*args,**kwargs)
             self.update_step(simulation,description)
+
+    def archive(self,archive_level): 
+        if archive_level == 0: 
+            return
+        if not os.path.isdir('archive'): 
+            os.mkdir('archive')
+        self.archive_name='archive/iter_%d.tar.gz'%(self.n)
+        self.files=glob.glob('.')
+        p_print("Write to file "+yellow(self.archive_name))
+        with tarfile.open(self.archive_name, "w:gz") as tar:
+            for fn in self.files: 
+                if not fn=="archive":
+                    tar.add(fn)
+
+
+
+

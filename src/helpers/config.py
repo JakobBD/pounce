@@ -27,10 +27,9 @@ def config(prmfile):
 
     # sets up global tools like logger
     print_step("Read parameters")
-    GeneralConfig(prms["general"])
 
     # initialize classes according to chosen subclass
-    simulation = Simulation()
+    simulation = Simulation(prms["general"])
     simulation.uq_method = UqMethod.create(prms["uq_method"])
     simulation.machine = Machine.create(prms["machine"])
     simulation.solver = Solver.create(prms["solver"])
@@ -93,22 +92,7 @@ def config_list(string,prms,class_init,defaults=None):
     return classes
 
 
-class GeneralConfig(BaseClass):
-    """
-    This class consists mainly of attributes.
-    Its purpose is to ease general parameter readin and default value
-    handling.
-    """
-    class_defaults={"archive_level" : "standard",
-                    # to keep parameter files compatible
-                    "output_level" : "dummy"}
 
-    def __init__(self,input_prm_dict):
-        super().__init__(input_prm_dict)
-        self.setup_archive()
-
-    def setup_archive(self):
-        pass
 
 
 def print_default_yml_file():
@@ -169,7 +153,7 @@ def print_default_yml_file():
     all_defaults.update({"qois" : qoi_defaults})
 
     # add general config parameters
-    all_defaults.update({"general" : GeneralConfig.class_defaults})
+    all_defaults.update({"general" : Simulation.class_defaults})
 
     msg="Enter file name for output (press enter for stdout):\n"
     filename_out=input(msg)

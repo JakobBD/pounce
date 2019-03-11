@@ -73,10 +73,12 @@ class Cray(Machine):
             jf.write(jobfile_string)
         # submit job
         job = subprocess.run(
-            ['qsub',jobfile],stdout=subprocess.PIPE,universal_newlines=True)
-        batch.job_i_d=int(job.stdout.read().split(".")[0])
+            ['qsub',batch.jobfile_name],stdout=subprocess.PIPE,
+            universal_newlines=True)
+        batch.job_id=int(job.stdout.split(".")[0])
+        p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
-        simulation.iterations[-1].UpdateStep(simulation)
+        simulation.iterations[-1].update_step(simulation)
 
 
     def wait_finished(self,batches,simulation):
@@ -86,13 +88,13 @@ class Cray(Machine):
         while True:
             statuses=self.read_qstat()
             for batch in self.unfinished(batches):
-                if batch.job_i_d in statuses:
-                    queue_status = statuses[batch.job_i_d]
+                if batch.job_id in statuses:
+                    queue_status = statuses[batch.job_id]
                 else:
                     queue_status = "C"
                 if not queue_status == batch.queue_status:
                     p_print("Job {} with ID {} has status {}.".format(
-                        batch.name,batch.job_i_d,queue_status))
+                        batch.name,batch.job_id,queue_status))
                     batch.queue_status=queue_status
                 if queue_status=='C':
                     self.check_errorfile(batch,batches,simulation)
@@ -121,14 +123,14 @@ class Cray(Machine):
         """open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        with open(glob.glob('*.e{}'.format(batch.job_i_d))[0]) as f:
+        with open(glob.glob('*.e{}'.format(batch.job_id))[0]) as f:
             lines = f.read().splitlines()
         # empty error file: all good
         if len(lines)==0:
             batch.finished=True
             batch.queue_status=None
             p_print('job ID {} is now complete! {} jobs remaining'.format(
-                batch.job_i_d,len(self.unfinished(batches))))
+                batch.job_id,len(self.unfinished(batches))))
             return
         # check if walltime excced in error file (also means that solver did not otherwise crash)
         longlines=[line.split() for line in lines if len(line.split())>=7]
@@ -142,7 +144,7 @@ class Cray(Machine):
                 return
         # non-empty error file and not walltime excceded: other error
         raise Exception('Error in jobfile execution! '
-                        + 'See file *.e{} for details.'.format(batch.job_i_d))
+                        + 'See file *.e{} for details.'.format(batch.job_id))
 
 
     def allocate_resources(self,batches):
@@ -155,11 +157,11 @@ class Cray(Machine):
 
         self.walltime_factor = 1.2
         stdout_table=StdOutTable(
-            "queue","rating","n_parallel_runs","n_sequential_runs","n_cores",
-            "n_nodes","batch_walltime")
+            "queue","max_rating","n_parallel_runs","n_sequential_runs",
+            "n_cores","n_nodes","batch_walltime")
         stdout_table.descriptions(
-            "Queue","Rating","n_parallel_runs","n_sequential_runs","n_cores",
-            "n_nodes","batch_walltime")
+            "Queue","Rating","n_parallel_runs","n_sequential_runs",
+            "n_cores","n_nodes","batch_walltime")
 
         for batch in batches:
             batch.scaled_avg_walltime=self.walltime_factor*batch.avg_walltime
@@ -202,9 +204,13 @@ class Cray(Machine):
         if batch.n_cores_package%self.cores_per_node:
             raise Exception("cores_per_sample has to be multiple of"
                             "cores_per_node or vice versa")
+        batch.parallel_runs_max= (self.n_max_cores // batch.n_cores_package) \
+            * batch.parallel_runs_package
         if batch.n_cores_package > self.n_max_cores:
             raise Exception("n_max_cores (%i) too small "%(self.n_max_cores)
-                            + "for smallest batch n_cores (%i)"%(n_cores))
+                            + "for smallest batch n_cores (%i)"%(
+                                batch.n_cores_package))
+        batch.sequential_runs_max=int(self.max_walltime//batch.avg_walltime)
 
 
     def get_best_option(self,batch):
@@ -283,21 +289,30 @@ def get_queue(batch):
     If too large, run on long (>4h)
     """
     # in order for the multi queue to be used, runs_multi_min
-    batch.runs_multi_min = int(math.ceil( 5*60 / batch.scaled_avg_walltime ))
-    batch.runs_multi_min = batch.parallel_runs_package \
-                           * int(math.ceil( 48*24 / batch.n_cores_package ))
+    batch.sruns_multi_min = int(math.ceil( 5*60 / batch.scaled_avg_walltime ))
+    batch.pruns_multi_min = batch.parallel_runs_package \
+                            * int(math.ceil( 48*24 / batch.n_cores_package ))
 
     batch.sequential_runs4h_max = batch.scaled_avg_walltime \
                                   * ( 4*3600 // batch.scaled_avg_walltime )
+    # the clean solution: 
+    # this is the maximum number of samples that should still be run in
+    # the small queue, as the number of parallel or sequential runs
+    # is too small for multi queue
+    n_samples_no_waste = \
+        max( batch.pruns_multi_min   *(batch.sruns_multi_min-1),
+            (batch.pruns_multi_min-1)* batch.sruns_multi_min   )
+    # this variant puts more jobs into the multi queue, at the cost of
+    # reduced efficiency
+    n_samples_often_multi = \
+        min( batch.pruns_multi_min   *(batch.sruns_multi_min-1),
+            (batch.pruns_multi_min-1)* batch.sruns_multi_min   )
+    # weight both
     vs_queue_factor = 0.9
-    n_samples_no_waste = max(batch.runs_multi_min*(batch.runs_multi_min-1),
-                             (batch.runs_multi_min-1)* batch.runs_multi_min)
-    n_samples_often_multi = min(batch.runs_multi_min*(batch.runs_multi_min-1),
-                                (batch.runs_multi_min-1)*batch.runs_multi_min)
-    n_samples_multi = (       vs_queue_factor  * n_samples_no_waste
+    n_samples_small = (       vs_queue_factor  * n_samples_no_waste
                         + (1.-vs_queue_factor) * n_samples_often_multi)
 
-    if n_samples_multi >= batch.samples.n:
+    if n_samples_small >= batch.samples.n:
         small_queue(batch)
     elif batch.sequential_runs4h_max*batch.parallel_runs_max < batch.samples.n:
         long_queue(batch)
@@ -331,9 +346,9 @@ def multi_queue(batch):
     batch.queue = "multi"
     batch.wt_func = [30.*60, 4.*3600 ]
     batch.cores_func = [48*24, 192*24]
-    batch.bounds_parallel = [batch.runs_multi_min, batch.parallel_runs_max]
+    batch.bounds_parallel = [batch.pruns_multi_min, batch.parallel_runs_max]
     batch.bounds_sequential = \
-        [batch.runs_multi_min, batch.sequential_runs4h_max]
+        [batch.sruns_multi_min, batch.sequential_runs4h_max]
 
 def long_queue(batch):
     """with max_cores, walltime exceeds 4h
@@ -341,6 +356,6 @@ def long_queue(batch):
     batch.queue = "long"
     batch.wt_func = [4.*3600, 8.*3600 ]
     batch.cores_func = [500*24, 500*24]
-    batch.bounds_parallel = [batch.runs_multi_min, batch.parallel_runs_max]
+    batch.bounds_parallel = [batch.pruns_multi_min, batch.parallel_runs_max]
     batch.bounds_sequential = [1, batch.sequential_runs_max]
 

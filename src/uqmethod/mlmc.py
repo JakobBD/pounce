@@ -136,6 +136,20 @@ class Mlmc(UqMethod):
 
         stdout_table.p_print()
 
+        print()
+        if self.tolerance: 
+            self.est_total_work = sum(
+                [l.work_mean*max(l.mlopt,l.samples.n_previous) \
+                    for l in self.levels])
+            p_print("Estimated required total work to achieve prescribed "
+                    "tolerance: %d core-seconds"%(int(self.est_total_work)))
+        elif self.total_work: 
+            self.est_tolerance = sum(
+                [l.sigma_sq/max(l.mlopt,l.samples.n_previous) \
+                    for l in self.levels])
+            p_print("Estimated achieved tolerance for given total work: %e" \
+                    %(2.*np.sqrt(self.est_tolerance)))
+
         self.get_active_batches()
 
 

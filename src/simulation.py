@@ -99,7 +99,7 @@ class Simulation(BaseClass):
         iteration.run_step("Get number of samples for next iteration",
                            self.uq_method.get_new_n_current_samples,
                            self,
-                           self.solver)
+                           self.solver,iteration.n)
 
         iteration.run_step("Archive",
                            iteration.archive,

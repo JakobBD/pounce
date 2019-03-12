@@ -95,7 +95,7 @@ class Mlmc(UqMethod):
             p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
 
-    def get_new_n_current_samples(self,solver):
+    def get_new_n_current_samples(self,solver,n_iter):
 
         stdout_table=StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                  "samples__n_previous","samples__n")
@@ -130,8 +130,17 @@ class Mlmc(UqMethod):
             level.mlopt_rounded=int(round(level.mlopt)) if level.mlopt > 1 \
                 else level.mlopt
             level.samples.n_previous += level.samples.n
+
+            # slowly approach mlopt... ad-hoc solution
+            n_iter_remain = self.n_max_iter-n_iter
+            expo=1./sum(0.3**i for i in range(n_iter_remain))
+            n_total_new = level.mlopt**expo * level.samples.n**(1-expo)
             level.samples.n = \
-                max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
+                max(int(np.ceil(n_total_new))-level.samples.n_previous , 0)
+
+            # directly jump to mlopt
+            # level.samples.n = \
+                # max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
             stdout_table.update(level)
 
         stdout_table.p_print()

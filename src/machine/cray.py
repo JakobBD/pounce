@@ -195,9 +195,9 @@ class Cray(Machine):
         stdout_table=StdOutTable(
             "queue","max_rating","n_parallel_runs","n_sequential_runs",
             "n_cores","n_nodes","batch_walltime")
-        stdout_table.descriptions(
-            "Queue","Rating","n_parallel_runs","n_sequential_runs",
-            "n_cores","n_nodes","batch_walltime")
+        stdout_table.set_descriptions(
+            "Queue","Rating (%)","# parallel runs","# sequential runs",
+            "# cores","# nodes","batch walltime")
 
         for batch in batches:
             batch.scaled_avg_walltime=self.walltime_factor*batch.avg_walltime
@@ -225,7 +225,7 @@ class Cray(Machine):
                 raise Exception("Max total core hours exceeded!")
 
             stdout_table.update(batch)
-        stdout_table.p_print("Batch")
+        stdout_table.p_print()
 
 
     def get_package_properties(self,batch):

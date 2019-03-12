@@ -6,7 +6,6 @@ Stil:
 Funktionell: 
 - cray debuggen
 - cray: allocate resources postproc erweitern
-- Restart von Archiv
 - Recordpoints
 - Mlopt: given work, Konfidenzintervalle
 

@@ -39,6 +39,7 @@ class Local(Machine):
             solver.check_all_finished(batches)
 
     def allocate_resources(self,batches):
+        p_print("All runs are carried out sequentially.")
         for batch in batches:
             batch.n_parallel_runs=1
             batch.n_sequential_runs=batch.samples.n

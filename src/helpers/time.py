@@ -31,6 +31,10 @@ class Time():
     @property
     def str(self):
         return(":".join(str(i) for i in self.list_))
+    @property
+    def str2(self):
+        tmp=["%2d"%(int(i)) for i in self.list_]
+        return(tmp[0]+"h "+tmp[1]+"m "+tmp[2]+"s")
     def __call__(self):
         return(self.sec_)
 

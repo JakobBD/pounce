@@ -1,6 +1,7 @@
 import logging
 import textwrap
 import numpy as np
+from .time import Time
 
 class Bcolors :
     """color and font style definitions for changing output appearance
@@ -79,50 +80,54 @@ class StdOutTable():
     Prints values for each level in ordered table to stdout.
     """
     def __init__(self,*args):
-        self.strs=[]
+        self.rows=[]
         for arg in args:
-            self.strs.append(TableString(arg))
-            self.names=[]
+            self.rows.append(TableRow(arg))
+            self.header_entries=[]
 
-    def descriptions(self,*args):
+    def set_descriptions(self,*args):
         for i_arg,arg in enumerate(args):
-            self.strs[i_arg].description=arg
+            self.rows[i_arg].description=arg
 
     def update(self,level):
-        self.names.append(level.name)
-        attr_names=[s.attr for s in self.strs]
+        self.header_entries.append(level.__class__.__name__+" "+level.name)
+        attr_names=[row.attr for row in self.rows]
         for attr_name in attr_names:
             attr=level
             for word in attr_name.split("__"):
                 attr=getattr(attr,word)
-            for s in self.strs: 
-                if s.attr==attr_name:
-                    s.values.append(attr)
+            for row in self.rows: 
+                if row.attr==attr_name:
+                    row.values.append(attr)
 
-    def p_print(self,batch_str):
-        description_length=max([len(s.description) for s in self.strs])
-        n_entries=len(self.names)
+    def p_print(self):
+        description_length=max([len(row.description) for row in self.rows])
+        n_entries=len(self.header_entries)
         p_print(" "*description_length+" ║ "
-                +"".join(["%11s ║ "%(batch_str+" "+n) for n in self.names]))
+                +"".join(["%11s ║ "%(n) for n in self.header_entries]))
         sep_str="═"*11+"═╬═"
         p_print("═"*description_length+"═╬═"+sep_str*n_entries)
-        for s in self.strs:
-            s.str_out=" "*(description_length-len(s.description))\
-                      +s.description+" ║ "
-            for value in s.values: 
-                if isinstance(value,str): 
-                    s.str_out=s.str_out+"%11s ║ "%(value)
+        for row in self.rows:
+            row.string=" "*(description_length-len(row.description))\
+                       +row.description+" ║ "
+            for value in row.values: 
+                if "time" in row.description.lower():
+                    row.string=row.string+"%11s ║ "%(Time(value).str2)
+                elif "%" in row.description:
+                    row.string=row.string+"%9.1f %% ║ "%(100*value)
+                elif isinstance(value,str): 
+                    row.string=row.string+"%11s ║ "%(value)
                 elif isinstance(value,int): 
-                    s.str_out=s.str_out+"%11d ║ "%(value)
+                    row.string=row.string+"%11d ║ "%(value)
                 elif isinstance(value,(float,np.ndarray)): 
-                    s.str_out=s.str_out+"%11.4e ║ "%(value)
+                    row.string=row.string+"%11.4e ║ "%(value)
                 else:
                     raise Exception("unknown type",type(value))
-            p_print(s.str_out)
+            p_print(row.string)
 
 
 
-class TableString():
+class TableRow():
     def __init__(self,attr):
         self.attr=attr
         self.values=[]

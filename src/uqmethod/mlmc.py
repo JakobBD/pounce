@@ -12,7 +12,8 @@ class Mlmc(UqMethod):
 
     subclass_defaults={
         "n_max_iter" : "NODEFAULT",
-        "tolerance" : "NODEFAULT",
+        "tolerance" : None,
+        "total_work" : None,
         "reset_seed" : False
         }
 
@@ -28,6 +29,8 @@ class Mlmc(UqMethod):
 
     def __init__(self,input_prm_dict):
         super().__init__(input_prm_dict)
+        if bool(self.tolerance) == bool(self.total_work): 
+            raise Exception("MLMC: Prescribe either tolerance or total_work")
         self.has_simulation_postproc=True
         if self.reset_seed:
             p_print("Reset RNG seed to 0")
@@ -94,10 +97,10 @@ class Mlmc(UqMethod):
 
     def get_new_n_current_samples(self,solver):
 
-        stdout_table=StdOutTable("sigma_sq","work_mean" ,"mlopt" ,
+        stdout_table=StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                  "samples__n_previous","samples__n")
-        stdout_table.descriptions("SigmaSq","mean work","ML_opt",
-                                  "finished Samples"  ,"new Samples")
+        stdout_table.set_descriptions("SigmaSq","mean work","ML_opt",
+                                      "finished Samples","new Samples")
 
         # build sum over levels of sqrt(sigma^2/w)
         sum_sigma_w = 0.
@@ -116,15 +119,22 @@ class Mlmc(UqMethod):
                 sum_sigma_w += safe_sqrt(level.sigma_sq*level.work_mean)
 
         for level in self.levels:
-            #TODO: add formula for given max_work
-            level.mlopt=(sum_sigma_w*safe_sqrt(level.sigma_sq/level.work_mean)
-                         /(self.tolerance*self.tolerance/4.))
+            if self.tolerance: 
+                level.mlopt=(sum_sigma_w
+                             * safe_sqrt(level.sigma_sq/level.work_mean)
+                             / (self.tolerance*self.tolerance/4.))
+            elif self.total_work: 
+                level.mlopt=(self.total_work
+                             * safe_sqrt(level.sigma_sq/level.work_mean)
+                             / sum_sigma_w)
+            level.mlopt_rounded=int(round(level.mlopt)) if level.mlopt > 1 \
+                else level.mlopt
             level.samples.n_previous += level.samples.n
             level.samples.n = \
                 max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
             stdout_table.update(level)
 
-        stdout_table.p_print("Level")
+        stdout_table.p_print()
 
         self.get_active_batches()
 

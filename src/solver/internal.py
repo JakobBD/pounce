@@ -46,6 +46,9 @@ class Internal(Solver):
 
     def prepare_simu_postproc(self,qois):
         for i,qoi in enumerate(qois):
+            p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
+            names=[p.name for p in qoi.participants]
+            p_print("  Participants: "+", ".join(names))
             qoi.args=[p.qois[i].output_filename for p in qoi.participants]
             qoi.run_command="python3 " + qoi.exe_paths["simulation_postproc"] \
                             + " " + " ".join(qoi.args)

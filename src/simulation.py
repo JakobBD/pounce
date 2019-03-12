@@ -28,16 +28,11 @@ class Simulation(BaseClass):
                             "Start Post-Processing")
 
         if self.uq_method.has_simulation_postproc:
-            self.simulation_postproc()
+            if not getattr(self,"simu_postproc_iter",None):
+                self.simu_postproc_iter=Iteration(-1)
+            self.run_simulation_postproc(self.simu_postproc_iter)
 
         print_major_section("POUNCE Finished")
-
-
-    def simulation_postproc(self):
-        self.machine.allocate_resources_simu_postproc(self.uq_method.qois)
-        self.solver.prepare_simu_postproc(self.uq_method.qois)
-        self.machine.run_batches(self.uq_method.qois,self,self.solver,
-                                 postproc_type="simu")
 
 
     def run_iteration(self,iteration):
@@ -114,8 +109,28 @@ class Simulation(BaseClass):
         if self.uq_method.do_continue:
             self.iterations.append(Iteration(iteration.n+1))
 
-
         return
+
+
+    def run_simulation_postproc(self,postproc):
+
+        postproc.run_step("Allocate resources for simulation postproc",
+                          self.machine.allocate_resources_simu_postproc,
+                          self,
+                          self.uq_method.qois)
+
+        postproc.run_step("Prepare simulation postprocessing",
+                          self.solver.prepare_simu_postproc,
+                          self,
+                          self.uq_method.qois)
+
+        postproc.run_step("Run simulation postprocessing",
+                          self.machine.run_batches,
+                          self,
+                          self.uq_method.qois,self,self.solver,
+                              postproc_type="simu")
+
+
 
 
 
@@ -141,6 +156,7 @@ class Iteration():
 
     def archive(self,archive_level,simulation): 
         if archive_level == 0: 
+            p_print("Archiving is deactivated.")
             return
         if not os.path.isdir('archive'): 
             os.mkdir('archive')

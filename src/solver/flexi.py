@@ -12,7 +12,7 @@ class Flexi(Solver):
             "prmfile" : "parameter_flexi.ini"
         }
 
-    def prepare_simulations(self,batches,stoch_vars):
+    def prepare_simulations(self,batches,uqmethod):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
@@ -21,53 +21,48 @@ class Flexi(Solver):
             p_print("Write HDF5 parameter file for simulation "+batch.name)
             batch.project_name = self.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
+            batch.solver_prms.update({"ProjectName":batch.project_name})
 
-            self.write_hdf5(batch,stoch_vars)
+            # both: 
+            stv=uqmethod.stoch_vars
+            prms= {'Samples'          : batch.samples.nodes,
+                   'StochVarNames'    : [s.name         for s in stv],
+                   'iOccurrence'      : [s.i_occurrence for s in stv],
+                   'iArray'           : [s.i_pos        for s in stv],
+                   "nStochVars"       : len(stv),
+                   "nGlobalRuns"      : batch.samples.n,
+                   "nParallelRuns"    : batch.n_parallel_runs
+                   }
+            prms.update(uqmethod.prm_dict_add(batch))
+
+            self.write_hdf5(batch.prm_file_name,batch.solver_prms,prms)
 
             batch.run_command = self.exe_path + ' ' \
                                 + batch.prm_file_name + ' ' + self.prmfile
 
 
-    def write_hdf5(self,batch,stoch_vars):
+    def write_hdf5(self,file_name,solver_prms,further_prms):
         """ Writes the HDF5 file containing all necessary data for
         flexi run to run.
         """
-        prms= {'Samples'          : batch.samples.nodes,
-               'Weights'          : batch.samples.weights,
-               'StochVarNames'    : [i.name         for i in stoch_vars],
-               'iOccurrence'      : [i.i_occurrence for i in stoch_vars],
-               'iArray'           : [i.i_pos        for i in stoch_vars],
-               'Distributions'    : [i._type        for i in stoch_vars],
-               'DistributionProps': [i.parameters   for i in stoch_vars],
-               "nStochVars"       : len(stoch_vars),
-               "nGlobalRuns"      : batch.samples.n,
-               "nPreviousRuns"    : batch.samples.n_previous,
-               "nParallelRuns"    : batch.n_parallel_runs
-               }
 
-        h5f = h5py.File(batch.prm_file_name, 'w')
-        for name,prm in prms.items():
+        h5f = h5py.File(file_name, 'w')
+        for name,prm in further_prms.items():
             self.h5write(h5f,name,prm)
 
-        batch.solver_prms.update(
-            {"ProjectName":self.project_name+"_"+batch.name})
         dtypes=[("Int", int), ("Str", str), ("Real", float)]
 
-        for suffix,type_in in dtypes:
-            names=[key for key, value in batch.solver_prms.items() \
-                   if isinstance(value,type_in)]
-            values=[value for value in batch.solver_prms.values() \
-                    if isinstance(value,type_in)]
+        for suffix,dtype in dtypes:
+            names=[key for key, value in solver_prms.items() \
+                   if isinstance(value,dtype)]
+            values=[value for value in solver_prms.values() \
+                    if isinstance(value,dtype)]
             n_vars=len(names)
             self.h5write(h5f,'nLevelVars'   +suffix,n_vars)
             self.h5write(h5f,'LevelVarNames'+suffix,names)
             self.h5write(h5f,'LevelVars'    +suffix,values)
 
         h5f.close()
-
-    @staticmethod
-    def getlist(list_,key):
-        return [getattr(e,key) for e in list_]
 
 
     def h5write(self,h5f,name,prm):
@@ -128,7 +123,6 @@ class Flexi(Solver):
             return False
 
 
-
 @QoI.register_subclass('flexi','fieldsolution')
 class FieldSolution(QoI):
 
@@ -137,14 +131,16 @@ class FieldSolution(QoI):
             }
 
     def prepare(self):
+        # participants[0] is a rather dirty hack
+        self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
-                           + " " + self.prmfiles["iteration_postproc"]
-        # this is a rather ugly current flexi implementation
-        self.project_name = self.participants[0].project_name
+                           + " " + self.prmfiles["iteration_postproc"] \
+                           + " " + self.prm_file_name
+        self.project_name  = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_state.h5'
         for p in self.participants:
             filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
-            self.run_command=self.run_command+' '+filename
+            self.run_command += " " + filename
 
 
 @QoI.register_subclass('flexi','recordpoints')
@@ -156,21 +152,20 @@ class RecordPoints(QoI):
             }
 
     def prepare(self):
+        # participants[0] is a rather dirty hack
+        self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
-                           + " " + self.prmfiles["iteration_postproc"]
-        # this is a rather ugly current flexi implementation
+                           + " " + self.prmfiles["iteration_postproc"] \
+                           + " " + self.prm_file_name
         self.project_name = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
-        for ip,p in enumerate(self.participants):
-            fn_add=[]
+        for p in self.participants:
             filenames=sorted(glob.glob(p.project_name+"_RecordPoints_*.h5"))
+            fn_add=[]
             for fn in filenames:
                 time=float(fn.split("_")[-1][:-3])
                 if time_span[0] <= time <= time_span[1]:
-                    fn_add.append(" "+fn)
-            if ip==0:
-                self.run_command=self.run_command+" -n "+str(len(fn_add))
-            self.run_command=self.run_command+"".join(fn_add)
+                    self.run_command += " "+fn
 
 
 

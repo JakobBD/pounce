@@ -50,6 +50,15 @@ class Sc(UqMethod):
         for level in self.levels:
             p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
+
+    def prm_dict_add(self,level):
+        return({
+            'Weights'          : level.samples.weights,
+            'Distributions'    : [i._type        for i in self.stoch_vars],
+            'DistributionProps': [i.parameters   for i in self.stoch_vars],
+            "polyDeg"          : level.poly_deg
+            })
+
     def get_new_n_samples(self,solver):
         raise Exception("the GetNewNSamples routine should not be called for"
                         " stochastic collocation")

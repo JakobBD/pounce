@@ -64,8 +64,7 @@ class Simulation(BaseClass):
         iteration.run_step("Prepare simulations",
                            self.solver.prepare_simulations,
                            self,
-                           self.uq_method.solver_batches,
-                               self.uq_method.stoch_vars)
+                           self.uq_method.solver_batches,self.uq_method)
 
         iteration.run_step("Run simulations",
                            self.machine.run_batches,

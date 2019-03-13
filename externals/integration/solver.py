@@ -24,10 +24,10 @@ def integ(n_points,xi_vec):
 # read input
 with h5py.File(sys.argv[1], 'r') as h5f: 
     projectname = h5f.attrs['ProjectName']
-    n_points      = h5f.attrs['nPoints']
-    n_previous    = h5f.attrs['nPrevious']
-    samples      = np.array(h5f['Samples'])
-    weights      = np.array(h5f['Weights'])
+    n_points    = h5f.attrs['nPoints']
+    n_previous  = h5f.attrs['nPrevious']
+    samples     = np.array(h5f['Samples'])
+    weights     = np.array(h5f['Weights'])
 
 # ACTUAL SIMULATION
 start_time = time.clock()

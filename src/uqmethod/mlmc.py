@@ -95,6 +95,10 @@ class Mlmc(UqMethod):
             p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
 
+    def prm_dict_add(self,sublevel):
+        return {"nPreviousRuns":sublevel.samples.n_previous}
+
+
     def get_new_n_current_samples(self,solver,n_iter):
 
         stdout_table=StdOutTable("sigma_sq","work_mean","mlopt_rounded",
@@ -106,8 +110,8 @@ class Mlmc(UqMethod):
         sum_sigma_w = 0.
         for level in self.levels:
             if level.samples.n > 0:
-                level.sigma_sq = solver.get_postproc_quantity_from_file(
-                    level.qoi_optimize,"SigmaSq")
+                level.sigma_sq = float(solver.get_postproc_quantity_from_file(
+                    level.qoi_optimize,"SigmaSq"))
                 work_mean = solver.get_work_mean(level.qoi_optimize)
                 if level.samples.n_previous > 0:
                     level.work_mean=((level.samples.n_previous*level.work_mean

@@ -25,9 +25,7 @@ def integ(n_points,xi_vec):
 with h5py.File(sys.argv[1], 'r') as h5f: 
     projectname = h5f.attrs['ProjectName']
     n_points    = h5f.attrs['nPoints']
-    n_previous  = h5f.attrs['nPrevious']
     samples     = np.array(h5f['Samples'])
-    weights     = np.array(h5f['Weights'])
 
 # ACTUAL SIMULATION
 start_time = time.clock()
@@ -39,8 +37,6 @@ work_mean =  (end_time - start_time)/len(samples)
 # write output
 with h5py.File(projectname+'_State.h5', 'w') as h5f:
     h5f.create_dataset('Integral', data=all_integs)
-    h5f.create_dataset('Weights', data=weights)
     h5f.attrs['ProjectName'] = projectname
     h5f.attrs['WorkMean'] = work_mean
     h5f.attrs['nSamples'] = len(samples)
-    h5f.attrs['nPrevious'] = n_previous

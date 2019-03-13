@@ -9,7 +9,7 @@ class Internal(Solver):
     subclass_defaults={
         }
 
-    def prepare_simulations(self,batches,stoch_vars):
+    def prepare_simulations(self,batches,uqmethod):
         """ Prepares the simulation by generating the run_command 
         and writing the HDF5 file containing all samples of the current 
         iteration and the current level.
@@ -18,21 +18,30 @@ class Internal(Solver):
             p_print("Write HDF5 parameter file for simulation "+batch.name)
             batch.project_name = self.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
-            self.write_hdf5(batch,stoch_vars)
+            prms={"Samples"    :batch.samples.nodes,
+                  "ProjectName":batch.project_name}
+            prms.update(uqmethod.prm_dict_add(batch))
+            prms.update(batch.solver_prms)
+
+            self.write_hdf5(batch.prm_file_name,prms)
+
             batch.run_command='python3 '+self.exe_path+' '+batch.prm_file_name
 
-    def write_hdf5(self,batch,stoch_vars):
+    def write_hdf5(self,file_name,prms):
         """ Writes the HDF5 file containing all necessary data for the 
         internal to run.
         """
-        h5f = h5py.File(batch.prm_file_name, 'w')
-        h5f.create_dataset('Samples', data=batch.samples.nodes)
-        h5f.create_dataset('Weights', data=batch.samples.weights)
-        h5f.attrs["nPrevious"] = batch.samples.n_previous
-        h5f.attrs["ProjectName"] = batch.project_name
-        for key, value in batch.solver_prms.items():
-            h5f.attrs[key] = value
+
+        h5f = h5py.File(file_name, 'w')
+        for name,prm in prms.items():
+            self.h5write(h5f,name,prm)
         h5f.close()
+
+    def h5write(self,h5f,name,prm):
+        if isinstance(prm,np.ndarray):
+            h5f.create_dataset(name, data=prm)
+        else:
+            h5f.attrs[name]=prm
 
     def prepare_postproc(self,qois):
         """ Prepares the postprocessing by generating the 
@@ -73,10 +82,12 @@ class Integral(QoI):
 
     def prepare(self):
         self.run_command = "python3 "+self.exe_paths["iteration_postproc"]
-        # this is a rather ugly current implementation
-        self.project_name = self.participants[0].project_name
+        # participants[0] is a rather dirty hack
+        self.prm_file_name = self.participants[0].prm_file_name
+        self.run_command += " " + self.prm_file_name 
+        self.project_name  = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_integral.h5'
         for p in self.participants:
             filename=p.project_name+"_State.h5"
-            self.run_command=self.run_command+' '+filename
+            self.run_command += ' ' + filename
 

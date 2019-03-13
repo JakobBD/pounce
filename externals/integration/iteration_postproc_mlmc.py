@@ -2,19 +2,21 @@ import sys
 import numpy as np
 import h5py
 
-# read in solution of fine sublevel
 with h5py.File(sys.argv[1],'r') as h5f:
+    n_previous  = h5f.attrs['nPreviousRuns']
+
+# read in solution of fine sublevel
+with h5py.File(sys.argv[2],'r') as h5f:
     UFine       = np.array(h5f['Integral'])
     projectname = h5f.attrs['ProjectName']
     work_mean   = h5f.attrs['WorkMean']
     n_samples   = h5f.attrs['nSamples']
-    n_previous  = h5f.attrs['nPrevious']
 
 sums_filename='postproc_'+projectname+'_integral.h5'
 
 # read in solution of coarse sublevel, if applicable
-if len(sys.argv)==3: # i_level > 1
-    with h5py.File(sys.argv[2],'r') as h5f:
+if len(sys.argv)==4: # i_level > 1
+    with h5py.File(sys.argv[3],'r') as h5f:
         UCoarse = np.array(h5f['Integral'])
         work_mean += h5f.attrs['WorkMean']
 else: # Level 1 

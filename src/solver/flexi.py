@@ -23,7 +23,7 @@ class Flexi(Solver):
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
             batch.solver_prms.update({"ProjectName":batch.project_name})
 
-            # both: 
+            # both:
             stv=uqmethod.stoch_vars
             prms= {'Samples'          : batch.samples.nodes,
                    'StochVarNames'    : [s.name         for s in stv],
@@ -160,12 +160,9 @@ class RecordPoints(QoI):
         self.project_name = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
         for p in self.participants:
-            filenames=sorted(glob.glob(p.project_name+"_RecordPoints_*.h5"))
+            filenames=sorted(glob.glob(p.project_name+"_RP_*.h5"))
             fn_add=[]
             for fn in filenames:
                 time=float(fn.split("_")[-1][:-3])
-                if time_span[0] <= time <= time_span[1]:
+                if self.time_span[0] <= time <= self.time_span[1]:
                     self.run_command += " "+fn
-
-
-

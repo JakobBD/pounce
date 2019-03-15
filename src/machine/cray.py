@@ -26,7 +26,7 @@ class Cray(Machine):
         }
 
     level_defaults={
-        "avg_walltime_postproc" : 120.
+        "avg_walltime_postproc" : 300.
         }
 
     def __init__(self,class_dict):
@@ -53,7 +53,9 @@ class Cray(Machine):
 
     def allocate_resources_postproc(self,batches):
         for batch in batches:
-            batch.n_cores=self.cores_per_node
+            batch.n_nodes=1
+            batch.n_cores=1
+            batch.batch_walltime=batch.avg_walltime
 
 
     def run_batches(self,batches,simulation,solver,postproc_type=False):
@@ -71,7 +73,12 @@ class Cray(Machine):
         # in case of a restart, only submit
         for batch in self.unfinished(batches):
             if not getattr(batch,"queue_status",None):
-                self.submit_job(batch,solver,simulation)
+                self.submit_job(batch,simulation)
+        self.stdout_table=StdOutTable("job_id","queue_status")
+        self.stdout_table.set_descriptions("Job ID","Status")
+        [self.stdout_table.update(batch) for batch in batches]
+        self.stdout_table.p_print()
+
         self.wait_finished(batches,simulation)
 
         if not postproc_type:
@@ -84,16 +91,17 @@ class Cray(Machine):
         return [b for b in batches if not getattr(b,"finished",False)]
 
 
-    def submit_job(self,batch,solver,simulation):
+    def submit_job(self,batch,simulation):
         """Generates the necessary jobfile and submits job.
         """
         jobfile_string = (
               '#!/bin/bash\n'
-            + '#PBS -N {}\n'.format(solver.project_name)
+            + '#PBS -N {}\n'.format(batch.project_name)
             + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+Time(batch.batch_walltime).str+"\n\n"
             + 'cd $PBS_O_WORKDIR\n\n'
-            + 'aprun -n  {}  -N 24 {}\n'.format(batch.n_cores,
+            + 'aprun -n  {}  -N {} {}\n'.format(batch.n_cores,
+                                                min(batch.n_cores,24),
                                                 batch.run_command))
         batch.jobfile_name = 'jobfile_{}'.format(batch.name)
         with open(batch.jobfile_name,'w+') as jf:
@@ -105,7 +113,7 @@ class Cray(Machine):
         job = subprocess.run(args,stdout=subprocess.PIPE,
                              universal_newlines=True)
         batch.job_id=int(job.stdout.split(".")[0])
-        p_print("submitted job "+str(batch.job_id))
+        # p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
         simulation.iterations[-1].update_step(simulation)
     
@@ -119,17 +127,22 @@ class Cray(Machine):
         """
         while True:
             statuses=self.read_qstat()
+            has_changes=False
             for batch in self.unfinished(batches):
                 if batch.job_id in statuses:
                     queue_status = statuses[batch.job_id]
                 else:
                     queue_status = "C"
                 if not queue_status == batch.queue_status:
-                    p_print("Job {} with ID {} has status {}.".format(
-                        batch.name,batch.job_id,queue_status))
+                    # p_print("Job {} with ID {} has status {}.".format(
+                        # batch.name,batch.job_id,queue_status))
                     batch.queue_status=queue_status
+                    self.stdout_table.update(batch)
+                    has_changes=True
                 if queue_status=='C':
                     self.check_errorfile(batch,batches,simulation)
+            if has_changes:
+                self.stdout_table.print_row_by_name("queue_status")
             if not self.unfinished(batches):
                 return
             time.sleep(1)
@@ -158,14 +171,18 @@ class Cray(Machine):
         """open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        with open(glob.glob('*.e{}'.format(batch.job_id))[0]) as f:
+        batch.logfile_name='{}.o{}'.format(batch.project_name,batch.job_id)
+        batch.errorfile_name='{}.e{}'.format(batch.project_name,batch.job_id)
+        if not os.path.isfile(batch.errorfile_name):
+            time.sleep(5)
+        with open(batch.errorfile_name) as f:
             lines = f.read().splitlines()
         # empty error file: all good
         if len(lines)==0:
             batch.finished=True
             batch.queue_status=None
-            p_print('job ID {} is now complete! {} jobs remaining'.format(
-                batch.job_id,len(self.unfinished(batches))))
+            # p_print('job ID {} is now complete! {} jobs remaining'.format(
+                # batch.job_id,len(self.unfinished(batches))))
             return
         # check if walltime excced in error file (also means that 
         # solver did not otherwise crash)
@@ -173,10 +190,10 @@ class Cray(Machine):
         for words in longlines:
             if words[4]=='walltime' and words[6]=='exceeded':
                 p_print("Job {} exceeded walltime ({}). ".format(
-                            batch.name,Time(batch.walltime).str)
+                            batch.name,Time(batch.batch_walltime).str)
                         +"Re-submit with double walltime.")
-                batch.walltime *= 2
-                self.submit_job(batch,solver,simulation)
+                batch.batch_walltime *= 2
+                self.submit_job(batch,simulation)
                 return
         # non-empty error file and not walltime excceded: other error
         raise Exception('Error in jobfile execution! '

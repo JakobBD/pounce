@@ -5,6 +5,7 @@ import glob
 
 from .solver import Solver,QoI
 from helpers.printtools import *
+from helpers.tools import *
 
 @Solver.register_subclass('flexi')
 class Flexi(Solver):
@@ -12,14 +13,14 @@ class Flexi(Solver):
             "prmfile" : "parameter_flexi.ini"
         }
 
-    def prepare_simulations(self,batches,uqmethod):
+    def prepare_simulations(self,batches,uqmethod,simulation):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
         """
         for batch in batches:
             p_print("Write HDF5 parameter file for simulation "+batch.name)
-            batch.project_name = self.project_name+'_'+batch.name
+            batch.project_name = simulation.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
             batch.solver_prms.update({"ProjectName":batch.project_name})
 
@@ -114,11 +115,12 @@ class Flexi(Solver):
     def check_finished(self,batch):
         #TODO: some more checks, e.g. empty stderr
         try:
-            args=['tail','-n','3',batch.logfile_name]
+            args=['tail','-n','4',batch.logfile_name]
             output=subprocess.run(args,stdout=subprocess.PIPE)
             output=output.stdout.decode("utf-8").splitlines()
-            batch.current_avg_work=float(output[2])
-            return output[0]=="FLEXIBATCH FINISHED"
+            index=output.index("FLEXIBATCH FINISHED")
+            batch.current_avg_work=float(output[index+2])
+            return True
         except:
             return False
 

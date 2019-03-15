@@ -7,7 +7,6 @@ from helpers.printtools import *
 class Solver(BaseClass):
     subclasses = {}
     class_defaults = {
-        "project_name":"NODEFAULT",
         "exe_path": "NODEFAULT"
         }
 

@@ -3,20 +3,21 @@ import numpy as np
 
 from .solver import Solver,QoI
 from helpers.printtools import *
+from helpers.tools import *
 
 @Solver.register_subclass('internal')
 class Internal(Solver):
     subclass_defaults={
         }
 
-    def prepare_simulations(self,batches,uqmethod):
+    def prepare_simulations(self,batches,uqmethod,simulation):
         """ Prepares the simulation by generating the run_command 
         and writing the HDF5 file containing all samples of the current 
         iteration and the current level.
         """
         for batch in batches:
             p_print("Write HDF5 parameter file for simulation "+batch.name)
-            batch.project_name = self.project_name+'_'+batch.name
+            batch.project_name = simulation.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
             prms={"Samples"    :batch.samples.nodes,
                   "ProjectName":batch.project_name}

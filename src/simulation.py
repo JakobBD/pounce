@@ -4,13 +4,15 @@ import tarfile
 import glob
 
 from helpers.printtools import *
+from helpers.tools import *
 from helpers.baseclass import BaseClass
 
 class Simulation(BaseClass):
 
     class_defaults={"archive_level" : 0,
                     # to keep parameter files compatible
-                    "output_level" : "dummy"}
+                    "output_level" : "dummy",
+                    "project_name" : "NODEFAULT"}
 
     def __init__(self,class_dict):
         super().__init__(class_dict)
@@ -64,7 +66,7 @@ class Simulation(BaseClass):
         iteration.run_step("Prepare simulations",
                            self.solver.prepare_simulations,
                            self,
-                           self.uq_method.solver_batches,self.uq_method)
+                           self.uq_method.solver_batches,self.uq_method,self)
 
         iteration.run_step("Run simulations",
                            self.machine.run_batches,

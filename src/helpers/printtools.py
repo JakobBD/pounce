@@ -90,7 +90,13 @@ class StdOutTable():
             self.rows[i_arg].description=arg
 
     def update(self,level):
-        self.header_entries.append(level.__class__.__name__+" "+level.name)
+        name=level.__class__.__name__+" "+level.name
+        if name in self.header_entries: 
+            i_col=self.header_entries.index(name)
+        else: 
+            i_col=len(self.header_entries)
+            self.header_entries.append(name)
+            [row.values.append('dummy') for row in self.rows]
         attr_names=[row.attr for row in self.rows]
         for attr_name in attr_names:
             attr=level
@@ -98,32 +104,28 @@ class StdOutTable():
                 attr=getattr(attr,word)
             for row in self.rows: 
                 if row.attr==attr_name:
-                    row.values.append(attr)
+                    row.values[i_col]=attr
 
     def p_print(self):
-        description_length=max([len(row.description) for row in self.rows])
+        self.descr_length=max([len(row.description) for row in self.rows])
         n_entries=len(self.header_entries)
-        p_print(" "*description_length+" ║ "
-                +"".join(["%11s ║ "%(n) for n in self.header_entries]))
-        sep_str="═"*11+"═╬═"
-        p_print("═"*description_length+"═╬═"+sep_str*n_entries)
+        self.str_length=max([len(h) for h in self.header_entries])
+        self.str_length=max(11,self.str_length)
+        self.l=str(self.str_length)
+        self.lm2=str(self.str_length-2)
+        print(indent+" "*self.descr_length+" ║ "
+              +"".join(["%11s ║ "%(n) for n in self.header_entries]))
+        sep_str="═"*self.str_length+"═╬═"
+        print(indent+"═"*self.descr_length+"═╬═"+sep_str*n_entries)
         for row in self.rows:
-            row.string=" "*(description_length-len(row.description))\
-                       +row.description+" ║ "
-            for value in row.values: 
-                if "time" in row.description.lower():
-                    row.string=row.string+"%11s ║ "%(Time(value).str2)
-                elif "%" in row.description:
-                    row.string=row.string+"%9.1f %% ║ "%(100*value)
-                elif isinstance(value,str): 
-                    row.string=row.string+"%11s ║ "%(value)
-                elif isinstance(value,int): 
-                    row.string=row.string+"%11d ║ "%(value)
-                elif isinstance(value,(float,np.ndarray)): 
-                    row.string=row.string+"%11.4e ║ "%(value)
-                else:
-                    raise Exception("unknown type",type(value))
-            p_print(row.string)
+            row.descr_length=self.descr_length
+            row.str_length=self.str_length
+            row.p_print(self.l,self.lm2)
+
+    def print_row_by_name(self,attr):
+        for row in self.rows:
+            if row.attr == attr: 
+                row.p_print(self.l,self.lm2)
 
 
 
@@ -132,7 +134,26 @@ class TableRow():
         self.attr=attr
         self.values=[]
 
+    def p_print(self,l,lm2):
+        self.string=" "*(self.descr_length-len(self.description))\
+                    +self.description+" ║ "
+        for value in self.values: 
+            if "time" in self.description.lower():
+                self.add_string(("%"+l+"s")%(Time(value).str2))
+            elif "%" in self.description:
+                self.add_string(("%"+lm2+".1f %%")%(100*value))
+            elif isinstance(value,str): 
+                self.add_string(("%"+l+"s")%(value))
+            elif isinstance(value,int): 
+                self.add_string(("%"+l+"d")%(value))
+            elif isinstance(value,(float,np.ndarray)): 
+                self.add_string(("%"+l+".4e")%(value))
+            else:
+                raise Exception("unknown type",type(value))
+        print(indent+self.string)
 
+    def add_string(self,string):
+        self.string+=yellow(string)+" ║ "
 
 
 

@@ -62,7 +62,7 @@ class Internal(Solver):
 @QoI.register_subclass('internal','integral')
 class Integral(QoI):
 
-    def prepare(self,simulation):
+    def prepare_iter_postproc(self,simulation):
         self.run_command = "python3 "+self.exe_paths["iteration_postproc"]
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name

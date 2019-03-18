@@ -4,8 +4,10 @@ import h5py
 
 # read in solution of fine sublevel
 with h5py.File(sys.argv[1],'r') as h5f:
-    u = np.array(h5f['Integral'])
     weights = np.array(h5f['Weights'])
+
+with h5py.File(sys.argv[2],'r') as h5f:
+    u = np.array(h5f['Integral'])
     projectname = h5f.attrs['ProjectName']
 
 mean = np.dot(u,weights)

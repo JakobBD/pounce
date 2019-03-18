@@ -122,7 +122,7 @@ class Simulation(BaseClass):
                           self.uq_method.qois)
 
         postproc.run_step("Prepare simulation postprocessing",
-                          self.solver.prepare_simu_postproc,
+                          self.solver.prepare_postproc,
                           self,
                           self.uq_method.qois,self)
 

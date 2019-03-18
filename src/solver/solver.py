@@ -25,19 +25,12 @@ class Solver(BaseClass):
         run_postproc_command.
         """
         for qoi in qois:
-            p_print("Generate iteration postproc command for "
+            p_print("Generate postproc command for "
                     +qoi.name+" "+qoi._type)
             names=[p.name for p in qoi.participants]
             p_print("  Participants: "+", ".join(names))
             qoi.prepare(simulation)
 
-    def prepare_simu_postproc(self,qois,simulation):
-        for qoi in qois:
-            p_print("Generate simulation postproc command for "
-                    +qoi.name+" "+qoi._type)
-            names=[p.name for p in qoi.participants]
-            p_print("  Participants: "+", ".join(names))
-            qoi.prepare_simu_postproc(simulation)
 
 
 
@@ -66,7 +59,7 @@ class QoI(BaseClass):
             return subclass
         return decorator
 
-    def prepare(self,simulation):
+    def prepare_iter_postproc(self,simulation):
         raise Exception("not yet implemented")
 
     def prepare_simu_postproc(self,simulation):

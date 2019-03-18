@@ -55,12 +55,14 @@ class Mlmc(UqMethod):
                 qoi.participants=level.sublevels
                 qoi.name="postproc_"+level.name
                 qoi.avg_walltime=level.avg_walltime_postproc
+                qoi.prepare=qoi.prepare_iter_postproc
         self.get_active_batches()
         self.setup_qois(qois,self)
         for i,qoi in enumerate(self.qois):
             qoi.name="combinelevels"
             qoi.avg_walltime=qoi.avg_walltime_combinelevels
             qoi.participants=[l.qois[i] for l in self.levels]
+            qoi.prepare=qoi.prepare_simu_postproc
 
     @staticmethod
     def setup_qois(qois_in,level):

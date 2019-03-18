@@ -14,8 +14,8 @@ def f(x,xi_vec):
 # integrates f over x from 0 to pi with 1st or 2nd order accuracy
 def integ(n_points,xi_vec):
     dx=np.pi/n_points
-    half_space=0.5*dx # second order
-    # half_space=0.     # first order
+    # half_space=0.5*dx # second order
+    half_space=0.     # first order
     x_vec=np.linspace(0.,np.pi-dx,n_points)+half_space
     return np.sum([f(x,xi_vec)*dx for x in x_vec])
 

@@ -116,7 +116,7 @@ class FieldSolution(QoI):
                                     "simulation_postproc":""}
             }
 
-    def prepare(self,simulation):
+    def prepare_iter_postproc(self,simulation):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -144,7 +144,7 @@ class RecordPoints(QoI):
                        "time_span": [0.,1.E10]
             }
 
-    def prepare(self,simulation):
+    def prepare_iter_postproc(self,simulation):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -160,3 +160,9 @@ class RecordPoints(QoI):
                 if self.time_span[0] <= time <= self.time_span[1]:
                     self.run_command += " "+fn
 
+    def prepare_simu_postproc(self,simulation):
+        self.args=[p.output_filename for p in self.participants]
+        self.run_command = self.exe_paths["simulation_postproc"] \
+                          + " " + " ".join(self.args)
+        self.project_name  = simulation.project_name+'_'+self.name
+        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

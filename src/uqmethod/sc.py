@@ -32,6 +32,7 @@ class Sc(UqMethod):
                 qoi.participants=[level]
                 qoi.name="postproc_"+level.name
                 qoi.avg_walltime=level.avg_walltime_postproc
+                qoi.prepare=qoi.prepare_iter_postproc
         self.solver_batches=self.levels
         self.postproc_batches = \
             [qoi for level in self.levels for qoi in level.qois]

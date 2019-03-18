@@ -1,6 +1,7 @@
 import numpy as np
 import inspect
 import copy
+from parse import parse
 
 from helpers.printtools import *
 
@@ -30,3 +31,46 @@ def deepmerge(*args):
     return out
 
 
+
+def parse_time_to_seconds(arg): 
+    if isvalidlist(arg):
+        return 3600*arg[0] + 60*arg[1] + arg[2]
+    if isinstance(arg,str):
+        tmp = parse("{:d}h{:d}m{:d}s",arg.lower())
+        if not tmp: 
+            tmp = parse("{:d}:{:d}:{:d}",arg.lower())
+        if not tmp: 
+            tmp = parse("(/{:d},{:d},{:d}/)",arg.lower())
+        if not tmp: 
+            tmp = parse("{:d},{:d},{:d}",arg.lower())
+        if not tmp: 
+            tmp = parse("({:d},{:d},{:d})",arg.lower())
+        if tmp: 
+            return parse_time_to_seconds(list(tmp))
+    return arg
+
+def isvalidlist(arg):
+    if isinstance(arg,(list,tuple)):
+        if len(arg) == 3:
+            return True
+        else:
+            raise TypeError("List or tuple has to have length 3, "
+                            +"but is {}.".format(len(arg)))
+    else:
+        return False
+
+def sec_to_list(sec):
+    list_=[0.,0.,0.]
+    list_[0] = int(int(sec)/3600)
+    list_[1] = int(int(sec)/60 - 60*list_[0])
+    list_[2] = int(sec - 3600*list_[0]  - 60*list_[1])
+    return list_
+
+def time_to_str(sec): 
+    list_=sec_to_list(sec)
+    return ":".join("%02d"%(int(i)) for i in list_)
+
+def time_to_str2(sec):
+    list_=sec_to_list(sec)
+    tmp=["%2d"%(int(i)) for i in list_]
+    return "{}h {}m {}s".format(*tmp)

@@ -1,7 +1,7 @@
 import logging
 import textwrap
 import numpy as np
-from .time import Time
+from .tools import *
 
 class Bcolors :
     """color and font style definitions for changing output appearance
@@ -139,7 +139,7 @@ class TableRow():
                     +self.description+" ║ "
         for value in self.values: 
             if "time" in self.description.lower():
-                self.add_string(("%"+l+"s")%(Time(value).str2))
+                self.add_string(("%"+l+"s")%(time_to_str2(value)))
             elif "%" in self.description:
                 self.add_string(("%"+lm2+".1f %%")%(100*value))
             elif isinstance(value,str): 

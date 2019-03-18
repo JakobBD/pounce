@@ -1,7 +1,7 @@
 import copy
 
 from helpers.printtools import *
-from helpers.time import Time
+from helpers.tools import *
 
 
 class BaseClass():
@@ -49,6 +49,8 @@ class BaseClass():
 
         # convert dict to class attributes
         for prm_name,prm_value in attributes.items():
+            if "time" in prm_name.lower(): 
+                prm_value=parse_time_to_seconds(prm_value)
             setattr(self,prm_name,prm_value)
 
     @classmethod

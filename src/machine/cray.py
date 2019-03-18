@@ -8,7 +8,6 @@ import socket
 import getpass
 
 from .machine import Machine
-from helpers.time import *
 from helpers.printtools import *
 from helpers.tools import *
 from .local import Local
@@ -104,7 +103,7 @@ class Cray(Machine):
             + '#PBS -N {}\n'.format(getattr(batch,"project_name",
                                             simulation.project_name))
             + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
-            + '#PBS -l walltime='+Time(batch.batch_walltime).str+"\n\n"
+            + '#PBS -l walltime='+time_to_str(batch.batch_walltime)+"\n\n"
             + 'cd $PBS_O_WORKDIR\n\n'
             + 'aprun -n  {}  -N {} {}\n'.format(batch.n_cores,
                                                 min(batch.n_cores,24),
@@ -191,7 +190,7 @@ class Cray(Machine):
         for words in longlines:
             if words[4]=='walltime' and words[6]=='exceeded':
                 p_print("Job {} exceeded walltime ({}). ".format(
-                            batch.name,Time(batch.batch_walltime).str)
+                            batch.name,time_to_str(batch.batch_walltime))
                         +"Re-submit with double walltime.")
                 batch.batch_walltime *= 2
                 self.submit_job(batch,simulation)

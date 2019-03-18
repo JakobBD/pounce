@@ -30,7 +30,7 @@ class Time():
         return(self.list_)
     @property
     def str(self):
-        return(":".join(str(i) for i in self.list_))
+        return(":".join("%02d"%(int(i)) for i in self.list_))
     @property
     def str2(self):
         tmp=["%2d"%(int(i)) for i in self.list_]

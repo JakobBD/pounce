@@ -20,6 +20,26 @@ class Solver(BaseClass):
             raise Exception("not all jobs finished. "
                             +"Problems with batch(es) "+", ".join(tmp)+".")
 
+    def prepare_postproc(self,qois,simulation):
+        """ Prepares the postprocessing by generating the
+        run_postproc_command.
+        """
+        for qoi in qois:
+            p_print("Generate iteration postproc command for "
+                    +qoi.name+" "+qoi._type)
+            names=[p.name for p in qoi.participants]
+            p_print("  Participants: "+", ".join(names))
+            qoi.prepare(simulation)
+
+    def prepare_simu_postproc(self,qois,simulation):
+        for qoi in qois:
+            p_print("Generate simulation postproc command for "
+                    +qoi.name+" "+qoi._type)
+            names=[p.name for p in qoi.participants]
+            p_print("  Participants: "+", ".join(names))
+            qoi.prepare_simu_postproc(simulation)
+
+
 
 
 class QoI(BaseClass):
@@ -45,6 +65,12 @@ class QoI(BaseClass):
             cls.subclasses[solver][subclass_key] = subclass
             return subclass
         return decorator
+
+    def prepare(self,simulation):
+        raise Exception("not yet implemented")
+
+    def prepare_simu_postproc(self,simulation):
+        raise Exception("not yet implemented")
 
 
 from . import *

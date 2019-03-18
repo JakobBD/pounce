@@ -57,6 +57,7 @@ class Cray(Machine):
             batch.n_cores=1
             batch.batch_walltime=batch.avg_walltime
 
+    allocate_resources_simu_postproc=allocate_resources_postproc
 
     def run_batches(self,batches,simulation,solver,postproc_type=False):
         """Runs a job by generating the necessary jobfile
@@ -74,6 +75,9 @@ class Cray(Machine):
         for batch in self.unfinished(batches):
             if not getattr(batch,"queue_status",None):
                 self.submit_job(batch,simulation)
+
+        # stdout 
+        print()
         self.stdout_table=StdOutTable("job_id","queue_status")
         self.stdout_table.set_descriptions("Job ID","Status")
         [self.stdout_table.update(batch) for batch in batches]
@@ -86,6 +90,7 @@ class Cray(Machine):
         # reset for next iteration
         for batch in batches:
             batch.finished=False
+            batch.queue_status=None
 
     def unfinished(self,batches):
         return [b for b in batches if not getattr(b,"finished",False)]
@@ -96,7 +101,8 @@ class Cray(Machine):
         """
         jobfile_string = (
               '#!/bin/bash\n'
-            + '#PBS -N {}\n'.format(batch.project_name)
+            + '#PBS -N {}\n'.format(getattr(batch,"project_name",
+                                            simulation.project_name))
             + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+Time(batch.batch_walltime).str+"\n\n"
             + 'cd $PBS_O_WORKDIR\n\n'
@@ -113,7 +119,7 @@ class Cray(Machine):
         job = subprocess.run(args,stdout=subprocess.PIPE,
                              universal_newlines=True)
         batch.job_id=int(job.stdout.split(".")[0])
-        # p_print("submitted job "+str(batch.job_id))
+        p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
         simulation.iterations[-1].update_step(simulation)
     
@@ -134,8 +140,6 @@ class Cray(Machine):
                 else:
                     queue_status = "C"
                 if not queue_status == batch.queue_status:
-                    # p_print("Job {} with ID {} has status {}.".format(
-                        # batch.name,batch.job_id,queue_status))
                     batch.queue_status=queue_status
                     self.stdout_table.update(batch)
                     has_changes=True
@@ -180,9 +184,6 @@ class Cray(Machine):
         # empty error file: all good
         if len(lines)==0:
             batch.finished=True
-            batch.queue_status=None
-            # p_print('job ID {} is now complete! {} jobs remaining'.format(
-                # batch.job_id,len(self.unfinished(batches))))
             return
         # check if walltime excced in error file (also means that 
         # solver did not otherwise crash)
@@ -197,7 +198,8 @@ class Cray(Machine):
                 return
         # non-empty error file and not walltime excceded: other error
         raise Exception('Error in jobfile execution! '
-                        + 'See file *.e{} for details.'.format(batch.job_id))
+                        + 'See file {} for details.'.format(
+                            batch.errorfile_name))
 
 
     def allocate_resources(self,batches):

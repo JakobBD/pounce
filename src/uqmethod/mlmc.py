@@ -24,7 +24,8 @@ class Mlmc(UqMethod):
 
     qoi_defaults={
         "exe_paths": {"iteration_postproc": "", "simulation_postproc": ""},
-        "optimize": False
+        "optimize": False,
+        "avg_walltime_combinelevels": 300.
         }
 
     def __init__(self,input_prm_dict):
@@ -56,9 +57,10 @@ class Mlmc(UqMethod):
                 qoi.avg_walltime=level.avg_walltime_postproc
         self.get_active_batches()
         self.setup_qois(qois,self)
-        for qoi in self.qois:
+        for i,qoi in enumerate(self.qois):
             qoi.name="combinelevels"
-            qoi.participants=self.levels
+            qoi.avg_walltime=qoi.avg_walltime_combinelevels
+            qoi.participants=[l.qois[i] for l in self.levels]
 
     @staticmethod
     def setup_qois(qois_in,level):

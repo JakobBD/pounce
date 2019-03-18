@@ -85,22 +85,6 @@ class Flexi(Solver):
             h5f.attrs[name] = prm
 
 
-    def prepare_postproc(self,qois):
-        """ Prepares the postprocessing by generating the
-        run_postproc_command.
-        """
-        for qoi in qois:
-            p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
-            names=[p.name for p in qoi.participants]
-            p_print("  Participants: "+", ".join(names))
-            qoi.prepare()
-
-    def prepare_simu_postproc(self,qois):
-        for i,qoi in enumerate(qois):
-            qoi.args=[p.qois[i].output_filename for p in qoi.participants]
-            qoi.run_command = qoi.exe_paths["simulation_postproc"] \
-                              + " " + " ".join(qoi.args)
-
     def get_postproc_quantity_from_file(self,qoi,quantity_name):
         """ Readin sigma_sq or avg_walltime for MLMC.
         """
@@ -132,7 +116,7 @@ class FieldSolution(QoI):
                                     "simulation_postproc":""}
             }
 
-    def prepare(self):
+    def prepare(self,simulation):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -144,6 +128,13 @@ class FieldSolution(QoI):
             filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
             self.run_command += " " + filename
 
+    def prepare_simu_postproc(self,simulation):
+        self.args=[p.output_filename for p in self.participants]
+        self.run_command = self.exe_paths["simulation_postproc"] \
+                          + " " + " ".join(self.args)
+        self.project_name  = simulation.project_name+'_'+self.name
+        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
+
 
 @QoI.register_subclass('flexi','recordpoints')
 class RecordPoints(QoI):
@@ -153,7 +144,7 @@ class RecordPoints(QoI):
                        "time_span": [0.,1.E10]
             }
 
-    def prepare(self):
+    def prepare(self,simulation):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -168,3 +159,4 @@ class RecordPoints(QoI):
                 time=float(fn.split("_")[-1][:-3])
                 if self.time_span[0] <= time <= self.time_span[1]:
                     self.run_command += " "+fn
+

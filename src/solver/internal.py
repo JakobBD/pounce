@@ -44,25 +44,6 @@ class Internal(Solver):
         else:
             h5f.attrs[name]=prm
 
-    def prepare_postproc(self,qois):
-        """ Prepares the postprocessing by generating the 
-        run_postproc_command.
-        """
-        for qoi in qois: 
-            p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
-            names=[p.name for p in qoi.participants]
-            p_print("  Participants: "+", ".join(names))
-            qoi.prepare()
-
-    def prepare_simu_postproc(self,qois):
-        for i,qoi in enumerate(qois):
-            p_print("Generate postproc command for "+qoi.name+" "+qoi._type)
-            names=[p.name for p in qoi.participants]
-            p_print("  Participants: "+", ".join(names))
-            qoi.args=[p.qois[i].output_filename for p in qoi.participants]
-            qoi.run_command="python3 " + qoi.exe_paths["simulation_postproc"] \
-                            + " " + " ".join(qoi.args)
-
     def get_work_mean(self,qoi):
         return self.get_postproc_quantity_from_file(qoi,"WorkMean")
 
@@ -81,7 +62,7 @@ class Internal(Solver):
 @QoI.register_subclass('internal','integral')
 class Integral(QoI):
 
-    def prepare(self):
+    def prepare(self,simulation):
         self.run_command = "python3 "+self.exe_paths["iteration_postproc"]
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
@@ -92,3 +73,7 @@ class Integral(QoI):
             filename=p.project_name+"_State.h5"
             self.run_command += ' ' + filename
 
+    def prepare_simu_postproc(self,simulation):
+        self.args=[p.output_filename for p in self.participants]
+        self.run_command="python3 " + self.exe_paths["simulation_postproc"] \
+                        + " " + " ".join(self.args)

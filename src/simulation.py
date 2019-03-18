@@ -48,9 +48,8 @@ class Simulation(BaseClass):
         # Prepare next iteration
 
         print_major_section("Start iteration %d"%(iteration.n))
-        if iteration.finished_steps:
-            p_print(green("Skipping finished steps of iteration:"))
-            [p_print("  "+i) for i in iteration.finished_steps]
+
+        iteration.print_unfinished_steps()
 
         iteration.run_step("Get samples",
                            self.uq_method.get_nodes_and_weights,
@@ -83,7 +82,7 @@ class Simulation(BaseClass):
         iteration.run_step("Prepare postprocessing",
                            self.solver.prepare_postproc,
                            self,
-                           self.uq_method.postproc_batches)
+                           self.uq_method.postproc_batches,self)
 
         iteration.run_step("Run postprocessing",
                            self.machine.run_batches,
@@ -115,6 +114,8 @@ class Simulation(BaseClass):
 
     def run_simulation_postproc(self,postproc):
 
+        postproc.print_unfinished_steps()
+
         postproc.run_step("Allocate resources for simulation postproc",
                           self.machine.allocate_resources_simu_postproc,
                           self,
@@ -123,7 +124,7 @@ class Simulation(BaseClass):
         postproc.run_step("Prepare simulation postprocessing",
                           self.solver.prepare_simu_postproc,
                           self,
-                          self.uq_method.qois)
+                          self.uq_method.qois,self)
 
         postproc.run_step("Run simulation postprocessing",
                           self.machine.run_batches,
@@ -179,4 +180,8 @@ class Iteration():
             tar.add(pf_temp,arcname=simulation.filename)
         os.remove(pf_temp)
 
+    def print_unfinished_steps(self):
+        if self.finished_steps:
+            p_print(green("Skipping finished steps of iteration:"))
+            [p_print("  "+i) for i in self.finished_steps]
 

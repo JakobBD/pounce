@@ -47,9 +47,9 @@ def isvalidlist(arg):
     if isinstance(arg,(list,tuple)):
         if len(arg) == 3:
             return True
-        else:
-            raise TypeError("List or tuple has to have length 3, "
-                            +"but is {}.".format(len(arg)))
+        # else:
+            # raise TypeError("List or tuple has to have length 3, "
+                            # +"but is {}.".format(len(arg)))
     else:
         return False
 

@@ -36,17 +36,11 @@ def parse_time_to_seconds(arg):
     if isvalidlist(arg):
         return 3600*arg[0] + 60*arg[1] + arg[2]
     if isinstance(arg,str):
-        tmp = parse("{:d}h{:d}m{:d}s",arg.lower())
-        if not tmp: 
-            tmp = parse("{:d}:{:d}:{:d}",arg.lower())
-        if not tmp: 
-            tmp = parse("(/{:d},{:d},{:d}/)",arg.lower())
-        if not tmp: 
-            tmp = parse("{:d},{:d},{:d}",arg.lower())
-        if not tmp: 
-            tmp = parse("({:d},{:d},{:d})",arg.lower())
-        if tmp: 
-            return parse_time_to_seconds(list(tmp))
+        formats=["0h0m0s", "0:0:0", "(/0,0,0/)", "0,0,0", "(0,0,0)"]
+        for f in formats:
+            tmp = parse(f.replace("0","{:d}"),arg.lower())
+            if tmp: 
+                return parse_time_to_seconds(list(tmp))
     return arg
 
 def isvalidlist(arg):

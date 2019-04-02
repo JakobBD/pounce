@@ -4,9 +4,7 @@ from .stochvar import StochVar
 
 class Uniform(StochVar):
     defaults_ = {
-        'bounds' : 'NODEFAULT',
-        'i_occurrence': {},
-        'i_pos': {}
+        'bounds' : 'NODEFAULT'
         }
 
     def __init__(self,input_prm_dict,*args):

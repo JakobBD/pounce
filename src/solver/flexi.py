@@ -8,8 +8,17 @@ from helpers.printtools import *
 from helpers.tools import *
 
 class Flexi(Solver):
+
     defaults_ = {
         "prmfile" : "parameter_flexi.ini"
+        }
+
+    defaults_add = { 
+        "StochVar": {
+            'i_occurrence': {},
+            'i_pos': {},
+            'name' : 'NODEFAULT'
+            }
         }
 
     class QoI(QoI):

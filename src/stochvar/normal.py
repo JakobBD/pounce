@@ -7,8 +7,6 @@ class Normal(StochVar):
     defaults_ = {
         'mean' : 'NODEFAULT',
         'standard_deviation' : 'NODEFAULT',
-        'i_occurrence': {},
-        'i_pos': {}
         }
 
     def __init__(self,input_prm_dict,*args):

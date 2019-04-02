@@ -139,15 +139,11 @@ def print_default_yml_file():
     sys.exit()
 
 
-def get_list_defaults(parent_class, *args):
+def get_list_defaults(parent, *args):
     """ output a list of all implemented types of list-input items
     (e.g. stoch_var, qoi)
     """
-    defaults_out=[]
-    # loop over all implemented types
-    for subclass in parent_class.__subclasses__():
-        defaults_out += [subclass.defaults(*args)]
-    return defaults_out
+    return [sub.defaults(*args) for sub in parent.__subclasses__()]
 
 
 def inquire_subclass(parent_class, prepend=""):

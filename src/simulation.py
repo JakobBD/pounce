@@ -52,41 +52,34 @@ class Simulation(BaseClass):
         iteration.print_unfinished_steps()
 
         iteration.run_step("Get samples",
-                           self.uq_method.get_nodes_and_weights,
-                           self)
+                           self.uq_method.get_nodes_and_weights)
 
         # Simulations
 
         iteration.run_step("Allocate resources",
                            self.machine.allocate_resources,
-                           self,
                            self.uq_method.solver_batches)
 
         iteration.run_step("Prepare simulations",
                            self.solver.prepare_simulations,
-                           self,
                            self.uq_method.solver_batches,self.uq_method,self)
 
         iteration.run_step("Run simulations",
                            self.machine.run_batches,
-                           self,
                            self.uq_method.solver_batches,self,self.solver)
 
         # Post-Processing
 
         iteration.run_step("Allocate resources Postproc",
                            self.machine.allocate_resources_postproc,
-                           self,
                            self.uq_method.postproc_batches)
 
         iteration.run_step("Prepare postprocessing",
                            self.solver.prepare_postproc,
-                           self,
                            self.uq_method.postproc_batches,self)
 
         iteration.run_step("Run postprocessing",
                            self.machine.run_batches,
-                           self,
                            self.uq_method.postproc_batches,self,self.solver,
                                postproc_type="iter")
 
@@ -98,13 +91,11 @@ class Simulation(BaseClass):
 
         iteration.run_step("Get number of samples for next iteration",
                            self.uq_method.get_new_n_current_samples,
-                           self,
                            self.solver,iteration.n)
 
         iteration.run_step("Archive",
                            iteration.archive,
-                           self,
-                           self.archive_level,self)
+                           self.archive_level)
 
         if self.uq_method.do_continue:
             self.iterations.append(Iteration(iteration.n+1))
@@ -118,17 +109,14 @@ class Simulation(BaseClass):
 
         postproc.run_step("Allocate resources for simulation postproc",
                           self.machine.allocate_resources_simu_postproc,
-                          self,
                           self.uq_method.qois)
 
         postproc.run_step("Prepare simulation postprocessing",
                           self.solver.prepare_postproc,
-                          self,
                           self.uq_method.qois,self)
 
         postproc.run_step("Run simulation postprocessing",
                           self.machine.run_batches,
-                          self,
                           self.uq_method.qois,self,self.solver,
                               postproc_type="simu")
 
@@ -142,21 +130,21 @@ class Iteration():
         self.finished_steps=[]
         self.n=n
 
-    def update_step(self,simulation,string=None,filename=None):
+    def update_step(self,string=None,filename=None):
         if string:
             self.finished_steps.append(string)
         if not filename: 
-            filename=simulation.filename
+            filename=sim.filename
         with open(filename, 'wb') as f:
-            pickle.dump(simulation, f, 2)
+            pickle.dump(sim, f, 2)
 
-    def run_step(self,description,func,simulation,*args,**kwargs):
+    def run_step(self,description,func,*args,**kwargs):
         if description not in self.finished_steps:
             print_step(description+":")
             func(*args,**kwargs)
-            self.update_step(simulation,string=description)
+            self.update_step(string=description)
 
-    def archive(self,archive_level,simulation): 
+    def archive(self,archive_level): 
         if archive_level == 0: 
             p_print("Archiving is deactivated.")
             return
@@ -167,17 +155,14 @@ class Iteration():
         # prevent simulations restarted from archive from
         # writing the very same data to archive again.
         pf_temp='.temp.pickle'
-        self.update_step(simulation,filename=pf_temp)
+        self.update_step(filename=pf_temp)
         p_print("Write to file "+yellow(self.archive_name))
         with tarfile.open(self.archive_name, "w:gz") as tar:
             for fn in self.files: 
-                print(fn)
-                if os.path.islink(fn): 
-                    print(fn)
-                if fn not in [simulation.filename,"archive"] \
+                if fn not in [sim.filename,"archive"] \
                         and not os.path.islink(fn):
                     tar.add(fn)
-            tar.add(pf_temp,arcname=simulation.filename)
+            tar.add(pf_temp,arcname=sim.filename)
         os.remove(pf_temp)
 
     def print_unfinished_steps(self):

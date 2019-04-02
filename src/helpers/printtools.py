@@ -1,7 +1,6 @@
 import logging
 import textwrap
 import numpy as np
-from .tools import *
 
 class Bcolors :
     """color and font style definitions for changing output appearance
@@ -128,7 +127,6 @@ class StdOutTable():
                 row.p_print(self.l,self.lm2)
 
 
-
 class TableRow():
     def __init__(self,attr):
         self.attr=attr
@@ -155,6 +153,11 @@ class TableRow():
     def add_string(self,string):
         self.string+=yellow(string)+" ║ "
 
+
+def time_to_str2(sec):
+    list_=sec_to_list(sec)
+    tmp=["%2d"%(int(i)) for i in list_]
+    return "{}h {}m {}s".format(*tmp)
 
 
 

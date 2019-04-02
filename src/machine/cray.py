@@ -121,7 +121,7 @@ class Cray(Machine):
         batch.job_id=int(job.stdout.split(".")[0])
         p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
-        simulation.iterations[-1].update_step(simulation)
+        simulation.iterations[-1].update_step()
     
     def to_ssh(self,args): 
         command = "cd "+self.dir_on_cray+" && "+" ".join(args)

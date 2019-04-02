@@ -64,7 +64,3 @@ def time_to_str(sec):
     list_=sec_to_list(sec)
     return ":".join("%02d"%(int(i)) for i in list_)
 
-def time_to_str2(sec):
-    list_=sec_to_list(sec)
-    tmp=["%2d"%(int(i)) for i in list_]
-    return "{}h {}m {}s".format(*tmp)

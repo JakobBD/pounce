@@ -4,7 +4,7 @@ import yaml
 import pickle
 from pick import pick
 # ---------- local imports -------------
-from simulation import Simulation
+import simulation
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
 from solver.solver import Solver
@@ -28,43 +28,45 @@ def config(prmfile):
     print_step("Read parameters")
 
     # initialize classes according to chosen subclass
-    simulation = Simulation(prms["general"])
-    simulation.uq_method = UqMethod.create(prms["uq_method"])
-    simulation.machine = Machine.create(prms["machine"])
-    simulation.solver = Solver.create(prms["solver"])
+    sim = simulation.Simulation(prms["general"])
+    sim.uq_method = UqMethod.create(prms["uq_method"])
+    sim.machine = Machine.create(prms["machine"])
+    sim.solver = Solver.create(prms["solver"])
 
     # initialize lists of classes for all levels, stoch_vars and qois
-    simulation.uq_method.stoch_vars = config_list(
+    sim.uq_method.stoch_vars = config_list(
         "stoch_vars",prms,StochVar.create,
-        simulation.uq_method)
+        sim.uq_method)
 
-    simulation.uq_method.levels = config_list(
+    sim.uq_method.levels = config_list(
         "levels",prms,Level,
-        simulation.uq_method,simulation.machine)
+        sim.uq_method,sim.machine)
 
-    simulation.solver.qois = config_list(
-        "qois",prms,simulation.solver.QoI.create,
-        simulation.uq_method)
+    sim.solver.qois = config_list(
+        "qois",prms,sim.solver.QoI.create,
+        sim.uq_method)
 
     # in the multilevel case, some firther setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
-    simulation.uq_method.setup_batches(simulation.solver.qois)
+    sim.uq_method.setup_batches(sim.solver.qois)
 
-    return simulation
+    simulation.sim = sim
+    return sim
 
 def restart(prmfile=None):
     with open('pounce.pickle', 'rb') as f:
-        simulation = pickle.load(f)
+        sim = pickle.load(f)
     if prmfile:
         raise Exception("Modifying parameters at restart is not yet "
                         "implemented")
 
-    n_finished_iter = (len(simulation.iterations)
-                       - (1 if simulation.uq_method.do_continue else 0))
+    n_finished_iter = (len(sim.iterations)
+                       - (1 if sim.uq_method.do_continue else 0))
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 
-    return simulation
+    simulation.sim = sim
+    return sim
 
 
 def config_list(string,prms,class_init,*args):
@@ -127,7 +129,7 @@ def print_default_yml_file():
     all_defaults["qois"] = qoi_defaults
 
     # add general config parameters
-    all_defaults["general"] = Simulation.defaults()
+    all_defaults["general"] = simulation.Simulation.defaults()
 
     msg="Enter file name for output (press enter for stdout):\n"
     filename_out=input(msg)

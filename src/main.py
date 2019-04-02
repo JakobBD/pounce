@@ -1,7 +1,7 @@
 # global imports
-import sys,os
+import sys
 if sys.version_info[0] < 3:
-    print('\n_c_e only works with Python 3!\n')
+    print('\nPounce only works with Python 3!\n')
     sys.exit()
 
 # local imports

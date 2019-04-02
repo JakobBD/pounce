@@ -1,4 +1,5 @@
 import copy
+import inflection
 
 from helpers.printtools import *
 from helpers.tools import *
@@ -10,15 +11,11 @@ class BaseClass():
     Provides methods for user input and to choose subclasses from a 
     user input string
     """
-    class_defaults={}
-    subclass_defaults={}
 
-    def __init__(self,class_dict,*further_defaults):
-        for dict_ in further_defaults:
-            self.class_defaults.update(dict_)
-        self.read_prms(class_dict)
+    def __init__(self,class_dict,*further_classes):
+        self.read_prms(class_dict,*further_classes)
 
-    def read_prms(self,input_prm_dict):
+    def read_prms(self,input_prm_dict,*further_classes):
         """
         Gets user input for own class as a dictionary.
         Compares user input against defaults for parent class and 
@@ -28,24 +25,22 @@ class BaseClass():
 
         p_print("  Setup class "+yellow(self.__class__.__name__))
         # initialize attribute dict with default values
-        attributes={}
-        attributes.update(copy.deepcopy(self.class_defaults))
-        attributes.update(copy.deepcopy(self.subclass_defaults))
+        attributes=self.defaults(*further_classes)
 
         # overwrite defaults with custom input prms
         for input_prm_name,input_value in input_prm_dict.items():
             if (input_prm_name not in attributes 
                     and not input_prm_name.startswith("_")):
-                raise Exception("'"+input_prm_name
-                                +"' is not a valid input parameter name!")
+                raise InputPrmError("'"+input_prm_name
+                                    +"' is not a valid input parameter name!")
             else:
                 attributes[input_prm_name]=input_value
 
         # check if all mandatory input prms are set
         for prm_name,prm_value in attributes.items():
             if prm_value is "NODEFAULT":
-                raise Exception("'"+prm_name+"' is not set in parameter file"
-                                "and has no default value!")
+                raise InputPrmError("'"+prm_name+"' is not set in parameter"
+                                    "file and has no default value!")
 
         # convert dict to class attributes
         for prm_name,prm_value in attributes.items():
@@ -54,33 +49,54 @@ class BaseClass():
             setattr(self,prm_name,prm_value)
 
     @classmethod
-    def register_subclass(cls, subclass_key):
-        """
-        this is called before defining a cubclass of a parent class.
-        It adds each subclass to a dict, so that the subclass can be 
-        chosen via a user input string.
-        """
-        def decorator(subclass):
-            if subclass_key in cls.subclasses: 
-                raise Exception("two subclasses with key '%s'"%(subclass_key)
-                                +" for class " + cls.__name__)
-            else: 
-                cls.subclasses[subclass_key] = subclass
-            return subclass
-        return decorator
-
-    @classmethod
     def create(cls,class_dict,*args):
         """
         Choose subclass via a input string and init.
         Further user input for this class is passed to init as a dict
         """
         subclass_key=class_dict["_type"]
-        # del class_dict["_type"]
-        if subclass_key not in cls.subclasses:
-            raise ValueError(
-                "'{}' is not a valid {}".format(subclass_key,cls.__name__))
-        p_print("Chosen subclass of "+yellow(cls.__name__)
-                +" is "+yellow(subclass_key)+".")
-        return cls.subclasses[subclass_key](class_dict,*args)
+        subcls=cls.subclass(subclass_key)
+        p_print("Chosen subclass of "+yellow(cls.name())
+                +" is "+yellow(subcls.name())+".")
+        return subcls(class_dict,*args)
+
+    @classmethod
+    def subclass(cls,string):
+        for subclass in cls.__subclasses__():
+            if string == subclass.name():
+                return subclass
+        raise InputPrmError(
+            "'{}' is not a valid {}".format(string,cls.name()))
+    
+    @classmethod
+    def defaults_class(cls,key=None):
+        defaults={}
+        for c in reversed(cls.__mro__): 
+            if key: 
+                try: 
+                    defaults_update = c.defaults_add[key]
+                except (AttributeError, KeyError) as e:
+                    defaults_update = {}
+            else:
+                try: 
+                    defaults_update = c.defaults_
+                except AttributeError:
+                    defaults_update={}
+            defaults.update(copy.deepcopy(defaults_update))
+        return defaults
+
+    @classmethod
+    def defaults(cls,*args): 
+        d=cls.defaults_class()
+        if args:
+            keys=[c.__name__ for c in reversed(cls.__mro__[:-2])]
+        for arg in args: 
+            for key in keys: 
+                d.update(arg.defaults_class(key))
+        d.update({"_type": cls.name()})
+        return d
+
+    @classmethod
+    def name(cls):
+        return inflection.underscore(cls.__name__)
 

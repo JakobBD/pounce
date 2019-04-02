@@ -1,14 +1,13 @@
 # ---------- external imports ----------
 import sys
 import yaml
-import logging
-import copy
 import pickle
+from pick import pick
 # ---------- local imports -------------
 from simulation import Simulation
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
-from solver.solver import Solver,QoI
+from solver.solver import Solver
 from stochvar.stochvar import StochVar
 from level.level import Level
 from helpers.baseclass import BaseClass
@@ -34,20 +33,18 @@ def config(prmfile):
     simulation.machine = Machine.create(prms["machine"])
     simulation.solver = Solver.create(prms["solver"])
 
-    # initialize lists of classes for all levels and all stoch_vars
+    # initialize lists of classes for all levels, stoch_vars and qois
     simulation.uq_method.stoch_vars = config_list(
         "stoch_vars",prms,StochVar.create,
-        simulation.uq_method.stoch_var_defaults)
+        simulation.uq_method)
 
-    defaults = {}
-    defaults.update(simulation.uq_method.level_defaults)
-    defaults.update(simulation.machine.level_defaults)
+    simulation.uq_method.levels = config_list(
+        "levels",prms,Level,
+        simulation.uq_method,simulation.machine)
 
-    simulation.uq_method.levels = config_list("levels",prms,Level,defaults)
-
-    QoI.subclasses=QoI.subclasses[prms["solver"]["_type"]]
     simulation.solver.qois = config_list(
-        "qois",prms,QoI.create,simulation.uq_method.qoi_defaults)
+        "qois",prms,simulation.solver.QoI.create,
+        simulation.uq_method)
 
     # in the multilevel case, some firther setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
@@ -56,12 +53,8 @@ def config(prmfile):
     return simulation
 
 def restart(prmfile=None):
-
-    f = open('pounce.pickle', 'rb')
-    simulation = pickle.load(f)
-    f.close()
-    simulation.machine.from_home=True
-
+    with open('pounce.pickle', 'rb') as f:
+        simulation = pickle.load(f)
     if prmfile:
         raise Exception("Modifying parameters at restart is not yet "
                         "implemented")
@@ -74,7 +67,7 @@ def restart(prmfile=None):
     return simulation
 
 
-def config_list(string,prms,class_init,defaults=None):
+def config_list(string,prms,class_init,*args):
     """
     Checks for correct input format for list type input and
     initializes (sub-) class for given input
@@ -87,11 +80,9 @@ def config_list(string,prms,class_init,defaults=None):
     p_print("Setup "+yellow(string)+" - Number of " + string + " is "
             + yellow(str(len(prms[string]))) + ".")
     indent_in()
-    classes = [class_init(sub_dict,defaults) for sub_dict in prms[string]]
+    classes = [class_init(sub_dict,*args) for sub_dict in prms[string]]
     indent_out()
     return classes
-
-
 
 
 
@@ -103,57 +94,40 @@ def print_default_yml_file():
     """
 
     print("\n_print default YML File\n"+"-"*132+"\n_config:\n")
-    all_defaults={}
-
-    parent_classes={"uq_method": UqMethod,
-                    "machine": Machine,
-                    "solver": Solver }
-    subclasses={}
+    all_defaults = {}
+    subclasses = []
 
     # Get defaults for parent classes uq_method, machine and solver.
-    for parent_class_name,parent_class in parent_classes.items():
+    for parent_class in [UqMethod, Machine, Solver]:
 
         # Inquire user input to choose subclass for which defaults are
         # to be printed
-        subclass_name, class_defaults, subclass \
-            = inquire_subclass(parent_class_name,parent_class)
+        subclass = inquire_subclass(parent_class)
 
-        # build up dictionary with defaults for this parent class.
-        class_dict=get_defaults(subclass_name,subclass)
+        # add to list, as might be needed for defaults_add
+        subclasses += [subclass]
+
+        #store solver to pick QoI from 
+        if parent_class is Solver: 
+            solver = subclass
 
         # add defaults for this class to dict with all defaults
-        all_defaults.update({parent_class_name : class_dict})
-
-        # we need a dict of all chosen subclasses below,
-        # as some defaults set per level or per stoch_var depend on the
-        # chosen subclasses.
-        subclasses.update({parent_class_name:subclass})
-
-
-    # build defaults per level
-    level_defaults_tmp = deepmerge(
-        Level.class_defaults,
-        # some defaults set per level depend on the chosen uq_method
-        subclasses["uq_method"].level_defaults,
-        subclasses["machine"].level_defaults)
+        all_defaults[parent_class.name()] = subclass.defaults()
 
     # we update the large defaults dict with a list containing our
     # level dict.
     # This outputs the defaults for n_levels = 1 in the correct format
-    all_defaults.update({"levels" : [level_defaults_tmp]})
+    all_defaults["levels"] = [Level.defaults(*subclasses)]
 
-    var_defaults=get_list_defaults(
-        StochVar,subclasses["uq_method"].stoch_var_defaults)
-    all_defaults.update({"stoch_vars" : var_defaults})
+    var_defaults=get_list_defaults(StochVar,*subclasses)
+    all_defaults["stoch_vars"] = var_defaults
 
     # QoIs
-    QoI.subclasses=QoI.subclasses[all_defaults["solver"]["_type"]]
-    qoi_defaults=get_list_defaults(
-        QoI,subclasses["uq_method"].qoi_defaults)
-    all_defaults.update({"qois" : qoi_defaults})
+    qoi_defaults=get_list_defaults(solver.QoI,*subclasses)
+    all_defaults["qois"] = qoi_defaults
 
     # add general config parameters
-    all_defaults.update({"general" : Simulation.class_defaults})
+    all_defaults["general"] = Simulation.defaults()
 
     msg="Enter file name for output (press enter for stdout):\n"
     filename_out=input(msg)
@@ -165,39 +139,24 @@ def print_default_yml_file():
     sys.exit()
 
 
-def get_list_defaults(Class,further_defaults):
+def get_list_defaults(parent_class, *args):
     """ output a list of all implemented types of list-input items
     (e.g. stoch_var, qoi)
     """
     defaults_out=[]
     # loop over all implemented types
-    for name,subclass in Class.subclasses.items():
-        sub_dict=get_defaults(name,subclass)
-        sub_dict=deepmerge(sub_dict,further_defaults)
-        defaults_out.append(sub_dict)
+    for subclass in parent_class.__subclasses__():
+        defaults_out += [subclass.defaults(*args)]
     return defaults_out
 
 
-def get_defaults(subclass_name,subclass):
-    return deepmerge(
-        {"_type" : subclass_name},
-        subclass.class_defaults,
-        subclass.subclass_defaults)
-
-
-def inquire_subclass(parent_class_name,parent_class):
+def inquire_subclass(parent_class, prepend=""):
     """
     Asks for user input to choose one of the available subclasses
     """
-    msg = "Available types for "+parent_class_name+" (please choose): "
-    for subclass_name in parent_class.subclasses:
-        msg += subclass_name + ", "
-    while True:
-        subclass_name=input(msg[:-2]+"\n")
-        # check if user input is a valid option
-        if subclass_name in parent_class.subclasses:
-            return(subclass_name,
-                   parent_class.class_defaults,
-                   parent_class.subclasses[subclass_name])
-        else:
-            print("Wrong input. Repeat.")
+    msg = "Please choose a "+parent_class.name()+":"
+    if prepend: 
+        msg = prepend+": "+msg
+    subclasses = {c.name(): c for c in parent_class.__subclasses__()}
+    subclass_name,_=pick(list(subclasses.keys()), msg)
+    return subclasses[subclass_name]

@@ -7,11 +7,13 @@ from .solver import Solver,QoI
 from helpers.printtools import *
 from helpers.tools import *
 
-@Solver.register_subclass('flexi')
 class Flexi(Solver):
-    subclass_defaults={
-            "prmfile" : "parameter_flexi.ini"
+    defaults_ = {
+        "prmfile" : "parameter_flexi.ini"
         }
+
+    class QoI(QoI):
+        pass
 
     def prepare_simulations(self,batches,uqmethod,simulation):
         """ Prepares the simulation by generating the run_command
@@ -109,12 +111,14 @@ class Flexi(Solver):
             return False
 
 
-@QoI.register_subclass('flexi','fieldsolution')
-class FieldSolution(QoI):
+class FieldSolution(Flexi.QoI):
 
-    subclass_defaults={"prmfiles": {"iteration_postproc": "",
-                                    "simulation_postproc":""}
+    defaults_ = {
+        "prmfiles": {
+            "iteration_postproc": "",
+            "simulation_postproc":""
             }
+        }
 
     def prepare_iter_postproc(self,simulation):
         # participants[0] is a rather dirty hack
@@ -136,13 +140,15 @@ class FieldSolution(QoI):
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
 
-@QoI.register_subclass('flexi','recordpoints')
-class RecordPoints(QoI):
+class RecordPoints(Flexi.QoI):
 
-    subclass_defaults={"prmfiles": {"iteration_postproc": "",
-                                    "simulation_postproc":""},
-                       "time_span": [0.,1.E10]
-            }
+    defaults_ = {
+        "prmfiles": {
+            "iteration_postproc": "",
+            "simulation_postproc":""
+            },
+        "time_span": [0.,1.E10]
+        }
 
     def prepare_iter_postproc(self,simulation):
         # participants[0] is a rather dirty hack

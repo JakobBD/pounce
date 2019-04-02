@@ -1,8 +1,7 @@
 from helpers.baseclass import BaseClass
 
 class StochVar(BaseClass):
-    subclasses = {}
-    class_defaults={
+    defaults_ = {
         'name' : 'NODEFAULT'
         }
 

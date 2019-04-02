@@ -5,10 +5,10 @@ from .solver import Solver,QoI
 from helpers.printtools import *
 from helpers.tools import *
 
-@Solver.register_subclass('internal')
 class Internal(Solver):
-    subclass_defaults={
-        }
+
+    class QoI(QoI):
+        pass
 
     def prepare_simulations(self,batches,uqmethod,simulation):
         """ Prepares the simulation by generating the run_command 
@@ -59,8 +59,7 @@ class Internal(Solver):
         return True
 
 
-@QoI.register_subclass('internal','integral')
-class Integral(QoI):
+class Integral(Internal.QoI):
 
     def prepare_iter_postproc(self,simulation):
         self.run_command = "python3 "+self.exe_paths["iteration_postproc"]

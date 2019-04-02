@@ -4,21 +4,20 @@ import subprocess
 from .machine import Machine
 from helpers.printtools import *
 
-@Machine.register_subclass('local')
 class Local(Machine):
     """Class: Defines local machine. Machine executes Samples.
-    Args:
-
-    Returns:
     """
-    subclass_defaults={
+
+    defaults_={
         "mpi" : "NODEFAULT",
         'cores_per_sample' : 2
         }
 
-    level_defaults={
-        'avg_walltime' : "dummy_unused",
-        'avg_walltime_postproc' : "dummy_unused"
+    defaults_add = { 
+        "Level": {
+            'avg_walltime': "dummy_unused",
+            'avg_walltime_postproc': "dummy_unused"
+            }
         }
 
     def run_batches(self,batches,simulation,solver,postproc_type=False):

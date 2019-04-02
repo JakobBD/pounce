@@ -2,9 +2,8 @@ import numpy as np
 import chaospy as cp
 from .stochvar import StochVar
 
-@StochVar.register_subclass('uniform')
 class Uniform(StochVar):
-    subclass_defaults={
+    defaults_ = {
         'bounds' : 'NODEFAULT',
         'i_occurrence': {},
         'i_pos': {}

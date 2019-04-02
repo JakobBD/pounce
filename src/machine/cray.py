@@ -12,11 +12,10 @@ from helpers.printtools import *
 from helpers.tools import *
 from .local import Local
 
-@Machine.register_subclass('cray')
 class Cray(Machine):
     """Definition of Cray Hazelhen machine.
     """
-    subclass_defaults={
+    defaults_={
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
         "max_walltime" : 86400, # 24h
@@ -24,8 +23,10 @@ class Cray(Machine):
         "local_postproc" : False
         }
 
-    level_defaults={
-        "avg_walltime_postproc" : 300.
+    defaults_add = { 
+        "Level": {
+            "avg_walltime_postproc" : 300.
+            }
         }
 
     def __init__(self,class_dict):

@@ -9,10 +9,10 @@ from helpers.baseclass import BaseClass
 
 class Simulation(BaseClass):
 
-    class_defaults={"archive_level" : 0,
-                    # to keep parameter files compatible
-                    "output_level" : "dummy",
-                    "project_name" : "NODEFAULT"}
+    defaults_ = {
+        "archive_level" : 0,
+        "project_name" : "NODEFAULT"
+        }
 
     def __init__(self,class_dict):
         super().__init__(class_dict)

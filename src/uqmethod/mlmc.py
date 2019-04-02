@@ -7,25 +7,28 @@ from helpers.printtools import *
 from helpers.tools import *
 
 
-@UqMethod.register_subclass('mlmc')
 class Mlmc(UqMethod):
 
-    subclass_defaults={
+    defaults_ = {
         "n_max_iter" : "NODEFAULT",
         "tolerance" : None,
         "total_work" : None,
         "reset_seed" : False
         }
 
-    level_defaults={
-        "n_warmup_samples": "NODEFAULT",
-        "solver_prms" : {},
-        }
-
-    qoi_defaults={
-        "exe_paths": {"iteration_postproc": "", "simulation_postproc": ""},
-        "optimize": False,
-        "avg_walltime_combinelevels": 300.
+    defaults_add = { 
+        "Level": {
+            "n_warmup_samples": "NODEFAULT",
+            "solver_prms" : {},
+            },
+        "QoI": {
+            "exe_paths": {
+                "iteration_postproc": "",
+                "simulation_postproc": ""
+                },
+            "optimize": False,
+            "avg_walltime_combinelevels": 300.
+            }
         }
 
     def __init__(self,input_prm_dict):

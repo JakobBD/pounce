@@ -2,9 +2,9 @@ import numpy as np
 import chaospy as cp
 from .stochvar import StochVar
 
-@StochVar.register_subclass('normal')
 class Normal(StochVar):
-    subclass_defaults={
+
+    defaults_ = {
         'mean' : 'NODEFAULT',
         'standard_deviation' : 'NODEFAULT',
         'i_occurrence': {},

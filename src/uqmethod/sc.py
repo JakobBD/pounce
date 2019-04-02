@@ -5,16 +5,17 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 
-@UqMethod.register_subclass('sc')
 class Sc(UqMethod):
 
-    subclass_defaults={
+    defaults_ = {
         "sparse_grid" : "NODEFAULT"
         }
 
-    level_defaults={
-        "poly_deg": "NODEFAULT",
-        'solver_prms' : {}
+    defaults_add = { 
+        "Level": {
+            "poly_deg": "NODEFAULT",
+            'solver_prms' : {}
+            }
         }
 
     def __init__(self,input_prm_dict):

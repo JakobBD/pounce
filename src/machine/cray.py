@@ -11,6 +11,7 @@ from .machine import Machine
 from helpers.printtools import *
 from helpers.tools import *
 from .local import Local
+from helpers import globels
 
 class Cray(Machine):
     """Definition of Cray Hazelhen machine.
@@ -51,30 +52,16 @@ class Cray(Machine):
                                 "run on remote machine.")
 
 
-    def allocate_resources_postproc(self,batches):
-        for batch in batches:
-            batch.n_nodes=1
-            batch.n_cores=1
-            batch.batch_walltime=batch.avg_walltime
-
-    allocate_resources_simu_postproc=allocate_resources_postproc
-
-    def run_batches(self,batches,simulation,solver,postproc_type=False):
-        """Runs a job by generating the necessary jobfile
-             and submitting it.
+    def run_batches(self,batches):
         """
-
-        # local_postproc means that postproc is carried out
-        if self.local_postproc and postproc_type: 
-            self.mpi=False
-            self.cores_per_sample=2
-            return Local.run_batches_external(self,simulation,solver,
-                                              postproc_type)
+        Runs batches by generating the necessary jobfiles and 
+        submitting them
+        """
 
         # in case of a restart, only submit
         for batch in self.unfinished(batches):
             if not getattr(batch,"queue_status",None):
-                self.submit_job(batch,simulation)
+                self.submit_job(batch)
 
         # stdout 
         print()
@@ -83,10 +70,10 @@ class Cray(Machine):
         [self.stdout_table.update(batch) for batch in batches]
         self.stdout_table.p_print()
 
-        self.wait_finished(batches,simulation)
+        self.wait_finished(batches)
 
-        if not postproc_type:
-            solver.check_all_finished(batches)
+        self.check_all_finished()
+
         # reset for next iteration
         for batch in batches:
             batch.finished=False
@@ -96,13 +83,13 @@ class Cray(Machine):
         return [b for b in batches if not getattr(b,"finished",False)]
 
 
-    def submit_job(self,batch,simulation):
+    def submit_job(self,batch):
         """Generates the necessary jobfile and submits job.
         """
         jobfile_string = (
               '#!/bin/bash\n'
             + '#PBS -N {}\n'.format(getattr(batch,"project_name",
-                                            simulation.project_name))
+                                            globels.project_name))
             + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+time_to_str(batch.batch_walltime)+"\n\n"
             + 'cd $PBS_O_WORKDIR\n\n'
@@ -121,13 +108,13 @@ class Cray(Machine):
         batch.job_id=int(job.stdout.split(".")[0])
         p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
-        simulation.iterations[-1].update_step()
+        globels.sim.iterations[-1].update_step()
     
     def to_ssh(self,args): 
         command = "cd "+self.dir_on_cray+" && "+" ".join(args)
         return ['ssh',self.cray_username+"@hazelhen.hww.de",command]
 
-    def wait_finished(self,batches,simulation):
+    def wait_finished(self,batches):
         """Monitors all jobs on Cray Hazelhen HPC queue. 
         Checks if jobfile finished.
         """
@@ -144,7 +131,7 @@ class Cray(Machine):
                     self.stdout_table.update(batch)
                     has_changes=True
                 if queue_status=='C':
-                    self.check_errorfile(batch,batches,simulation)
+                    self.check_errorfile(batch,batches)
             if has_changes:
                 self.stdout_table.print_row_by_name("queue_status")
             if not self.unfinished(batches):
@@ -171,7 +158,7 @@ class Cray(Machine):
             return {id(line):stat(line) for line in lines[5:-1]}
 
 
-    def check_errorfile(self,batch,batches,simulation):
+    def check_errorfile(self,batch,batches):
         """open error file and parse errrors. 
         Well, parse is a strong word here.
         """
@@ -194,7 +181,7 @@ class Cray(Machine):
                             batch.name,time_to_str(batch.batch_walltime))
                         +"Re-submit with double walltime.")
                 batch.batch_walltime *= 2
-                self.submit_job(batch,simulation)
+                self.submit_job(batch)
                 return
         # non-empty error file and not walltime excceded: other error
         raise Exception('Error in jobfile execution! '
@@ -209,6 +196,13 @@ class Cray(Machine):
         etc.) and outputs number of cores and number of parallel runs 
         for this batch.
         """
+
+        if not self.multi_sample:
+            for batch in batches:
+                batch.n_nodes=1
+                batch.n_cores=1
+                batch.batch_walltime=batch.avg_walltime
+            return
 
         self.walltime_factor = 1.2
         stdout_table=StdOutTable(

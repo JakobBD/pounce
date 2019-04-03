@@ -12,6 +12,7 @@ from level.level import Level
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
 from helpers.tools import *
+from helpers import globels
 
 
 def config(prmfile):
@@ -27,25 +28,30 @@ def config(prmfile):
     print_step("Read parameters")
 
     # initialize classes according to chosen subclass
-    global sim
     sim = UqMethod.create(prms["uq_method"])
-    sim.general = GeneralConfig(prms["general"])
-    sim.machine = Machine.create(prms["machine"])
-    sim.solver = Solver.create(prms["solver"])
+    general = GeneralConfig(prms["general"])
+    SolverLoc = Solver.subclass(prms["solver"]["_type"])
+    LocMachine = Machine.subclass(prms["machine"]["_type"])
 
     # initialize lists of classes for all levels, stoch_vars and qois
     sim.stoch_vars = config_list("stoch_vars", prms, StochVar.create, sim)
-    sim.levels = config_list("levels", prms, Level, sim, sim.machine)
-    sim.solver.qois = config_list("qois", prms, sim.solver.QoI.create, sim)
+    sim.levels = config_list("levels", prms, Level, sim, LocMachine)
 
     # in the multilevel case, some firther setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
-    sim.setup_batches(sim.solver.qois)
+    sim.setup_batches(prms)
 
+    sim.main_simulation = LocMachine(prms["machine"])
+    sim.main_simulation.fill("simulation", True, sim.solver_batches)
+    sim.iteration_postproc = LocMachine(prms["machine"])
+    sim.iteration_postproc.fill("iteration_postproc", False, sim.postproc_batches)
+    sim.simulation_postproc = LocMachine(prms["machine"])
+    sim.simulation_postproc.fill("simulation_postproc", False, sim.qois)
+
+    globels.sim = sim
     return sim
 
 def restart(prmfile=None):
-    global sim
     with open('pounce.pickle', 'rb') as f:
         sim = pickle.load(f)
     if prmfile:
@@ -57,6 +63,7 @@ def restart(prmfile=None):
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 
+    globels.sim = sim
     return sim
 
 
@@ -157,3 +164,8 @@ class GeneralConfig(BaseClass):
         "archive_level" : 0,
         "project_name" : "NODEFAULT"
         }
+
+    def __init__(self,*args): 
+        super().__init__(*args)
+        globels.archive_level=self.archive_level
+        globels.project_name=self.project_name

@@ -6,6 +6,7 @@ import glob
 from .solver import Solver,QoI
 from helpers.printtools import *
 from helpers.tools import *
+from helpers import globels
 
 class Flexi(Solver):
 
@@ -22,35 +23,45 @@ class Flexi(Solver):
         }
 
     class QoI(QoI):
-        pass
 
-    def prepare_simulations(self,batches,uq_method):
+        def get_derived_quantity(self,quantity_name):
+            """ Readin sigma_sq or avg_walltime for MLMC.
+            """
+            with h5py.File(self.output_filename, 'r') as h5f:
+                quantity = h5f.attrs[quantity_name]
+            return quantity
+
+        def get_work_mean(self):
+            return sum(p.current_avg_work for p in self.participants)
+
+
+    def prepare_simulations(self,uq_method):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
         """
-        for batch in batches:
-            p_print("Write HDF5 parameter file for simulation "+batch.name)
-            batch.project_name = uq_method.general.project_name+'_'+batch.name
-            batch.prm_file_name = 'input_'+batch.project_name+'.h5'
-            batch.solver_prms.update({"ProjectName":batch.project_name})
 
-            # both:
-            stv=uq_method.stoch_vars
-            prms= {'Samples'          : batch.samples.nodes,
-                   'StochVarNames'    : [s.name         for s in stv],
-                   'iOccurrence'      : [s.i_occurrence for s in stv],
-                   'iArray'           : [s.i_pos        for s in stv],
-                   "nStochVars"       : len(stv),
-                   "nGlobalRuns"      : batch.samples.n,
-                   "nParallelRuns"    : batch.n_parallel_runs
-                   }
-            prms.update(uq_method.prm_dict_add(batch))
+        p_print("Write HDF5 parameter file for simulation "+self.name)
+        self.project_name = globels.project_name+'_'+self.name
+        self.prm_file_name = 'input_'+self.project_name+'.h5'
+        self.solver_prms.update({"ProjectName":self.project_name})
 
-            self.write_hdf5(batch.prm_file_name,batch.solver_prms,prms)
+        # both:
+        stv=uq_method.stoch_vars
+        prms= {'Samples'          : self.samples.nodes,
+               'StochVarNames'    : [s.name         for s in stv],
+               'iOccurrence'      : [s.i_occurrence for s in stv],
+               'iArray'           : [s.i_pos        for s in stv],
+               "nStochVars"       : len(stv),
+               "nGlobalRuns"      : self.samples.n,
+               "nParallelRuns"    : self.n_parallel_runs
+               }
+        prms.update(uq_method.prm_dict_add(self))
 
-            batch.run_command = self.exe_path + ' ' \
-                                + batch.prm_file_name + ' ' + self.prmfile
+        self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
+
+        self.run_command = self.exe_path + ' ' \
+                            + self.prm_file_name + ' ' + self.prmfile
 
 
     def write_hdf5(self,file_name,solver_prms,further_prms):
@@ -96,19 +107,7 @@ class Flexi(Solver):
             h5f.attrs[name] = prm
 
 
-    def get_postproc_quantity_from_file(self,qoi,quantity_name):
-        """ Readin sigma_sq or avg_walltime for MLMC.
-        """
-        h5f = h5py.File(qoi.output_filename, 'r')
-        quantity = h5f.attrs[quantity_name]
-        h5f.close()
-        return quantity
-
-    def get_work_mean(self,qoi):
-        return sum(p.current_avg_work for p in qoi.participants)
-
     def check_finished(self,batch):
-        #TODO: some more checks, e.g. empty stderr
         try:
             args=['tail','-n','4',batch.logfile_name]
             output=subprocess.run(args,stdout=subprocess.PIPE)
@@ -145,7 +144,7 @@ class FieldSolution(Flexi.QoI):
         self.args=[p.output_filename for p in self.participants]
         self.run_command = self.exe_paths["simulation_postproc"] \
                           + " " + " ".join(self.args)
-        self.project_name  = uq_method.general.project_name+'_'+self.name
+        self.project_name  = globels.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
 

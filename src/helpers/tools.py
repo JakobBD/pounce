@@ -31,6 +31,14 @@ def deepmerge(*args):
     return out
 
 
+def make_iter(process_func):
+    def func_wrapper(self,iteration):
+        self.iterations.append(self.current_iter)
+        self.current_iter.start()
+        process_func(self,iteration)
+        iteration.run_step("Archive",self.archive)
+    return func_wrapper
+
 
 def parse_time_to_seconds(arg): 
     if isvalidlist(arg):
@@ -47,9 +55,6 @@ def isvalidlist(arg):
     if isinstance(arg,(list,tuple)):
         if len(arg) == 3:
             return True
-        # else:
-            # raise TypeError("List or tuple has to have length 3, "
-                            # +"but is {}.".format(len(arg)))
     else:
         return False
 
@@ -64,3 +69,10 @@ def time_to_str(sec):
     list_=sec_to_list(sec)
     return ":".join("%02d"%(int(i)) for i in list_)
 
+def time_to_str2(sec):
+    list_=sec_to_list(sec)
+    tmp=["%2d"%(int(i)) for i in list_]
+    return "{}h {}m {}s".format(*tmp)
+
+class InputPrmError(Exception): 
+    pass

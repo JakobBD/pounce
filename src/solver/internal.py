@@ -4,29 +4,39 @@ import numpy as np
 from .solver import Solver,QoI
 from helpers.printtools import *
 from helpers.tools import *
+from helpers import globels
 
 class Internal(Solver):
 
     class QoI(QoI):
-        pass
 
-    def prepare_simulations(self,batches,uq_method):
+        def get_work_mean(self):
+            return self.get_derived_quantity("WorkMean")
+
+        def get_derived_quantity(self,quantity_name):
+            """ Readin sigma_sq for MLMC.
+            """
+            with h5py.File(self.output_filename, 'r') as h5f:
+                quantity = h5f.attrs[quantity_name]
+            return quantity
+
+
+    def prepare_simulations(self,uq_method):
         """ Prepares the simulation by generating the run_command 
         and writing the HDF5 file containing all samples of the current 
         iteration and the current level.
         """
-        for batch in batches:
-            p_print("Write HDF5 parameter file for simulation "+batch.name)
-            batch.project_name = uq_method.general.project_name+'_'+batch.name
-            batch.prm_file_name = 'input_'+batch.project_name+'.h5'
-            prms={"Samples"    :batch.samples.nodes,
-                  "ProjectName":batch.project_name}
-            prms.update(uq_method.prm_dict_add(batch))
-            prms.update(batch.solver_prms)
+        p_print("Write HDF5 parameter file for simulation "+self.name)
+        self.project_name = globels.project_name+'_'+self.name
+        self.prm_file_name = 'input_'+self.project_name+'.h5'
+        prms={"Samples"    :self.samples.nodes,
+              "ProjectName":self.project_name}
+        prms.update(uq_method.prm_dict_add(self))
+        prms.update(self.solver_prms)
 
-            self.write_hdf5(batch.prm_file_name,prms)
+        self.write_hdf5(self.prm_file_name,prms)
 
-            batch.run_command='python3 '+self.exe_path+' '+batch.prm_file_name
+        self.run_command='python3 '+self.exe_path+' '+self.prm_file_name
 
     def write_hdf5(self,file_name,prms):
         """ Writes the HDF5 file containing all necessary data for the 
@@ -44,19 +54,7 @@ class Internal(Solver):
         else:
             h5f.attrs[name]=prm
 
-    def get_work_mean(self,qoi):
-        return self.get_postproc_quantity_from_file(qoi,"WorkMean")
 
-    def get_postproc_quantity_from_file(self,qoi,quantity_name):
-        """ Readin sigma_sq for MLMC.
-        """
-        h5f = h5py.File(qoi.output_filename, 'r')
-        quantity = h5f.attrs[quantity_name]
-        h5f.close()
-        return quantity
-
-    def check_finished(self,batch):
-        return True
 
 
 class Integral(Internal.QoI):

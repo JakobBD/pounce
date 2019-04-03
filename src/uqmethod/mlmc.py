@@ -6,6 +6,7 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 from sampling.sampling import MonteCarlo
+from solver.solver import Solver
 
 
 class Mlmc(UqMethod,MonteCarlo):
@@ -40,62 +41,72 @@ class Mlmc(UqMethod,MonteCarlo):
             p_print("Reset RNG seed to 0")
             np.random.seed(0)
 
-    def setup_batches(self,qois):
-        self.all_sublevels=[]
+    def setup_batches(self,prms):
+
+        self.solver_batches=[]
+        self.postproc_batches=[]
+        self.qois=[]
+        self.qois_optimize = []
+        SolverLoc=Solver.subclass(prms["solver"]["_type"])
         for i_level,level in enumerate(self.levels):
             level.name=str(i_level+1)
             level.samples=Empty()
             level.samples.n=level.n_warmup_samples
             level.samples.n_previous = 0
-            level.sublevels= [ SubLevel(level,level,'f') ]
-            self.all_sublevels.append(level.sublevels[-1])
+            level.sublevels = []
+            self.setup_sublevel(prms, level, level,'f')
             if i_level > 0:
-                level.sublevels.append(
-                    SubLevel(level,self.levels[i_level-1],'c'))
-                self.all_sublevels.append(level.sublevels[-1])
-            self.setup_qois(qois,level)
-            for qoi in level.qois:
-                qoi.participants=level.sublevels
-                qoi.name="postproc_"+level.name
-                qoi.avg_walltime=level.avg_walltime_postproc
-                qoi.prepare=qoi.prepare_iter_postproc
-        self.get_active_batches()
-        self.setup_qois(qois,self)
-        for i,qoi in enumerate(self.qois):
+                self.setup_sublevel(prms, level, self.levels[i_level-1], 'c')
+
+            level.n_optimize = 0
+            level.qois = []
+            for sub_dict in prms["qois"]: 
+                self.setup_qoi(sub_dict,SolverLoc,level)
+            if level.n_optimize != 1: 
+                raise Exception("Please specify exactly "
+                                "one QoI to optimize")
+
+        for i,sub_dict in enumerate(prms["qois"]): 
+            qoi=SolverLoc.QoI.create(sub_dict,self)
             qoi.name="combinelevels"
             qoi.avg_walltime=qoi.avg_walltime_combinelevels
             qoi.participants=[l.qois[i] for l in self.levels]
             qoi.prepare=qoi.prepare_simu_postproc
+            self.qois.append(qoi)
 
-    @staticmethod
-    def setup_qois(qois_in,level):
-        level.qois=[]
-        for qoi_in in qois_in:
-            # init qoi with exe_paths, _type etc
-            qoi=copy.deepcopy(qoi_in)
-            level.qois.append(qoi)
-            if qoi.optimize: 
-                level.qoi_optimize=qoi
-        if len([qoi for qoi in qois_in if qoi.optimize ]) != 1: 
-            raise Exception("Please specify exactly one QoI to optimize")
 
-    def get_active_batches(self):
-        self.active_sublevels = \
-            [sub for sub in self.all_sublevels if sub.samples.n > 0]
-        self.active_levels = [l for l in self.levels if l.samples.n > 0]
-        # external naming
-        self.solver_batches = self.active_sublevels
-        self.postproc_batches = \
-            [qoi for level in self.active_levels for qoi in level.qois]
+    def setup_sublevel(self, prms, diff_level, resolution_level, name):
+        sub = Solver.create(prms["solver"])
+        sub.solver_prms = resolution_level.solver_prms
+        sub.cores_per_sample = resolution_level.cores_per_sample
+        sub.avg_walltime = resolution_level.avg_walltime
+        sub.samples = diff_level.samples
+        sub.name = diff_level.name+name
+        sub.prepare = sub.prepare_simulations
+        diff_level.sublevels.append(sub)
+        self.solver_batches.append(sub)
 
-        self.do_continue = len(self.active_levels) > 0
+    def setup_qoi(self,subdict,SolverLoc,level):
+        qoi=SolverLoc.QoI.create(subdict,self)
+        qoi.participants=level.sublevels
+        qoi.name="postproc_"+level.name
+        qoi.avg_walltime=level.avg_walltime_postproc
+        qoi.prepare=qoi.prepare_iter_postproc
+        qoi.samples = level.samples
+        if qoi.optimize: 
+            level.qoi_optimize=qoi
+            level.n_optimize += 1
+            self.qois_optimize.append(qoi)
+        level.qois.append(qoi)
+        self.postproc_batches.append(qoi)
+
 
 
     def prm_dict_add(self,sublevel):
         return {"nPreviousRuns":sublevel.samples.n_previous}
 
 
-    def get_new_n_current_samples(self,solver,n_iter):
+    def get_new_n_current_samples(self,n_iter):
 
         stdout_table=StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                  "samples__n_previous","samples__n")
@@ -104,70 +115,61 @@ class Mlmc(UqMethod,MonteCarlo):
 
         # build sum over levels of sqrt(sigma^2/w)
         sum_sigma_w = 0.
-        for level in self.levels:
-            if level.samples.n > 0:
-                level.sigma_sq = float(solver.get_postproc_quantity_from_file(
-                    level.qoi_optimize,"SigmaSq"))
-                work_mean = solver.get_work_mean(level.qoi_optimize)
-                if level.samples.n_previous > 0:
-                    level.work_mean=((level.samples.n_previous*level.work_mean
-                                      + level.samples.n*work_mean)/
-                                    (level.samples.n+level.samples.n_previous))
+        for qoi in self.qois_optimize:
+            if qoi.samples.n > 0:
+                qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
+                work_mean = qoi.get_work_mean()
+                if qoi.samples.n_previous > 0:
+                    qoi.work_mean=((qoi.samples.n_previous*qoi.work_mean
+                                    + qoi.samples.n*work_mean)
+                                   / (qoi.samples.n+qoi.samples.n_previous))
                 else:
-                    level.work_mean = work_mean
-            if level.samples.n_previous+level.samples.n > 0:
-                sum_sigma_w += safe_sqrt(level.sigma_sq*level.work_mean)
+                    qoi.work_mean = work_mean
+            if qoi.samples.n_previous+qoi.samples.n > 0:
+                sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
 
-        for level in self.levels:
+        for qoi in self.qois_optimize:
             if self.tolerance: 
-                level.mlopt=(sum_sigma_w
-                             * safe_sqrt(level.sigma_sq/level.work_mean)
+                qoi.mlopt=(sum_sigma_w
+                             * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
                              / (self.tolerance*self.tolerance/4.))
             elif self.total_work: 
-                level.mlopt=(self.total_work
-                             * safe_sqrt(level.sigma_sq/level.work_mean)
+                qoi.mlopt=(self.total_work
+                             * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
                              / sum_sigma_w)
-            level.mlopt_rounded=int(round(level.mlopt)) if level.mlopt > 1 \
-                else level.mlopt
-            level.samples.n_previous += level.samples.n
+            qoi.mlopt_rounded=int(round(qoi.mlopt)) if qoi.mlopt > 1 \
+                else qoi.mlopt
+            qoi.samples.n_previous += qoi.samples.n
 
-            # slowly approach mlopt... ad-hoc solution
+            # slowly approach mlopt... heuristic solution
             n_iter_remain = self.n_max_iter-n_iter
-            expo=1./sum(0.3**i for i in range(n_iter_remain))
-            n_total_new = level.mlopt**expo * level.samples.n**(1-expo)
-            level.samples.n = \
-                max(int(np.ceil(n_total_new))-level.samples.n_previous , 0)
+            if n_iter_remain > 0: 
+                expo=1./sum(0.3**i for i in range(n_iter_remain))
+                n_total_new = qoi.mlopt**expo * qoi.samples.n**(1-expo)
+                qoi.samples.n = \
+                    max(int(np.ceil(n_total_new))-qoi.samples.n_previous , 0)
+            else: 
+                qoi.samples.n = 0
 
-            # directly jump to mlopt
-            # level.samples.n = \
-                # max(int(np.ceil(level.mlopt))-level.samples.n_previous , 0)
-            stdout_table.update(level)
+            stdout_table.update(qoi)
 
         stdout_table.p_print()
 
         print()
         if self.tolerance: 
             self.est_total_work = sum(
-                [l.work_mean*max(l.mlopt,l.samples.n_previous) \
-                    for l in self.levels])
+                [q.work_mean*max(q.mlopt, q.samples.n_previous) \
+                    for q in self.qois_optimize])
             p_print("Estimated required total work to achieve prescribed "
                     "tolerance: %d core-seconds"%(int(self.est_total_work)))
         elif self.total_work: 
             self.est_tolerance = sum(
-                [l.sigma_sq/max(l.mlopt,l.samples.n_previous) \
-                    for l in self.levels])
+                [q.sigma_sq/max(q.mlopt, q.samples.n_previous) \
+                    for q in self.qois_optimize])
             p_print("Estimated achieved tolerance for given total work: %e" \
                     %(2.*np.sqrt(self.est_tolerance)))
 
-        self.get_active_batches()
+        self.do_continue = len(self.main_simulation.active()) > 0
 
-
-class SubLevel():
-    def __init__(self,diff_level,resolution_level,name):
-        self.solver_prms = resolution_level.solver_prms
-        self.cores_per_sample = resolution_level.cores_per_sample
-        self.avg_walltime = resolution_level.avg_walltime
-        self.samples=diff_level.samples
-        self.name=diff_level.name+name
 
 

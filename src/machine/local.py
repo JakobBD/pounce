@@ -20,13 +20,13 @@ class Local(Machine):
             }
         }
 
-    def run_batches(self,batches,simulation,solver,postproc_type=False):
+    def run_batches(self,batches):
         """Runs a job by calling a subprocess.
         """
         # TODO: enable parallel runs of jobs
         for batch in batches:
             batch.logfile_name="log_"+batch.name+".dat"
-            if self.mpi and not postproc_type:
+            if self.mpi and self.multi_sample:
                 args="mpirun -np {} {}".format(
                     batch.cores_per_sample, batch.run_command)
             else:
@@ -34,13 +34,14 @@ class Local(Machine):
             p_print("run command "+yellow(args))
             with open(batch.logfile_name,'w+') as f:
                 subprocess.run(args,stdout=f,shell=True)
-        if not postproc_type:
-            solver.check_all_finished(batches)
+        self.check_all_finished()
 
     def allocate_resources(self,batches):
+        if not self.multi_sample:
+            p_print("Nothing to be done.")
+            return
         p_print("All runs are carried out sequentially.")
         for batch in batches:
             batch.n_parallel_runs=1
             batch.n_sequential_runs=batch.samples.n
 
-    run_batches_external=staticmethod(run_batches)

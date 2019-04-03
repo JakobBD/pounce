@@ -4,7 +4,6 @@ import yaml
 import pickle
 from pick import pick
 # ---------- local imports -------------
-import simulation
 from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
 from solver.solver import Solver
@@ -28,32 +27,25 @@ def config(prmfile):
     print_step("Read parameters")
 
     # initialize classes according to chosen subclass
-    sim = simulation.Simulation(prms["general"])
-    sim.uq_method = UqMethod.create(prms["uq_method"])
+    global sim
+    sim = UqMethod.create(prms["uq_method"])
+    sim.general = GeneralConfig(prms["general"])
     sim.machine = Machine.create(prms["machine"])
     sim.solver = Solver.create(prms["solver"])
 
     # initialize lists of classes for all levels, stoch_vars and qois
-    sim.uq_method.stoch_vars = config_list(
-        "stoch_vars",prms,StochVar.create,
-        sim.uq_method)
-
-    sim.uq_method.levels = config_list(
-        "levels",prms,Level,
-        sim.uq_method,sim.machine)
-
-    sim.solver.qois = config_list(
-        "qois",prms,sim.solver.QoI.create,
-        sim.uq_method)
+    sim.stoch_vars = config_list("stoch_vars", prms, StochVar.create, sim)
+    sim.levels = config_list("levels", prms, Level, sim, sim.machine)
+    sim.solver.qois = config_list("qois", prms, sim.solver.QoI.create, sim)
 
     # in the multilevel case, some firther setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
-    sim.uq_method.setup_batches(sim.solver.qois)
+    sim.setup_batches(sim.solver.qois)
 
-    simulation.sim = sim
     return sim
 
 def restart(prmfile=None):
+    global sim
     with open('pounce.pickle', 'rb') as f:
         sim = pickle.load(f)
     if prmfile:
@@ -61,11 +53,10 @@ def restart(prmfile=None):
                         "implemented")
 
     n_finished_iter = (len(sim.iterations)
-                       - (1 if sim.uq_method.do_continue else 0))
+                       - (1 if sim.do_continue else 0))
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 
-    simulation.sim = sim
     return sim
 
 
@@ -129,7 +120,7 @@ def print_default_yml_file():
     all_defaults["qois"] = qoi_defaults
 
     # add general config parameters
-    all_defaults["general"] = simulation.Simulation.defaults()
+    all_defaults["general"] = GeneralConfig.defaults()
 
     msg="Enter file name for output (press enter for stdout):\n"
     filename_out=input(msg)
@@ -158,3 +149,11 @@ def inquire_subclass(parent_class, prepend=""):
     subclasses = {c.name(): c for c in parent_class.__subclasses__()}
     subclass_name,_=pick(list(subclasses.keys()), msg)
     return subclasses[subclass_name]
+
+
+class GeneralConfig(BaseClass):
+
+    defaults_ = {
+        "archive_level" : 0,
+        "project_name" : "NODEFAULT"
+        }

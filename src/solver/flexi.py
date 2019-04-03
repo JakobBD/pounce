@@ -24,19 +24,19 @@ class Flexi(Solver):
     class QoI(QoI):
         pass
 
-    def prepare_simulations(self,batches,uqmethod,simulation):
+    def prepare_simulations(self,batches,uq_method):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
         """
         for batch in batches:
             p_print("Write HDF5 parameter file for simulation "+batch.name)
-            batch.project_name = simulation.project_name+'_'+batch.name
+            batch.project_name = uq_method.general.project_name+'_'+batch.name
             batch.prm_file_name = 'input_'+batch.project_name+'.h5'
             batch.solver_prms.update({"ProjectName":batch.project_name})
 
             # both:
-            stv=uqmethod.stoch_vars
+            stv=uq_method.stoch_vars
             prms= {'Samples'          : batch.samples.nodes,
                    'StochVarNames'    : [s.name         for s in stv],
                    'iOccurrence'      : [s.i_occurrence for s in stv],
@@ -45,7 +45,7 @@ class Flexi(Solver):
                    "nGlobalRuns"      : batch.samples.n,
                    "nParallelRuns"    : batch.n_parallel_runs
                    }
-            prms.update(uqmethod.prm_dict_add(batch))
+            prms.update(uq_method.prm_dict_add(batch))
 
             self.write_hdf5(batch.prm_file_name,batch.solver_prms,prms)
 
@@ -129,7 +129,7 @@ class FieldSolution(Flexi.QoI):
             }
         }
 
-    def prepare_iter_postproc(self,simulation):
+    def prepare_iter_postproc(self,uq_method):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -141,11 +141,11 @@ class FieldSolution(Flexi.QoI):
             filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
             self.run_command += " " + filename
 
-    def prepare_simu_postproc(self,simulation):
+    def prepare_simu_postproc(self,uq_method):
         self.args=[p.output_filename for p in self.participants]
         self.run_command = self.exe_paths["simulation_postproc"] \
                           + " " + " ".join(self.args)
-        self.project_name  = simulation.project_name+'_'+self.name
+        self.project_name  = uq_method.general.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
 
@@ -159,7 +159,7 @@ class RecordPoints(Flexi.QoI):
         "time_span": [0.,1.E10]
         }
 
-    def prepare_iter_postproc(self,simulation):
+    def prepare_iter_postproc(self,uq_method):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command = self.exe_paths["iteration_postproc"] \
@@ -175,9 +175,9 @@ class RecordPoints(Flexi.QoI):
                 if self.time_span[0] <= time <= self.time_span[1]:
                     self.run_command += " "+fn
 
-    def prepare_simu_postproc(self,simulation):
+    def prepare_simu_postproc(self,uq_method):
         self.args=[p.output_filename for p in self.participants]
         self.run_command = self.exe_paths["simulation_postproc"] \
                           + " " + " ".join(self.args)
-        self.project_name  = simulation.project_name+'_'+self.name
+        self.project_name  = uq_method.general.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

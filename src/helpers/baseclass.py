@@ -100,3 +100,5 @@ class BaseClass():
     def name(cls):
         return inflection.underscore(cls.__name__)
 
+class InputPrmError(Exception):
+    pass

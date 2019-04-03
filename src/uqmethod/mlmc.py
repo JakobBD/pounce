@@ -5,15 +5,15 @@ import copy
 from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
+from sampling.sampling import MonteCarlo
 
 
-class Mlmc(UqMethod):
+class Mlmc(UqMethod,MonteCarlo):
 
     defaults_ = {
         "n_max_iter" : "NODEFAULT",
         "tolerance" : None,
-        "total_work" : None,
-        "reset_seed" : False
+        "total_work" : None
         }
 
     defaults_add = { 
@@ -89,17 +89,6 @@ class Mlmc(UqMethod):
             [qoi for level in self.active_levels for qoi in level.qois]
 
         self.do_continue = len(self.active_levels) > 0
-
-    def get_nodes_and_weights(self):
-        for level in self.active_levels:
-            level.samples.nodes=[]
-            for var in self.stoch_vars:
-                level.samples.nodes.append(var.draw_samples(level.samples.n))
-            level.samples.nodes=np.transpose(level.samples.nodes)
-            level.samples.weights=[]
-        p_print("Number of current samples for this iteration:")
-        for level in self.levels:
-            p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
 
 
     def prm_dict_add(self,sublevel):

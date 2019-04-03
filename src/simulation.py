@@ -7,6 +7,10 @@ from helpers.printtools import *
 from helpers.tools import *
 from helpers.baseclass import BaseClass
 
+# this is just a place holder, 
+# sim is an instance of Simulation defined in config
+sim = None
+
 class Simulation(BaseClass):
 
     defaults_ = {
@@ -52,7 +56,7 @@ class Simulation(BaseClass):
         iteration.print_unfinished_steps()
 
         iteration.run_step("Get samples",
-                           self.uq_method.get_nodes_and_weights)
+                           self.uq_method.get_samples)
 
         # Simulations
 

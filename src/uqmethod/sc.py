@@ -1,15 +1,9 @@
-import chaospy as cp
-import numpy as np
-
 from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
+from sampling.sampling import Collocation
 
-class Sc(UqMethod):
-
-    defaults_ = {
-        "sparse_grid" : "NODEFAULT"
-        }
+class Sc(UqMethod,Collocation):
 
     defaults_add = { 
         "Level": {
@@ -37,21 +31,6 @@ class Sc(UqMethod):
         self.solver_batches=self.levels
         self.postproc_batches = \
             [qoi for level in self.levels for qoi in level.qois]
-
-    def get_nodes_and_weights(self):
-        distributions=[var.distribution for var in self.stoch_vars]
-        for level in self.levels:
-            nodes,level.samples.weights = \
-                cp.generate_quadrature(level.poly_deg,
-                                       cp.J(*distributions),
-                                       rule='G',
-                                       sparse=self.sparse_grid)
-            level.samples.nodes=np.transpose(nodes)
-            level.samples.n = len(level.samples.nodes)
-        p_print("Number of current samples for this iteration:")
-        for level in self.levels:
-            p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
-
 
     def prm_dict_add(self,level):
         return({

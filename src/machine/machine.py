@@ -2,7 +2,7 @@ from helpers.printtools import *
 from helpers.baseclass import BaseClass
 from simulation.simulation import Stage
 
-class Machine(BaseClass,Stage):
+class Machine(Stage,BaseClass):
 
     def check_all_finished(self):
         finished = [batch.check_finished() for batch in self.batches]

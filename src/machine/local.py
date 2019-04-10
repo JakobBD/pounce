@@ -9,12 +9,12 @@ class Local(Machine):
     """
 
     defaults_={
-        "mpi" : "NODEFAULT",
-        'cores_per_sample' : 2
+        "mpi" : "NODEFAULT"
         }
 
     defaults_add = { 
         "Level": {
+            'cores_per_sample' : 2,
             'avg_walltime': "dummy_unused",
             'avg_walltime_postproc': "dummy_unused"
             }

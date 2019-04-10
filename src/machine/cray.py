@@ -20,8 +20,7 @@ class Cray(Machine):
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
         "max_walltime" : 86400, # 24h
-        "max_total_work" : 36e5, # 1.000 CoreH
-        "local_postproc" : False
+        "max_total_work" : 36e5 # 1.000 CoreH
         }
 
     defaults_add = { 
@@ -196,7 +195,6 @@ class Cray(Machine):
         etc.) and outputs number of cores and number of parallel runs 
         for this batch.
         """
-
         if not self.multi_sample:
             for batch in batches:
                 batch.n_nodes=1
@@ -284,6 +282,7 @@ class Cray(Machine):
         if batch.max_rating <= 0.:
             raise Exception("Something went wrong in allocate_resources. "
                             "No valid option found")
+
 
 
 class Option():

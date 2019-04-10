@@ -74,7 +74,7 @@ class Simulation(BaseClass):
         if not os.path.isdir('archive'): 
             os.mkdir('archive')
         iter_ = self.current_iter
-        self.archive_name = 'archive/iter_%s.tar.gz'%(iter_.name)
+        self.archive_name = 'archive/%s.tar.gz'%(iter_.name.replace(" ","_"))
         self.files = glob.glob('*')
         # prevent simulations restarted from archive from
         # writing the very same data to archive again.
@@ -93,10 +93,13 @@ class Simulation(BaseClass):
 
 class Stage():
 
-    def fill(self, name, multi_sample, batches):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.batches = []
+
+    def fill(self, name, multi_sample):
         self.name = name
         self.multi_sample = multi_sample
-        self.batches = batches
 
     def prepare_set(self, *args):
         for batch in self.active(): 

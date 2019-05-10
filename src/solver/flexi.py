@@ -174,3 +174,31 @@ class RecordPoints(QoI):
                           + " " + " ".join(self.args)
         self.project_name  = simulation.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
+
+@QoI.register_subclass('flexi','bodyforces')
+class BodyForces(QoI):
+
+    subclass_defaults={"prmfiles": {"iteration_postproc": "",
+                                    "simulation_postproc":""},
+            }
+
+    def prepare_iter_postproc(self,simulation):
+        # participants[0] is a rather dirty hack
+        self.prm_file_name = self.participants[0].prm_file_name
+        self.run_command = self.exe_paths["iteration_postproc"] \
+                           + " " + self.prmfiles["iteration_postproc"] \
+                           + " " + self.prm_file_name
+        self.project_name  = self.participants[0].project_name
+        self.output_filename = 'postproc_'+self.project_name+'_bodyforces.h5'
+        for p in self.participants:
+            filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
+            self.run_command += " " + filename
+            filename=sorted(glob.glob(p.project_name+"_BodyForces_*.h5"))[-1]
+            self.run_command += " " + filename
+
+    def prepare_simu_postproc(self,simulation):
+        self.args=[p.output_filename for p in self.participants]
+        self.run_command = self.exe_paths["simulation_postproc"] \
+                          + " " + " ".join(self.args)
+        self.project_name  = simulation.project_name+'_'+self.name
+        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

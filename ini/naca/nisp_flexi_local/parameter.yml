@@ -16,11 +16,17 @@ levels:
 
 stoch_vars:
 - _type: uniform
-  bounds: [7.,9.]
+  bounds: [8.,9.]
   name: angle
   i_occurrence: 1
   i_pos: 0
 
+- _type: normal
+  mean: 0.0005
+  standard_deviation: 0.0001
+  name: mu0
+  i_occurrence: 1
+  i_pos: 0
 
 machine:
   _type: local
@@ -28,7 +34,6 @@ machine:
 
 qois:
 - _type: fieldsolution
-  optimize: true
   exe_paths:
     iteration_postproc: ./nisp
     simulation_postproc: ./nisp

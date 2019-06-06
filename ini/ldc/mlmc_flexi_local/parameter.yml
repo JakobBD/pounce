@@ -1,0 +1,60 @@
+general:
+  output_level: standard #options: none, standard, debug
+  project_name: ldc
+
+uq_method:
+  _type: mlmc
+  n_max_iter: 1
+  tolerance: 0.02
+levels:
+   - n_warmup_samples : 20
+     cores_per_sample: 4
+     solver_prms:
+        N: 3
+        MeshFile: mesh_1.h5
+
+   - n_warmup_samples : 10
+     cores_per_sample: 16
+     solver_prms:
+        N: 4
+        MeshFile: mesh_2.h5
+
+   - n_warmup_samples : 5
+     cores_per_sample: 16
+     solver_prms:
+        N: 5
+        MeshFile: mesh_3.h5
+
+stoch_vars:
+- _type: uniform
+  bounds: [0.001,0.003]
+  name: mu0
+  i_occurrence: 1
+  i_pos: 0
+
+#- _type: normal
+#  mean: 1.1
+#  standard_deviation: 0.1
+#  name: RefState
+#  i_occurrence: 1
+#  i_pos: 1
+
+machine:
+  _type: local
+  mpi: true
+
+qois:
+  - _type: fieldsolution
+    exe_paths:
+      iteration_postproc: ./mlmc_estimatesigma
+      simulation_postproc: ./mlmc_combinelevels
+    optimize: True
+    prmfiles:
+      iteration_postproc: 'parameter_estimatesigma.ini'
+      simulation_postproc: ''
+
+solver:
+  _type: flexi
+  prmfile: 'parameter_flexi.ini'
+  exe_path: ./flexibatch
+

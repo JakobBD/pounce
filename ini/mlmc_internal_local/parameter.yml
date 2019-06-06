@@ -1,10 +1,11 @@
 general:
   output_level: debug #options: none, standard, debug
+  project_name: integ
 
 uq_method:
   _type: mlmc
   n_max_iter: 3
-  tolerance: 0.05
+  tolerance: 0.005
 levels:
    - n_warmup_samples : 100
      cores_per_sample: 24
@@ -38,7 +39,6 @@ machine:
 
 solver:
   _type: internal
-  project_name: integ
   exe_path: ../../externals/integration/solver.py
 
 qois:

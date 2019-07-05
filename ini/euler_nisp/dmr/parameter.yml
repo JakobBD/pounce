@@ -1,0 +1,41 @@
+general:
+  output_level: debug #options: none, standard, debug
+  project_name: dmr
+
+uq_method:
+  _type: sc
+  sparse_grid: False
+
+
+levels:
+   - poly_deg : 5
+     cores_per_sample: 16
+     solver_prms:
+        N: 2
+        MeshFile: mesh_1.h5
+
+stoch_vars:
+- _type: uniform
+  bounds: [28.,32.]
+  name: dmr_angle
+  i_occurrence: 1
+  i_pos: 0
+
+
+machine:
+  _type: local
+  mpi: true
+
+qois:
+- _type: fieldsolution
+  exe_paths:
+    iteration_postproc: ./nisp
+    simulation_postproc: ./nisp
+  prmfiles:
+    iteration_postproc: 'parameter_nisp.ini'
+    simulation_postproc: ''
+
+solver:
+  _type: flexi
+  prmfile: 'parameter_flexi.ini'
+  exe_path: ./flexibatch

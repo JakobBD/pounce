@@ -86,14 +86,15 @@ class BaseClass():
         return defaults
 
     @classmethod
-    def defaults(cls,*args): 
+    def defaults(cls,*args,with_type=True): 
         d=cls.defaults_class()
         if args:
             keys=[c.__name__ for c in reversed(cls.__mro__[:-2])]
         for arg in args: 
             for key in keys: 
                 d.update(arg.defaults_class(key))
-        d.update({"_type": cls.name()})
+        if with_type:
+            d.update({"_type": cls.name()})
         return d
 
     @classmethod

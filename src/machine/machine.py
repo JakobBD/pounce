@@ -9,7 +9,7 @@ class Machine(Stage,BaseClass):
         if all(finished): 
                 p_print("All jobs finished.")
         else:
-            tmp=[batch.name for batch,is_finished in zip(batches,finished) \
+            tmp=[batch.name for batch,is_finished in zip(self.batches,finished) \
                  if not is_finished]
             raise Exception("not all jobs finished. "
                             +"Problems with batch(es) "+", ".join(tmp)+".")

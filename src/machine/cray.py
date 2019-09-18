@@ -197,8 +197,8 @@ class Cray(Machine):
         """
         if not self.multi_sample:
             for batch in batches:
-                batch.n_nodes=1
-                batch.n_cores=1
+                batch.n_cores=batch.cores_per_sample
+                batch.n_nodes=((batch.cores_per_sample - 1) // self.cores_per_node) + 1
                 batch.batch_walltime=batch.avg_walltime
             return
 

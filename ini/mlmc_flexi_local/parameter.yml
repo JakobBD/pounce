@@ -1,22 +1,27 @@
 general:
-  output_level: debug #options: none, standard, debug
+  project_name: cavity
 
 uq_method:
   _type: mlmc
   n_max_iter: 3
   tolerance: 0.1
-levels:
-   - n_warmup_samples : 100
-     cores_per_sample: 24
-     solver_prms:
-        N: 2
-        MeshFile: mesh_1.h5
 
-   - n_warmup_samples : 20
-     cores_per_sample: 24
-     solver_prms:
-        N: 4
-        MeshFile: mesh_1.h5
+solver:
+  _type: flexi
+  prmfile: 'parameter_flexi.ini'
+  exe_path: ./flexibatch
+  levels:
+  - n_warmup_samples : 100
+    cores_per_sample: 24
+    solver_prms:
+      N: 2
+      MeshFile: mesh_1.h5
+
+  - n_warmup_samples : 20
+    cores_per_sample: 24
+    solver_prms:
+      N: 4
+      MeshFile: mesh_1.h5
 
 stoch_vars:
 - _type: uniform
@@ -24,7 +29,6 @@ stoch_vars:
   name: RefState
   i_occurrence: 1
   i_pos: 1
-
 - _type: normal
   mean: 1.
   standard_deviation: 0.1
@@ -37,18 +41,14 @@ machine:
   mpi: false
 
 qois:
-  - _type: fieldsolution
-    exe_paths:
-      iteration_postproc: ./mlmc_estimatesigma
-      simulation_postproc: ./mlmc_combinelevels
-    optimize: True
-    prmfiles:
-      iteration_postproc: 'parameter_estimatesigma.ini'
-      simulation_postproc: ''
+- _type: field_solution
+  stages: 
+    iteration_postproc:
+      exe_path:  ./mlmc_estimatesigma
+      prmfile: 'parameter_estimatesigma.ini'
+    simulation_postproc:
+      exe_path:  ./mlmc_combinelevels
+      prmfile: ''
+  optimize: True
 
-solver:
-  _type: flexi
-  project_name: cavity
-  prmfile: 'parameter_flexi.ini'
-  exe_path: ./flexibatch
 

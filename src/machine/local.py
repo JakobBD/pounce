@@ -13,10 +13,9 @@ class Local(Machine):
         }
 
     defaults_add = { 
-        "Level": {
-            'cores_per_sample' : 2,
+        "Batch": {
+            'cores_per_sample' : 1,
             'avg_walltime': "dummy_unused",
-            'avg_walltime_postproc': "dummy_unused"
             }
         }
 

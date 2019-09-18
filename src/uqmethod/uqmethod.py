@@ -3,7 +3,7 @@ from simulation.simulation import Simulation
 
 
 class UqMethod(Simulation,BaseClass):
-        pass
+    pass
 
 
 # import subclasses

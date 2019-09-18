@@ -49,11 +49,10 @@ class Simulation(BaseClass):
         # Prepare next iteration
         iteration.run_step("Get samples",
                            self.get_samples, 
-                           self.main_simulation.active())
+                           self.stages[0].active())
 
-        self.main_simulation.process(iteration)
-
-        self.iteration_postproc.process(iteration)
+        for stage in self.stages:
+            stage.process(iteration)
 
         # Prepare next iteration
         iteration.run_step("Get number of samples for next iteration",
@@ -124,8 +123,8 @@ class Stage():
         except AttributeError: 
             return self.batches
 
-    def __getitem__(self, index): 
-        return self.batches[index]
+    # def __getitem__(self, index): 
+        # return self.batches[index]
 
 
 
@@ -152,11 +151,6 @@ class Iteration():
             print_step(description+":")
             func(*args,**kwargs)
             self.update_step(string=description)
-
-    def print_unfinished_steps(self):
-        if self.finished_steps:
-            p_print(green("Skipping finished steps of iteration:"))
-            [p_print("  "+i) for i in self.finished_steps]
 
     def start(self):
         print_major_section("Start " + self.name)

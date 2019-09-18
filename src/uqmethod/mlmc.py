@@ -8,7 +8,7 @@ from helpers.tools import *
 from sampling.sampling import MonteCarlo
 from solver.solver import Solver
 from machine.machine import Machine
-from level.level import Level
+from stochvar.stochvar import StochVar
 from helpers import config
 
 
@@ -21,17 +21,12 @@ class Mlmc(UqMethod,MonteCarlo):
         }
 
     defaults_add = { 
-        "Level": {
+        "Solver": {
             "n_warmup_samples": "NODEFAULT",
             "solver_prms" : {},
             },
         "QoI": {
-            "exe_paths": {
-                "iteration_postproc": "",
-                "simulation_postproc": ""
-                },
             "optimize": False,
-            "avg_walltime_combinelevels": 300.
             }
         }
 
@@ -45,90 +40,98 @@ class Mlmc(UqMethod,MonteCarlo):
             np.random.seed(0)
 
     def setup(self, prms):
+
         SolverLoc = Solver.subclass(prms["solver"]["_type"])
-        LocMachine = Machine.subclass(prms["machine"]["_type"])
+        MachineLoc = Machine.subclass(prms["machine"]["_type"])
 
-        # initialize lists of classes for all levels, stoch_vars and qois
-        self.levels = config.config_list("levels", prms, Level, 
-                                         self, LocMachine)
+        # initialize StochVars
+        self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
+                                             SolverLoc)
 
-        self.main_simulation = LocMachine(prms["machine"])
-        self.main_simulation.fill("simulation", True)
+        # initialize sublevels
+        subs_fine = config.config_list("solver", prms, Solver.create, 
+                                       self, MachineLoc, sub_list_name="levels")
+        subs_coarse=[Empty()]
+        subs_coarse.extend(copy.deepcopy(subs_fine[:-1]))
+        # initialize levels and connect to sublevels
+        iterator=zip(range(1,len(subs_fine)+1),subs_fine,subs_coarse)
+        self.levels = [self.setup_level(*args) for args in iterator]
+
+        #setup stages 
+        main_simu = MachineLoc(prms["machine"])
+        main_simu.fill("simulation", True)
+        main_simu.batches = []
+        for level in self.levels:
+            main_simu.batches.extend(level.sublevels)
         if "machine_postproc" in prms: 
-            LocMachine = Machine.subclass("local")
+            MachineLoc = Machine.subclass("local")
             sub_dict = prms["machine_postproc"]
         else: 
             sub_dict = prms["machine"]
-
-        self.iteration_postproc = LocMachine(sub_dict)
-        self.iteration_postproc.fill("iteration_postproc", False)
-        self.simulation_postproc = LocMachine(sub_dict)
+        iter_postproc = MachineLoc(sub_dict)
+        iter_postproc.fill("iteration_postproc", False)
+        self.stages = [main_simu, iter_postproc]
+        self.simulation_postproc = MachineLoc(sub_dict)
         self.simulation_postproc.fill("simulation_postproc", False)
 
         self.qois_optimize = []
-        for i_level,level in enumerate(self.levels):
-            level.name = str(i_level+1)
-            level.samples = Empty()
-            level.samples.n = level.n_warmup_samples
-            level.samples.n_previous = 0
-            level.sublevels = []
-            self.setup_sublevel(prms, level, level,'f')
-            if i_level > 0:
-                self.setup_sublevel(prms, level, self.levels[i_level-1], 'c')
+        for level in self.levels:
             level.n_optimize = 0
             level.qois = []
             for sub_dict in prms["qois"]: 
-                self.setup_qoi(sub_dict,SolverLoc,level)
+                self.setup_qoi(sub_dict,level)
             if level.n_optimize != 1: 
                 raise Exception("Please specify exactly "
                                 "one QoI to optimize")
 
         for i,sub_dict in enumerate(prms["qois"]): 
-            qoi = SolverLoc.QoI.create(sub_dict,self)
+            QoILoc = Solver.subclass(prms["solver"]["_type"]).QoI
+            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
             qoi.name = "combinelevels"
-            qoi.avg_walltime = qoi.avg_walltime_combinelevels
             qoi.participants = [l.qois[i] for l in self.levels]
-            qoi.prepare = qoi.prepare_simu_postproc
             self.simulation_postproc.batches.append(qoi)
 
+    def setup_level(self, i, sub_fine, sub_coarse):
+        level=Empty()
+        level.name = str(i)
+        level.samples = Empty()
+        level.samples.n = sub_fine.n_warmup_samples
+        level.samples.n_previous = 0
+        sublevels = [sub_fine, sub_coarse]
+        for sub, sub_name in zip(sublevels,['f', 'c']):
+            sub.samples = level.samples
+            sub.name = level.name+sub_name
+        if i == 1:
+            sublevels = [sub_fine]
+        level.sublevels = sublevels
+        return level
 
-
-    def setup_sublevel(self, prms, diff_level, resolution_level, name):
-        sub = Solver.create(prms["solver"])
-
-        sub.solver_prms = resolution_level.solver_prms
-        sub.cores_per_sample = resolution_level.cores_per_sample
-        sub.avg_walltime = resolution_level.avg_walltime
-
-        sub.samples = diff_level.samples
-        sub.name = diff_level.name+name
-
-        sub.prepare = sub.prepare_simulations
-
-        diff_level.sublevels.append(sub)
-        self.main_simulation.batches.append(sub)
-
-    def setup_qoi(self, subdict, SolverLoc, level):
-        qoi = SolverLoc.QoI.create(subdict, self)
+    def setup_qoi(self, subdict, level):
+        QoILoc = level.sublevels[0].__class__.QoI
+        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
         qoi.participants = level.sublevels
         qoi.name = "postproc_"+level.name
-        qoi.avg_walltime = level.avg_walltime_postproc
 
-        qoi.prepare = qoi.prepare_iter_postproc
         qoi.samples = level.samples
         if qoi.optimize: 
             level.n_optimize += 1
             self.qois_optimize.append(qoi)
         level.qois.append(qoi)
-        self.iteration_postproc.batches.append(qoi)
+        self.stages[1].batches.append(qoi)
 
 
     @staticmethod
     def default_yml(d):
         d.get_machine()
         solver = d.process_subclass(Solver)
-        d.all_defaults["levels"] = [Level.defaults(*d.subclasses)]
+        d.all_defaults["solver"]=d.expand_to_several(sub=d.all_defaults["solver"], list_name="levels", exclude = ["_type","exe_path"])
         d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
+        for i,sub in enumerate(d.all_defaults["qois"]):
+            d.all_defaults["qois"][i] = d.expand_to_several(sub=sub, list_name="stages", keys=["iteration_postproc","simulation_postproc"], exclude = ["_type","optimize"])
+
+
+
+
 
 
     def prm_dict_add(self, sublevel):
@@ -198,7 +201,7 @@ class Mlmc(UqMethod,MonteCarlo):
             p_print("Estimated achieved tolerance for given total work: %e" \
                     %(2.*np.sqrt(self.est_tolerance)))
 
-        self.do_continue = len(self.main_simulation.active()) > 0
+        self.do_continue = len(self.stages[0].active()) > 0
 
 
 

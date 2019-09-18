@@ -2,11 +2,16 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 from sampling.sampling import Collocation
+from solver.solver import Solver
+from machine.machine import Machine
+from stochvar.stochvar import StochVar
+from helpers import config
+from helpers import globels
 
 class Sc(UqMethod, Collocation):
 
     defaults_add = { 
-        "Level": {
+        "Solver": {
             "poly_deg": "NODEFAULT",
             'solver_prms': {}
             }
@@ -17,30 +22,54 @@ class Sc(UqMethod, Collocation):
         self.has_simulation_postproc = False
         self.n_max_iter = 1
 
-    def setup(self, qois):
-        for i_level,level in enumerate(self.levels):
-            level.name = str(i_level+1)
-            level.samples = Empty()
-            level.samples.n_previous = 0
-            level.qois = [copy.deepcopy(qoi) for qoi in qois]
-            for qoi in level.qois:
-                qoi.participants = [level]
-                qoi.name = "postproc_"+level.name
-                qoi.avg_walltime = level.avg_walltime_postproc
-                qoi.prepare = qoi.prepare_iter_postproc
-        self.solver_batches = self.levels
-        self.postproc_batches = \
-            [qoi for level in self.levels for qoi in level.qois]
+    def setup(self, prms):
 
-    def prm_dict_add(self, level):
+        SolverLoc = Solver.subclass(prms["solver"]["_type"])
+        MachineLoc = Machine.subclass(prms["machine"]["_type"])
+
+        # initialize StochVars
+        self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
+                                             SolverLoc)
+
+        # initialize lists of classes for all levels, stoch_vars and qois
+        self.solver = Solver.create(prms["solver"], self, MachineLoc)
+
+        self.stages = [Machine.create(prms["machine"])]
+        self.stages[0].fill("simulation", True)
+        self.stages[0].batches = [self.solver]
+        if "machine_postproc" in prms: 
+            MachineLoc = Machine.subclass("local")
+            sub_dict = prms["machine_postproc"]
+        else: 
+            sub_dict = prms["machine"]
+
+        self.postproc = MachineLoc(sub_dict)
+        self.postproc.fill("postproc", False)
+
+        self.solver.name = ""
+        self.solver.samples = Empty()
+        for sub_dict in prms["qois"]: 
+            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
+            qoi.participants = [self.solver]
+            qoi.name = "postproc"
+            self.postproc.batches.append(qoi)
+
+    @staticmethod
+    def default_yml(d):
+        d.get_machine()
+        solver = d.process_subclass(Solver)
+        d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
+
+    def prm_dict_add(self, solver):
         return({
-            'Weights'          : level.samples.weights,
+            'Weights'          : solver.samples.weights,
             'Distributions'    : [i._type        for i in self.stoch_vars],
             'DistributionProps': [i.parameters   for i in self.stoch_vars],
-            "polyDeg"          : level.poly_deg
+            "polyDeg"          : solver.poly_deg
             })
 
-    def get_new_n_samples(self, solver):
-        raise Exception("the GetNewNSamples routine should not be called for"
-                        " stochastic collocation")
+    def get_new_n_current_samples(self, solver):
+        pass
+        # raise Exception("the GetNewNSamples routine should not be called for"
+                        # " stochastic collocation")
 

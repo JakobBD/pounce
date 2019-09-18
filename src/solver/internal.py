@@ -8,6 +8,12 @@ from helpers import globels
 
 class Internal(Solver):
 
+    defaults_ = {
+        "solver_prms" : {
+            "nPoints" : "NODEFAULT"
+            }
+        }
+
     class QoI(QoI):
 
         def get_work_mean(self):
@@ -21,7 +27,7 @@ class Internal(Solver):
             return quantity
 
 
-    def prepare_simulations(self,uq_method):
+    def prepare(self,uq_method):
         """ Prepares the simulation by generating the run_command 
         and writing the HDF5 file containing all samples of the current 
         iteration and the current level.
@@ -59,8 +65,8 @@ class Internal(Solver):
 
 class Integral(Internal.QoI):
 
-    def prepare_iter_postproc(self,uq_method):
-        self.run_command = "python3 "+self.exe_paths["iteration_postproc"]
+    def prepare_iteration_postproc(self,uq_method):
+        self.run_command = "python3 "+self.exe_path
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         self.run_command += " " + self.prm_file_name 
@@ -70,7 +76,10 @@ class Integral(Internal.QoI):
             filename=p.project_name+"_State.h5"
             self.run_command += ' ' + filename
 
-    def prepare_simu_postproc(self,uq_method):
+    def prepare_simulation_postproc(self,uq_method):
         self.args=[p.output_filename for p in self.participants]
-        self.run_command="python3 " + self.exe_paths["simulation_postproc"] \
+        self.run_command="python3 " + self.exe_path \
                         + " " + " ".join(self.args)
+
+
+            

@@ -1,36 +1,18 @@
 general:
-  output_level: debug #options: none, standard, debug
+  project_name: test
+  #output_level: debug #options: none, standard, debug
 
 uq_method:
   _type: mlmc
   n_max_iter: 3
   tolerance: 0.05
-levels:
-   - n_warmup_samples : 100
-     cores_per_sample: 24
-     solver_prms:
-        nPoints: 8
-   - n_warmup_samples : 40
-     cores_per_sample: 24
-     solver_prms:
-        nPoints: 16
-   - n_warmup_samples : 20
-     cores_per_sample: 24
-     solver_prms:
-        nPoints: 32
-   - n_warmup_samples : 10
-     cores_per_sample: 24
-     solver_prms:
-        nPoints: 64
 
 stoch_vars:
 - _type: uniform
   bounds: [1.,2.]
-  name: RefState
 - _type: normal
   mean: 1.
   standard_deviation: 0.1
-  name: b
 
 machine:
   _type: local
@@ -38,12 +20,30 @@ machine:
 
 solver:
   _type: internal
-  project_name: integ
   exe_path: ../../externals/integration/solver.py
+  levels:
+  - n_warmup_samples : 100
+    cores_per_sample: 24
+    solver_prms:
+      nPoints: 8
+  - n_warmup_samples : 40
+    cores_per_sample: 24
+    solver_prms:
+      nPoints: 16
+  - n_warmup_samples : 20
+    cores_per_sample: 24
+    solver_prms:
+      nPoints: 32
+  - n_warmup_samples : 10
+    cores_per_sample: 24
+    solver_prms:
+      nPoints: 64
 
 qois:
 - _type: integral
-  exe_paths:
-    iteration_postproc: ../../externals/integration/iteration_postproc_mlmc.py
-    simulation_postproc: ../../externals/integration/simulation_postproc_mlmc.py
+  stages: 
+    iteration_postproc:
+      exe_path: ../../externals/integration/iteration_postproc_mlmc.py
+    simulation_postproc:
+      exe_path: ../../externals/integration/simulation_postproc_mlmc.py
   optimize: True

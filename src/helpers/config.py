@@ -8,7 +8,6 @@ from uqmethod.uqmethod import UqMethod
 from machine.machine import Machine
 from solver.solver import Solver
 from stochvar.stochvar import StochVar
-from level.level import Level
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
 from helpers.tools import *
@@ -30,9 +29,8 @@ def config(prmfile):
     # initialize classes according to chosen subclass
     sim = UqMethod.create(prms["uq_method"])
     general = GeneralConfig(prms["general"])
-    sim.stoch_vars = config_list("stoch_vars", prms, StochVar.create, sim)
 
-    # in the multilevel case, some firther setup is needed for the
+    # in the multilevel case, some further setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
     sim.setup(prms)
 
@@ -56,20 +54,32 @@ def restart(prmfile=None):
     return sim
 
 
-def config_list(string,prms,class_init,*args):
+def config_list(name,prms,class_init,*args,sub_list_name=None):
     """
     Checks for correct input format for list type input and
     initializes (sub-) class for given input
     """
-    if string not in prms:
+    if name not in prms:
         raise Exception("Required parameter '"
-                        +string+"' is not set in parameter file!")
-    if not isinstance(prms[string],list):
-        raise Exception("Parameter'"+string+"' needs to be defined as a list!")
-    p_print("Setup "+yellow(string)+" - Number of " + string + " is "
-            + yellow(str(len(prms[string]))) + ".")
+                        +name+"' is not set in parameter file!")
+    if sub_list_name: 
+        try:
+            prms_loc=prms[name][sub_list_name]
+            for_all = copy.deepcopy(prms[name])
+            del for_all[sub_list_name]
+            for entry in prms_loc: 
+                entry.update(for_all)
+        except KeyError: 
+            print(prms)
+            raise Exception("Revise input prm structure of "+name+"!")
+    else: 
+        prms_loc=prms[name]
+    if not isinstance(prms_loc,list):
+        raise Exception("Parameter'"+name+"' needs to be defined as a list!")
+    p_print("Setup "+yellow(name)+" - Number of " + name + " is "
+            + yellow(str(len(prms_loc))) + ".")
     indent_in()
-    classes = [class_init(sub_dict,*args) for sub_dict in prms[string]]
+    classes = [class_init(sub_dict,*args) for sub_dict in prms_loc]
     indent_out()
     return classes
 
@@ -87,6 +97,7 @@ def print_default_yml_file():
 
     uq_method.default_yml(d)
 
+    d.clean()
     d.print_()
     sys.exit()
 
@@ -98,26 +109,32 @@ class DefaultFile():
         self.subclasses = []
 
         # add general config parameters
-        self.all_defaults["general"] = GeneralConfig.defaults()
+        self.all_defaults["general"] = GeneralConfig.defaults(with_type=False)
 
         self.all_defaults["stoch_vars"] = self.get_list_defaults(StochVar)
 
-    def process_subclass(self, parent, add_to_lists="default", 
-                         add_to_dict="default"): 
-        if add_to_lists == "default": 
-            add_to_lists = self.subclasses
-        if add_to_dict == "default": 
-            add_to_dict = self.all_defaults
-            # print(add_to_dict)
+    def clean(self): 
+        self.all_defaults = self.clean_(self.all_defaults)
 
+    def clean_(self,dict_in): 
+        dict_out = {k: v for k,v in dict_in.items() if v != "dummy_unused"}
+        for k,v in dict_out.items():
+            if isinstance(v,dict): 
+                dict_out[k] = self.clean_(v)
+            elif isinstance(v,list):
+                dict_out[k] = [self.clean_(i) for i in v]
+        return dict_out
+
+
+    def process_subclass(self, parent):
+        """ inquires subclass, and adds its default prms to dict. 
+        Returns the class as an object
+        """
         subclass = self.inquire_subclass(parent)
-
-        # add to list, as might be needed for defaults_add
-        for list_ in add_to_lists:
-            list_.append(subclass)
-
         # add defaults for this class to dict with all defaults
-        add_to_dict[parent.name()] = subclass.defaults()
+        self.all_defaults[parent.name()] = subclass.defaults(*self.subclasses)
+        # add to subclasses list, as might influence other class defaults
+        self.subclasses.append(subclass)
         return subclass
 
     def get_machine(self): 
@@ -151,6 +168,18 @@ class DefaultFile():
         subclasses = {c.name(): c for c in parent_class.__subclasses__()}
         subclass_name,_=pick(list(subclasses.keys()), msg)
         return subclasses[subclass_name]
+
+    def expand_to_several(self,sub,list_name,keys=None,exclude=[]):
+        for_all={}
+        for exclude_item in exclude: 
+            for_all[exclude_item]=sub[exclude_item]
+            del sub[exclude_item]
+        if keys: 
+            sub = {list_name : {key : sub for key in keys}}
+        else: 
+            sub = {list_name : [sub] }
+        sub.update(for_all)
+        return sub
 
     def print_(self):
         msg="Enter file name for output (press enter for stdout):\n"

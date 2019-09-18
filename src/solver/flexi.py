@@ -11,7 +11,11 @@ from helpers import globels
 class Flexi(Solver):
 
     defaults_ = {
-        "prmfile" : "parameter_flexi.ini"
+        "prmfile" : "parameter_flexi.ini",
+        "solver_prms" : {
+            "N" : "NODEFAULT",
+            "MeshFile" : "NODEFAULT"
+            }
         }
 
     defaults_add = { 
@@ -24,6 +28,10 @@ class Flexi(Solver):
 
     class QoI(QoI):
 
+        defaults_ = {
+            "prmfile" : ""
+            }
+
         def get_derived_quantity(self,quantity_name):
             """ Readin sigma_sq or avg_walltime for MLMC.
             """
@@ -35,7 +43,7 @@ class Flexi(Solver):
             return sum(p.current_avg_work for p in self.participants)
 
 
-    def prepare_simulations(self,uq_method):
+    def prepare(self,uq_method):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
@@ -107,13 +115,13 @@ class Flexi(Solver):
             h5f.attrs[name] = prm
 
 
-    def check_finished(self,batch):
+    def check_finished(self):
         try:
-            args=['tail','-n','4',batch.logfile_name]
+            args=['tail','-n','4',self.logfile_name]
             output=subprocess.run(args,stdout=subprocess.PIPE)
             output=output.stdout.decode("utf-8").splitlines()
             index=output.index("FLEXIBATCH FINISHED")
-            batch.current_avg_work=float(output[index+2])
+            self.current_avg_work=float(output[index+2])
             return True
         except:
             return False
@@ -121,18 +129,11 @@ class Flexi(Solver):
 
 class FieldSolution(Flexi.QoI):
 
-    defaults_ = {
-        "prmfiles": {
-            "iteration_postproc": "",
-            "simulation_postproc":""
-            }
-        }
-
-    def prepare_iter_postproc(self,uq_method):
+    def prepare_iteration_postproc(self,uq_method):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
-        self.run_command = self.exe_paths["iteration_postproc"] \
-                           + " " + self.prmfiles["iteration_postproc"] \
+        self.run_command = self.exe_path \
+                           + " " + self.prmfile \
                            + " " + self.prm_file_name
         self.project_name  = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_state.h5'
@@ -140,9 +141,9 @@ class FieldSolution(Flexi.QoI):
             filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
             self.run_command += " " + filename
 
-    def prepare_simu_postproc(self,uq_method):
+    def prepare_simulation_postproc(self,uq_method):
         self.args=[p.output_filename for p in self.participants]
-        self.run_command = self.exe_paths["simulation_postproc"] \
+        self.run_command = self.exe_path \
                           + " " + " ".join(self.args)
         self.project_name  = globels.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
@@ -151,19 +152,17 @@ class FieldSolution(Flexi.QoI):
 class RecordPoints(Flexi.QoI):
 
     defaults_ = {
-        "prmfiles": {
-            "iteration_postproc": "",
-            "simulation_postproc":""
-            },
         "time_span": [0.,1.E10]
         }
 
-    def prepare_iter_postproc(self,uq_method):
+    def prepare_iteration_postproc(self,uq_method):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
-        self.run_command = self.exe_paths["iteration_postproc"] \
-                           + " " + self.prmfiles["iteration_postproc"] \
-                           + " " + self.prm_file_name
+        n_files = len(glob.glob(participants[0].project_name+"_RP_*.h5"))
+        self.run_command = self.exe_path \
+                           + " " + self.prmfile \
+                           + " " + self.prm_file_name \
+                           + " " + str(n_files)
         self.project_name = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
         for p in self.participants:
@@ -174,9 +173,9 @@ class RecordPoints(Flexi.QoI):
                 if self.time_span[0] <= time <= self.time_span[1]:
                     self.run_command += " "+fn
 
-    def prepare_simu_postproc(self,uq_method):
+    def prepare_simulation_postproc(self,uq_method):
         self.args=[p.output_filename for p in self.participants]
-        self.run_command = self.exe_paths["simulation_postproc"] \
+        self.run_command = self.exe_path \
                           + " " + " ".join(self.args)
         self.project_name  = uq_method.general.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

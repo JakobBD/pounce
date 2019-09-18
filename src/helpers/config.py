@@ -117,6 +117,8 @@ class DefaultFile():
         self.all_defaults = self.clean_(self.all_defaults)
 
     def clean_(self,dict_in): 
+        if not isinstance(dict_in,dict): 
+            return dict_in
         dict_out = {k: v for k,v in dict_in.items() if v != "dummy_unused"}
         for k,v in dict_out.items():
             if isinstance(v,dict): 

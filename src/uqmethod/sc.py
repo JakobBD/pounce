@@ -43,8 +43,8 @@ class Sc(UqMethod, Collocation):
         else: 
             sub_dict = prms["machine"]
 
-        self.postproc = MachineLoc(sub_dict)
-        self.postproc.fill("postproc", False)
+        self.stages.append(MachineLoc(sub_dict))
+        self.stages[1].fill("postproc", False)
 
         self.solver.name = ""
         self.solver.samples = Empty()
@@ -52,7 +52,7 @@ class Sc(UqMethod, Collocation):
             qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
             qoi.participants = [self.solver]
             qoi.name = "postproc"
-            self.postproc.batches.append(qoi)
+            self.stages[1].batches.append(qoi)
 
     @staticmethod
     def default_yml(d):

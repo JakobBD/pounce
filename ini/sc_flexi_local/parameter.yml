@@ -12,6 +12,7 @@ solver:
     MeshFile: mesh_1.h5
   _type: flexi
   exe_path: ./flexibatch
+  prmfile: parameter_flexi.ini
 
 stoch_vars:
 - _type: uniform
@@ -34,4 +35,4 @@ machine:
 
 qois:
 - _type: field_solution
-  exe_path: ./mlmc_estimatesigma
+  exe_path: ./nisp

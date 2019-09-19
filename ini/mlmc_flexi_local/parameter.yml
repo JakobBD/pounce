@@ -6,6 +6,9 @@ uq_method:
   n_max_iter: 3
   tolerance: 0.1
 
+sampling:
+  reset_seed: false
+
 solver:
   _type: flexi
   prmfile: 'parameter_flexi.ini'

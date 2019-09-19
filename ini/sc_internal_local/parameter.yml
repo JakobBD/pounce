@@ -3,10 +3,12 @@ general:
 
 uq_method:
   _type: sc
+
+sampling:
+  poly_deg : 5
   sparse_grid: True
 
 solver:
-  poly_deg : 5
   cores_per_sample: 24
   solver_prms:
      nPoints: 64

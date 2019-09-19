@@ -28,7 +28,7 @@ def config(prmfile):
 
     # initialize classes according to chosen subclass
     sim = UqMethod.create(prms["uq_method"])
-    general = GeneralConfig(prms["general"])
+    sim.cfg = GeneralConfig(prms["general"])
 
     # in the multilevel case, some further setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
@@ -51,6 +51,7 @@ def restart(prmfile=None):
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 
     globels.sim = sim
+    sim.cfg.copy_to_globels()
     return sim
 
 
@@ -202,5 +203,8 @@ class GeneralConfig(BaseClass):
 
     def __init__(self,*args): 
         super().__init__(*args)
+        self.copy_to_globels()
+
+    def copy_to_globels(self):
         globels.archive_level=self.archive_level
         globels.project_name=self.project_name

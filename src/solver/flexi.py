@@ -55,7 +55,7 @@ class Flexi(Solver):
         self.solver_prms.update({"ProjectName":self.project_name})
 
         # both:
-        stv=self.stoch_vars
+        stv=self.samples.stoch_vars
         prms= {'Samples'          : self.samples.nodes,
                'StochVarNames'    : [s.name         for s in stv],
                'iOccurrence'      : [s.i_occurrence for s in stv],
@@ -64,7 +64,7 @@ class Flexi(Solver):
                "nGlobalRuns"      : self.samples.n,
                "nParallelRuns"    : self.n_parallel_runs
                }
-        prms.update(self.uqmethod_prms())
+        prms.update(self.samples.sampling_prms())
 
         self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
 

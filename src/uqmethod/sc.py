@@ -8,14 +8,9 @@ from stochvar.stochvar import StochVar
 from helpers import config
 from helpers import globels
 
-class Sc(UqMethod, Collocation):
+class Sc(UqMethod):
 
-    defaults_add = { 
-        "Solver": {
-            "poly_deg": "NODEFAULT",
-            'solver_prms': {}
-            }
-        }
+    SamplingMethod = Collocation
 
     def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
@@ -47,29 +42,20 @@ class Sc(UqMethod, Collocation):
         self.stages[1].fill("postproc", False)
 
         self.solver.name = ""
-        self.solver.samples = Empty()
+        self.solver.samples = Collocation(prms["sampling"])
+        self.solver.samples.stoch_vars = self.stoch_vars
         for sub_dict in prms["qois"]: 
             qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
             qoi.participants = [self.solver]
             qoi.name = "postproc"
             self.stages[1].batches.append(qoi)
 
-    @staticmethod
-    def default_yml(d):
-        d.get_machine()
-        solver = d.process_subclass(Solver)
-        d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
-
-    def uqmethod_prms(self, solver):
-        return({
-            'Weights'          : solver.samples.weights,
-            'Distributions'    : [i._type        for i in self.stoch_vars],
-            'DistributionProps': [i.parameters   for i in self.stoch_vars],
-            "polyDeg"          : solver.poly_deg
-            })
-
-    def get_new_n_current_samples(self, solver):
+    def get_new_n_current_samples(self):
         pass
         # raise Exception("the GetNewNSamples routine should not be called for"
                         # " stochastic collocation")
 
+    @classmethod
+    def default_yml(cls,d):
+        super().default_yml(d)
+        d.all_defaults["sampling"] = cls.SamplingMethod.defaults(with_type=False)

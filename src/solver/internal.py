@@ -37,7 +37,7 @@ class Internal(Solver):
         self.prm_file_name = 'input_'+self.project_name+'.h5'
         prms={"Samples"    :self.samples.nodes,
               "ProjectName":self.project_name}
-        prms.update(self.uqmethod_prms())
+        prms.update(self.samples.sampling_prms())
         prms.update(self.solver_prms)
 
         self.write_hdf5(self.prm_file_name,prms)

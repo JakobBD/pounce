@@ -55,9 +55,10 @@ class Simulation(BaseClass):
             stage.process(iteration)
 
         # Prepare next iteration
+        # self.get_new_n_current_samples() !TODO_MAKE_STEP
         iteration.run_step("Get number of samples for next iteration",
-                           self.get_new_n_current_samples,
-                           iteration.n)
+                           self.get_new_n_current_samples)
+                           
 
 
 

@@ -23,12 +23,6 @@ class Cray(Machine):
         "max_total_work" : 36e5 # 1.000 CoreH
         }
 
-    defaults_add = { 
-        "Level": {
-            "avg_walltime_postproc" : 300.
-            }
-        }
-
     def __init__(self,class_dict):
         super().__init__(class_dict)
         self.cores_per_node = 24

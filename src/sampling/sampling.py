@@ -7,43 +7,49 @@ from helpers.printtools import *
 
 class Sampling(BaseClass):
 
-    def get_samples(self,batches):
+    def get(self):
         pass
+
+    def sampling_prms(self):
+        return {}
 
 
 class MonteCarlo(Sampling):
 
-    defaults_={
-        "reset_seed" : False
-        }
+    def get(self):
+        self.nodes=[]
+        for var in self.stoch_vars:
+            self.nodes.append(var.draw_samples(self.n))
+        self.nodes=np.transpose(self.nodes)
 
-    def get_samples(self,batches):
-        for batch in batches:
-            batch.samples.nodes=[]
-            for var in self.stoch_vars:
-                batch.samples.nodes.append(var.draw_samples(batch.samples.n))
-            batch.samples.nodes=np.transpose(batch.samples.nodes)
-        p_print("Number of current samples for this iteration:")
-        for batch in batches:
-            p_print("  Level %2s: %6d samples"%(batch.name,batch.samples.n))
+    # to be precise, one could add a class 
+    # IterativeMonteCarlo(MonteCarlo) here
+    def sampling_prms(self):
+        return {"nPreviousRuns":self.n_previous}
 
 
 class Collocation(Sampling):
          
     defaults_={
+        "poly_deg": "NODEFAULT",
         "sparse_grid" : "NODEFAULT"
         }
 
-    def get_samples(self,batches):
+    def get(self):
         distributions=[var.distribution for var in self.stoch_vars]
-        for batch in batches:
-            nodes,batch.samples.weights = \
-                cp.generate_quadrature(batch.poly_deg,
-                                       cp.J(*distributions),
-                                       rule='G',
-                                       sparse=self.sparse_grid)
-            batch.samples.nodes=np.transpose(nodes)
-            batch.samples.n = len(batch.samples.nodes)
-        p_print("Number of current samples for this iteration:")
-        for batch in batches:
-            p_print("  Level %2s: %6d samples"%(batch.name,batch.samples.n))
+        nodes,self.weights = \
+            cp.generate_quadrature(self.poly_deg,
+                                   cp.J(*distributions),
+                                   rule='G',
+                                   sparse=self.sparse_grid)
+        self.nodes=np.transpose(nodes)
+        self.n = len(self.nodes)
+
+    def sampling_prms(self):
+        return({
+            'Weights'          : self.weights,
+            'Distributions'    : [i._type        for i in self.stoch_vars],
+            'DistributionProps': [i.parameters   for i in self.stoch_vars],
+            "polyDeg"          : self.poly_deg
+            })
+

@@ -12,23 +12,25 @@ from stochvar.stochvar import StochVar
 from helpers import config
 
 
-class Mlmc(UqMethod,MonteCarlo):
+class Mlmc(UqMethod):
 
     defaults_ = {
         "n_max_iter" : "NODEFAULT",
         "tolerance" : None,
-        "total_work" : None
+        "total_work" : None,
+        "reset_seed" : False
         }
 
     defaults_add = { 
-        "Solver": {
-            "n_warmup_samples": "NODEFAULT",
-            "solver_prms" : {},
+        "Solver": { 
+            "n_warmup_samples": "NODEFAULT"
             },
         "QoI": {
             "optimize": False,
             }
         }
+
+    SamplingMethod = MonteCarlo
 
     def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
@@ -94,7 +96,8 @@ class Mlmc(UqMethod,MonteCarlo):
     def setup_level(self, i, sub_fine, sub_coarse):
         level=Empty()
         level.name = str(i)
-        level.samples = Empty()
+        level.samples = MonteCarlo({})
+        level.samples.stoch_vars = self.stoch_vars
         level.samples.n = sub_fine.n_warmup_samples
         level.samples.n_previous = 0
         sublevels = [sub_fine, sub_coarse]
@@ -120,19 +123,15 @@ class Mlmc(UqMethod,MonteCarlo):
         self.stages[1].batches.append(qoi)
 
 
-    @staticmethod
-    def default_yml(d):
-        d.get_machine()
-        solver = d.process_subclass(Solver)
+    @classmethod
+    def default_yml(cls,d):
+        super().default_yml(d)
         d.all_defaults["solver"]=d.expand_to_several(sub=d.all_defaults["solver"], list_name="levels", exclude = ["_type","exe_path"])
-        d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
         for i,sub in enumerate(d.all_defaults["qois"]):
             d.all_defaults["qois"][i] = d.expand_to_several(sub=sub, list_name="stages", keys=["iteration_postproc","simulation_postproc"], exclude = ["_type","optimize"])
 
-    def uqmethod_prms(self, solver):
-        return {"nPreviousRuns":solver.samples.n_previous}
-
-    def get_new_n_current_samples(self, n_iter):
+    # @make_step("Test") !TODO_MAKE_STEP
+    def get_new_n_current_samples(self):
 
         stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                    "samples__n_previous","samples__n")
@@ -168,7 +167,7 @@ class Mlmc(UqMethod,MonteCarlo):
             qoi.samples.n_previous += qoi.samples.n
 
             # slowly approach mlopt... heuristic solution
-            n_iter_remain = self.n_max_iter-n_iter
+            n_iter_remain = self.n_max_iter-self.current_iter.n
             if n_iter_remain > 0: 
                 expo = 1./sum(0.15**i for i in range(n_iter_remain))
                 n_total_new = qoi.mlopt**expo * qoi.samples.n**(1-expo)

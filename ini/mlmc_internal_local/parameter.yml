@@ -18,6 +18,9 @@ machine:
   _type: local
   mpi: false
 
+sampling: 
+  reset_seed: false
+
 solver:
   _type: internal
   exe_path: ../../externals/integration/solver.py

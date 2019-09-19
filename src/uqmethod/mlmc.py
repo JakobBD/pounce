@@ -129,14 +129,8 @@ class Mlmc(UqMethod,MonteCarlo):
         for i,sub in enumerate(d.all_defaults["qois"]):
             d.all_defaults["qois"][i] = d.expand_to_several(sub=sub, list_name="stages", keys=["iteration_postproc","simulation_postproc"], exclude = ["_type","optimize"])
 
-
-
-
-
-
-    def prm_dict_add(self, sublevel):
-        return {"nPreviousRuns":sublevel.samples.n_previous}
-
+    def uqmethod_prms(self, solver):
+        return {"nPreviousRuns":solver.samples.n_previous}
 
     def get_new_n_current_samples(self, n_iter):
 
@@ -201,7 +195,7 @@ class Mlmc(UqMethod,MonteCarlo):
             p_print("Estimated achieved tolerance for given total work: %e" \
                     %(2.*np.sqrt(self.est_tolerance)))
 
-        self.do_continue = len(self.stages[0].active()) > 0
+        self.do_continue = len(self.stages[0].active_batches) > 0
 
 
 

@@ -43,7 +43,7 @@ class Flexi(Solver):
             return sum(p.current_avg_work for p in self.participants)
 
 
-    def prepare(self,uq_method):
+    def prepare(self):
         """ Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
@@ -55,7 +55,7 @@ class Flexi(Solver):
         self.solver_prms.update({"ProjectName":self.project_name})
 
         # both:
-        stv=uq_method.stoch_vars
+        stv=self.stoch_vars
         prms= {'Samples'          : self.samples.nodes,
                'StochVarNames'    : [s.name         for s in stv],
                'iOccurrence'      : [s.i_occurrence for s in stv],
@@ -64,12 +64,12 @@ class Flexi(Solver):
                "nGlobalRuns"      : self.samples.n,
                "nParallelRuns"    : self.n_parallel_runs
                }
-        prms.update(uq_method.prm_dict_add(self))
+        prms.update(self.uqmethod_prms())
 
         self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
 
-        self.run_command = self.exe_path + ' ' \
-                            + self.prm_file_name + ' ' + self.prmfile
+        self.run_commands = [self.exe_path + ' ' \
+                             + self.prm_file_name + ' ' + self.prmfile]
 
 
     def write_hdf5(self,file_name,solver_prms,further_prms):
@@ -117,11 +117,12 @@ class Flexi(Solver):
 
     def check_finished(self):
         try:
-            args=['tail','-n','4',self.logfile_name]
-            output=subprocess.run(args,stdout=subprocess.PIPE)
-            output=output.stdout.decode("utf-8").splitlines()
-            index=output.index("FLEXIBATCH FINISHED")
-            self.current_avg_work=float(output[index+2])
+            for logfile in self.logfile_names: 
+                args=['tail','-n','4',logfile]
+                output=subprocess.run(args,stdout=subprocess.PIPE)
+                output=output.stdout.decode("utf-8").splitlines()
+                index=output.index("FLEXIBATCH FINISHED")
+                self.current_avg_work=float(output[index+2])
             return True
         except:
             return False
@@ -129,22 +130,23 @@ class Flexi(Solver):
 
 class FieldSolution(Flexi.QoI):
 
-    def prepare_iteration_postproc(self,uq_method):
+    def prepare_iteration_postproc(self):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
-        self.run_command = self.exe_path \
-                           + " " + self.prmfile \
-                           + " " + self.prm_file_name
+        run_command = self.exe_path \
+                      + " " + self.prmfile \
+                      + " " + self.prm_file_name
         self.project_name  = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_state.h5'
         for p in self.participants:
             filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
-            self.run_command += " " + filename
+            run_command += " " + filename
+        self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self,uq_method):
+    def prepare_simulation_postproc(self):
         self.args=[p.output_filename for p in self.participants]
-        self.run_command = self.exe_path \
-                          + " " + " ".join(self.args)
+        self.run_commands = [self.exe_path \
+                            + " " + " ".join(self.args)]
         self.project_name  = globels.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
@@ -155,14 +157,14 @@ class RecordPoints(Flexi.QoI):
         "time_span": [0.,1.E10]
         }
 
-    def prepare_iteration_postproc(self,uq_method):
+    def prepare_iteration_postproc(self):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         n_files = len(glob.glob(participants[0].project_name+"_RP_*.h5"))
-        self.run_command = self.exe_path \
-                           + " " + self.prmfile \
-                           + " " + self.prm_file_name \
-                           + " " + str(n_files)
+        run_command = self.exe_path \
+                      + " " + self.prmfile \
+                      + " " + self.prm_file_name \
+                      + " " + str(n_files)
         self.project_name = self.participants[0].project_name
         self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
         for p in self.participants:
@@ -171,11 +173,12 @@ class RecordPoints(Flexi.QoI):
             for fn in filenames:
                 time=float(fn.split("_")[-1][:-3])
                 if self.time_span[0] <= time <= self.time_span[1]:
-                    self.run_command += " "+fn
+                    run_command += " "+fn
+        self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self,uq_method):
+    def prepare_simulation_postproc(self):
         self.args=[p.output_filename for p in self.participants]
-        self.run_command = self.exe_path \
-                          + " " + " ".join(self.args)
-        self.project_name  = uq_method.general.project_name+'_'+self.name
+        self.run_commands = [self.exe_path \
+                            + " " + " ".join(self.args)]
+        self.project_name  = globels.project_name+'_'+self.name
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

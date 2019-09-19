@@ -60,7 +60,7 @@ class Sc(UqMethod, Collocation):
         solver = d.process_subclass(Solver)
         d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
 
-    def prm_dict_add(self, solver):
+    def uqmethod_prms(self, solver):
         return({
             'Weights'          : solver.samples.weights,
             'Distributions'    : [i._type        for i in self.stoch_vars],

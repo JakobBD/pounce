@@ -49,7 +49,7 @@ class Simulation(BaseClass):
         # Prepare next iteration
         iteration.run_step("Get samples",
                            self.get_samples, 
-                           self.stages[0].active())
+                           self.stages[0].active_batches)
 
         for stage in self.stages:
             stage.process(iteration)
@@ -100,31 +100,30 @@ class Stage():
         self.name = name
         self.multi_sample = multi_sample
 
-    def prepare_set(self, *args):
-        for batch in self.active(): 
-            batch.prepare(*args)
+    def prepare_set(self):
+        for batch in self.active_batches: 
+            batch.prepare()
 
     def process(self,iteration):
         iteration.run_step("Allocate resources for "+self.name,
-                           self.allocate_resources,
-                           self.active())
+                           self.allocate_resources)
 
         iteration.run_step("Prepare "+self.name,
-                           self.prepare_set,
-                           globels.sim) # TODO: replace globels!!!
+                           self.prepare_set)
 
         iteration.run_step("Run "+self.name,
-                           self.run_batches,
-                           self.active())
+                           self.run_batches)
 
-    def active(self):
+    @property
+    def active_batches(self):
         try: 
             return [b for b in self.batches if b.samples.n > 0]
         except AttributeError: 
             return self.batches
 
-    # def __getitem__(self, index): 
-        # return self.batches[index]
+    @property
+    def unfinished(self):
+        return [b for b in self.active_batches if not getattr(b,"finished",False)]
 
 
 

@@ -51,14 +51,13 @@ class Cray(Machine):
                                 "run on remote machine.")
 
 
-    def run_batches(self,batches):
+    def run_batches(self):
         """
         Runs batches by generating the necessary jobfiles and 
         submitting them
         """
-
         # in case of a restart, only submit
-        for batch in self.unfinished(batches):
+        for batch in self.unfinished:
             if not getattr(batch,"queue_status",None):
                 self.submit_job(batch)
 
@@ -66,20 +65,17 @@ class Cray(Machine):
         print()
         self.stdout_table=StdOutTable("job_id","queue_status")
         self.stdout_table.set_descriptions("Job ID","Status")
-        [self.stdout_table.update(batch) for batch in batches]
+        [self.stdout_table.update(batch) for batch in self.active_batches]
         self.stdout_table.p_print()
 
-        self.wait_finished(batches)
+        self.wait_finished()
 
         self.check_all_finished()
 
         # reset for next iteration
-        for batch in batches:
+        for batch in self.active_batches:
             batch.finished=False
             batch.queue_status=None
-
-    def unfinished(self,batches):
-        return [b for b in batches if not getattr(b,"finished",False)]
 
 
     def submit_job(self,batch):
@@ -91,10 +87,12 @@ class Cray(Machine):
                                             globels.project_name))
             + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+time_to_str(batch.batch_walltime)+"\n\n"
-            + 'cd $PBS_O_WORKDIR\n\n'
-            + 'aprun -n  {}  -N {} {}\n'.format(batch.n_cores,
-                                                min(batch.n_cores,24),
-                                                batch.run_command))
+            + 'cd $PBS_O_WORKDIR\n\n')
+
+        for i,run in enumerate(batch.run_commands): 
+            jobfile_string += 'aprun -n  {}  -N {} {} 1> {} 2> {}\n'.format(
+                batch.n_cores, min(batch.n_cores,24), run,
+                batch.logfile_names[i], batch.errfile_names[i] )
         batch.jobfile_name = 'jobfile_{}'.format(batch.name)
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
@@ -113,27 +111,30 @@ class Cray(Machine):
         command = "cd "+self.dir_on_cray+" && "+" ".join(args)
         return ['ssh',self.cray_username+"@hazelhen.hww.de",command]
 
-    def wait_finished(self,batches):
+    def wait_finished(self):
         """Monitors all jobs on Cray Hazelhen HPC queue. 
         Checks if jobfile finished.
         """
         while True:
+            # loop until all jobs are finished
             statuses=self.read_qstat()
             has_changes=False
-            for batch in self.unfinished(batches):
+            for batch in self.unfinished:
                 if batch.job_id in statuses:
                     queue_status = statuses[batch.job_id]
                 else:
+                    # after restart, completed job can be removed from qstat
                     queue_status = "C"
                 if not queue_status == batch.queue_status:
+                    # new status
                     batch.queue_status=queue_status
                     self.stdout_table.update(batch)
                     has_changes=True
                 if queue_status=='C':
-                    self.check_errorfile(batch,batches)
+                    self.check_errorfile(batch)
             if has_changes:
                 self.stdout_table.print_row_by_name("queue_status")
-            if not self.unfinished(batches):
+            if not self.unfinished:
                 return
             time.sleep(1)
 
@@ -157,38 +158,38 @@ class Cray(Machine):
             return {id(line):stat(line) for line in lines[5:-1]}
 
 
-    def check_errorfile(self,batch,batches):
+    def check_errorfile(self,batch):
         """open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        batch.logfile_name='{}.o{}'.format(batch.project_name,batch.job_id)
-        batch.errorfile_name='{}.e{}'.format(batch.project_name,batch.job_id)
-        if not os.path.isfile(batch.errorfile_name):
-            time.sleep(5)
-        with open(batch.errorfile_name) as f:
-            lines = f.read().splitlines()
-        # empty error file: all good
-        if len(lines)==0:
-            batch.finished=True
-            return
-        # check if walltime excced in error file (also means that 
-        # solver did not otherwise crash)
-        longlines=[line.split() for line in lines if len(line.split())>=7]
-        for words in longlines:
-            if words[4]=='walltime' and words[6]=='exceeded':
-                p_print("Job {} exceeded walltime ({}). ".format(
-                            batch.name,time_to_str(batch.batch_walltime))
-                        +"Re-submit with double walltime.")
-                batch.batch_walltime *= 2
-                self.submit_job(batch)
-                return
-        # non-empty error file and not walltime excceded: other error
-        raise Exception('Error in jobfile execution! '
-                        + 'See file {} for details.'.format(
-                            batch.errorfile_name))
+        for errfile in self.errfile_names:
+            # sometimes cray needs a while to finish up jobs
+            if not os.path.isfile(errfile):
+                time.sleep(5)
+            with open(errfile) as f:
+                lines = f.read().splitlines()
+            # empty error file: all good
+            if len(lines)==0:
+                continue
+            # check if walltime excced in error file (also means that 
+            # solver did not otherwise crash)
+            longlines=[line.split() for line in lines if len(line.split())>=7]
+            for words in longlines:
+                if words[4]=='walltime' and words[6]=='exceeded':
+                    p_print("Job {} exceeded walltime ({}). ".format(
+                                batch.name,time_to_str(batch.batch_walltime))
+                            +"Re-submit with double walltime.")
+                    batch.batch_walltime *= 2
+                    self.submit_job(batch)
+                    return
+            # non-empty error file and not walltime excceded: other error
+            raise Exception('Error in jobfile execution! '
+                            + 'See file {} for details.'.format(errfile))
+        # nor return means all runs finished normally
+        batch.finished=True
 
 
-    def allocate_resources(self,batches):
+    def allocate_resources(self):
         """Takes the properties of the batch (number of current samples,
         walltime and cores of current sample) as well as the machine 
         properties or machine input (number of cores per node, max nodes
@@ -196,7 +197,7 @@ class Cray(Machine):
         for this batch.
         """
         if not self.multi_sample:
-            for batch in batches:
+            for batch in self.active_batches:
                 batch.n_cores=batch.cores_per_sample
                 batch.n_nodes=((batch.cores_per_sample - 1) // self.cores_per_node) + 1
                 batch.batch_walltime=batch.avg_walltime
@@ -210,7 +211,7 @@ class Cray(Machine):
             "Queue","Rating (%)","# parallel runs","# sequential runs",
             "# cores","# nodes","batch walltime")
 
-        for batch in batches:
+        for batch in self.active_batches:
             batch.scaled_avg_walltime=self.walltime_factor*batch.avg_walltime
             batch.work=batch.scaled_avg_walltime * batch.cores_per_sample\
                 * batch.samples.n

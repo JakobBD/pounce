@@ -3,6 +3,7 @@ import subprocess
 
 from .machine import Machine
 from helpers.printtools import *
+from helpers.tools import *
 
 class Local(Machine):
     """Class: Defines local machine. Machine executes Samples.

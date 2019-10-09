@@ -45,8 +45,8 @@ def restart(prmfile=None):
         raise Exception("Modifying parameters at restart is not yet "
                         "implemented")
 
-    n_finished_iter = (len(sim.iterations)
-                       - (1 if sim.do_continue else 0))
+    n_finished_iter = len(sim.iterations) \
+                    - (0 if sim.current_iter.finished else 1)
     if n_finished_iter > 0:
         p_print(cyan("Skipping %i finished Iteration(s)."%(n_finished_iter)))
 

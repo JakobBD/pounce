@@ -4,7 +4,6 @@ import copy
 from parse import parse
 
 from helpers.printtools import *
-from helpers import globels
 
 
 
@@ -33,24 +32,6 @@ def deepmerge(*args):
     return out
 
 
-def make_iter(process_func):
-    def func_wrapper(self,iteration):
-        self.iterations.append(self.current_iter)
-        self.current_iter.start()
-        process_func(self,iteration)
-        iteration.run_step("Archive",self.archive)
-    return func_wrapper
-
-def make_step(description):
-    def decorator(func):
-        def run_step(*args, **kwargs):
-            if description not in globels.sim.current_iter.finished_steps:
-                print_step(description+":")
-                func(*args,**kwargs)
-                globels.sim.current_iter.update_step(string=description)
-        return run_step
-    return decorator
-    
 def parse_time_to_seconds(arg): 
     if isvalidlist(arg):
         return 3600*arg[0] + 60*arg[1] + arg[2]

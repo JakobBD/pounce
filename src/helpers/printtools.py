@@ -63,7 +63,8 @@ def print_header():
                                 MM       MM.      ,MP MM       M    M   `MM.M MM.           MM   Y  ,
                                 MM       `Mb.    ,dP' YM.     ,M    M     YMM `Mb.     ,'   MM     ,M
                               .JMML.       `*bmmd*'    `bmmmmd*'  .JML.    YM   `*bmmmd'  .JMMmmmmMMM"""
-    msg2="""                                 Propagation of Uncertainty - Framework for HPC UQ implementations"""
+    msg2="""                                 Propagation of Uncertainty - Framework for HPC UQ implementations
+                                     You queue UQ simulations? That's your cue to use POUNCE!"""
     print("="*132)
     print(yellow(msg1))
     print("="*132)

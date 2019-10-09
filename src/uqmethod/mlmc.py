@@ -126,11 +126,17 @@ class Mlmc(UqMethod):
     @classmethod
     def default_yml(cls,d):
         super().default_yml(d)
-        d.all_defaults["solver"]=d.expand_to_several(sub=d.all_defaults["solver"], list_name="levels", exclude = ["_type","exe_path"])
+        d.all_defaults["solver"] = d.expand_to_several(
+            sub = d.all_defaults["solver"], 
+            list_name = "levels", 
+            exclude = ["_type","exe_path"])
         for i,sub in enumerate(d.all_defaults["qois"]):
-            d.all_defaults["qois"][i] = d.expand_to_several(sub=sub, list_name="stages", keys=["iteration_postproc","simulation_postproc"], exclude = ["_type","optimize"])
+            d.all_defaults["qois"][i] = d.expand_to_several(
+                sub = sub, 
+                list_name = "stages", 
+                keys = ["iteration_postproc","simulation_postproc"], 
+                exclude = ["_type","optimize"])
 
-    # @make_step("Test") !TODO_MAKE_STEP
     def get_new_n_current_samples(self):
 
         stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
@@ -194,7 +200,7 @@ class Mlmc(UqMethod):
             p_print("Estimated achieved tolerance for given total work: %e" \
                     %(2.*np.sqrt(self.est_tolerance)))
 
-        self.do_continue = len(self.stages[0].active_batches) > 0
+        self.iter_loop_finished = len(self.stages[0].active_batches) == 0
 
 
 

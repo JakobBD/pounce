@@ -5,7 +5,7 @@ if sys.version_info[0] < 3:
     sys.exit()
 
 # local imports
-from helpers import config,printtools
+from helpers import config,default_yml
 from helpers.printtools import *
 
 
@@ -25,7 +25,7 @@ if n_args < 2:
     raise Exception(usage)
 
 if n_args == 2 and sys.argv[1] in ['-h','--help']:
-    config.print_default_yml_file()
+    default_yml.print_default_yml_file()
 
 print_header()
 

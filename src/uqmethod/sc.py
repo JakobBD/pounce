@@ -9,6 +9,9 @@ from helpers import config
 from helpers import globels
 
 class Sc(UqMethod):
+    """
+    Stochastic Collocation (non-adaptive)
+    """
 
     SamplingMethod = Collocation
 
@@ -18,6 +21,9 @@ class Sc(UqMethod):
         self.n_max_iter = 1
 
     def setup(self, prms):
+        """
+        Only one batch is needed (called solver)
+        """
 
         SolverLoc = Solver.subclass(prms["solver"]["_type"])
         MachineLoc = Machine.subclass(prms["machine"]["_type"])
@@ -50,10 +56,12 @@ class Sc(UqMethod):
             qoi.name = "postproc"
             self.stages[1].batches.append(qoi)
 
-    def get_new_n_current_samples(self):
+    def prepare_next_iteration(self):
+        """
+        There is only one "iteration", so no next 
+        one needs to be prepared.
+        """
         pass
-        # raise Exception("the GetNewNSamples routine should not be called for"
-                        # " stochastic collocation")
 
     @classmethod
     def default_yml(cls,d):

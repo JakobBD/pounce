@@ -9,6 +9,11 @@ from helpers.printtools import *
 
 
 class Batch(BaseClass):
+    """
+    A batch consists of a set of computations.
+    This can be either simulations or post-processing.
+    It is therefore the parent class to Solver and QoI
+    """
 
     defaults_ = {
         'cores_per_sample' : 1,
@@ -44,6 +49,12 @@ class Batch(BaseClass):
 
 
 class Solver(Batch):
+    """
+    Solver is the parent class to subclasses which include 
+    routines specidifc to the used solver. Here only the main
+    simulation is considered as opposed to the according QoI's, 
+    which are defined separately. 
+    """
 
     defaults_ = {
         'cores_per_sample' : "NODEFAULT",
@@ -57,6 +68,10 @@ class Solver(Batch):
 
 
 class QoI(Batch):
+    """
+    QoIs are always chosen automatically according 
+    to the chosen Solver. 
+    """
 
     def __init__(self,*args):
         super().__init__(*args)

@@ -5,6 +5,12 @@ from helpers.tools import *
 from helpers.baseclass import BaseClass
 
 class Simulation(BaseClass):
+    """
+    Organizes how the simulation is run, i.e. how iterations follow 
+    each other in a loop and how an iteration looks. 
+    Simulation is a parent class to UqMethod, where routines can be
+    overwritten.
+    """
 
     def __init__(self, class_dict):
         super().__init__(class_dict)
@@ -13,10 +19,13 @@ class Simulation(BaseClass):
         self.filename = "pounce.pickle"
         self.iter_loop_finished = False
 
+
     def run(self):
-        """Main Loop for UQMethod.
         """
-        # main loop
+        Default main simulation loop: Iterate until finished or 
+        maximum number of iterations is reached, the npost-process 
+        if necessary.
+        """
         while not self.iter_loop_finished:
             n_iter = len(self.iterations)
             if n_iter == 0 or self.current_iter.finished: 
@@ -37,10 +46,12 @@ class Simulation(BaseClass):
 
     @globels.iteration
     def run_iteration(self):
-        """General procedure:
-        1. Let machine decide how many samples to compute.
-        2. Generate samples and weights.
-        3. Compute samples on system
+        """
+        Default iterations:
+        - Get samples to run
+        - process all external stages (e.g. main simulation and
+          post-processing of the iteration)
+        - prepare next iteration
         """
         # Prepare next iteration
         globels.run_step("Get samples",
@@ -49,9 +60,8 @@ class Simulation(BaseClass):
         for stage in self.stages:
             stage.process()
         # Prepare next iteration
-        # self.get_new_n_current_samples() !TODO_MAKE_STEP
-        globels.run_step("Get number of samples for next iteration",
-                         self.get_new_n_current_samples)
+        globels.run_step("Prepare next iteration",
+                         self.prepare_next_iteration)
                            
 
     @globels.iteration
@@ -93,8 +103,18 @@ class Stage():
             return self.batches
 
     @property
-    def unfinished(self):
+    def unfinished_batches(self):
         return [b for b in self.active_batches if not getattr(b,"finished",False)]
+
+    def check_all_finished(self):
+        finished = [batch.check_finished() for batch in self.batches]
+        if all(finished): 
+                p_print("All jobs finished.")
+        else:
+            tmp=[batch.name for batch,is_finished in zip(self.batches,finished) \
+                 if not is_finished]
+            raise Exception("not all jobs finished. "
+                            +"Problems with batch(es) "+", ".join(tmp)+".")
 
 
 

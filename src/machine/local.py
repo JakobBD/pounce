@@ -6,7 +6,10 @@ from helpers.printtools import *
 from helpers.tools import *
 
 class Local(Machine):
-    """Class: Defines local machine. Machine executes Samples.
+    """
+    Class: Defines local machine.
+    Since no queuing is required, this all reduces
+    to very basic routines.
     """
 
     defaults_={
@@ -21,7 +24,8 @@ class Local(Machine):
         }
 
     def run_batches(self):
-        """Runs a job by calling a subprocess.
+        """
+        Runs a job by calling a subprocess.
         """
         # TODO: enable parallel runs of jobs
         for batch in self.active_batches:

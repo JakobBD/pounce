@@ -3,7 +3,8 @@ import textwrap
 import numpy as np
 
 class Bcolors :
-    """color and font style definitions for changing output appearance
+    """
+    color and font style definitions for changing output appearance
     """
     # Reset (user after applying a color to return to normal coloring)
     ENDC   ='\033[0m'     
@@ -75,10 +76,13 @@ def print_header():
 
 class StdOutTable():
     """
-    Helper class for get_new_n_current_samples routine.
-    Outsourced for improved readability.
-    Prints values for each level in ordered table to stdout.
+    Buffers several values for each batch for stdout in ordered table.
+    Called in three steps:
+    - before loop over batches: init class and set_descriptions
+    - during loop over batches: update (for each batch) 
+    - after  loop over batches: print
     """
+
     def __init__(self,*args):
         self.rows=[]
         for arg in args:

@@ -13,6 +13,12 @@ from helpers import config
 
 
 class Mlmc(UqMethod):
+    """
+    Multilevel Monte Carlo
+    The number of levels is prescribed, the number of samples is 
+    adapted iteratively in a prescribed number of iterations
+    (convergence rate and work per sample are obtained empirically).
+    """
 
     defaults_ = {
         "n_max_iter" : "NODEFAULT",
@@ -42,6 +48,13 @@ class Mlmc(UqMethod):
             np.random.seed(0)
 
     def setup(self, prms):
+        """
+        Set up data structure for an MLMC simulation
+        Includes levels and sublevels, quantities of interest, 
+        each initiallized according to chosen solver, 
+        and stages (main simulation and post proc) according to
+        chosen machine.
+        """
 
         SolverLoc = Solver.subclass(prms["solver"]["_type"])
         MachineLoc = Machine.subclass(prms["machine"]["_type"])
@@ -94,6 +107,10 @@ class Mlmc(UqMethod):
             self.simulation_postproc.batches.append(qoi)
 
     def setup_level(self, i, sub_fine, sub_coarse):
+        """
+        set up a level, connect to its sublevels, and 
+        add the samples container
+        """ 
         level=Empty()
         level.name = str(i)
         level.samples = MonteCarlo({})
@@ -110,6 +127,10 @@ class Mlmc(UqMethod):
         return level
 
     def setup_qoi(self, subdict, level):
+        """ 
+        set up quantity of interest for a level and make the 
+        sublevels its participants
+        """
         QoILoc = level.sublevels[0].__class__.QoI
         qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
         qoi.participants = level.sublevels
@@ -125,6 +146,9 @@ class Mlmc(UqMethod):
 
     @classmethod
     def default_yml(cls,d):
+        """
+        MLMC specific layout of the default yml file.
+        """
         super().default_yml(d)
         d.all_defaults["solver"] = d.expand_to_several(
             sub = d.all_defaults["solver"], 
@@ -137,7 +161,14 @@ class Mlmc(UqMethod):
                 keys = ["iteration_postproc","simulation_postproc"], 
                 exclude = ["_type","optimize"])
 
-    def get_new_n_current_samples(self):
+    def prepare_next_iteration(self):
+        """
+        Compute number of samples for next iteration. 
+        - evaluate sigma^2 and avg work. 
+        - get optimal number of samples on every level
+          (given prescribed tolerance or total work) 
+        - approach this numbr carefully and iteratively
+        """
 
         stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                    "samples__n_previous","samples__n")

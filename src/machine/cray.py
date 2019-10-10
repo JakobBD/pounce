@@ -14,8 +14,10 @@ from .local import Local
 from helpers import globels
 
 class Cray(Machine):
-    """Definition of Cray Hazelhen machine.
     """
+    Definition of Cray Hazelhen machine.
+    """
+
     defaults_={
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,
@@ -24,6 +26,11 @@ class Cray(Machine):
         }
 
     def __init__(self,class_dict):
+        """
+        check if POUNCE is run on Cray or locally on a mounted
+        directory. In the latter case, ssh is used to submit jobs
+        and supervise the queuing status.
+        """
         super().__init__(class_dict)
         self.cores_per_node = 24
         self.total_work = 0.
@@ -47,11 +54,11 @@ class Cray(Machine):
 
     def run_batches(self):
         """
-        Runs batches by generating the necessary jobfiles and 
-        submitting them
+        Runs batches by generating the necessary jobfiles,
+        submitting them, and supervising the queuing status.
         """
         # in case of a restart, only submit
-        for batch in self.unfinished:
+        for batch in self.unfinished_batches:
             if not getattr(batch,"queue_status",None):
                 self.submit_job(batch)
 
@@ -73,7 +80,8 @@ class Cray(Machine):
 
 
     def submit_job(self,batch):
-        """Generates the necessary jobfile and submits job.
+        """
+        Generates the necessary jobfile and submits job for a batch
         """
         jobfile_string = (
               '#!/bin/bash\n'
@@ -102,18 +110,25 @@ class Cray(Machine):
         globels.sim.iterations[-1].update_step()
     
     def to_ssh(self,args): 
+        """
+        converts a command into the same command passed via ssh
+        (each argument is an item of a list; in the ssh command, 
+        the original command appears as one argument and thus one 
+        string)
+        """
         command = "cd "+self.dir_on_cray+" && "+" ".join(args)
         return ['ssh',self.cray_username+"@hazelhen.hww.de",command]
 
     def wait_finished(self):
-        """Monitors all jobs on Cray Hazelhen HPC queue. 
+        """
+        Monitors all jobs on Cray Hazelhen HPC queue. 
         Checks if jobfile finished.
         """
         while True:
             # loop until all jobs are finished
             statuses=self.read_qstat()
             has_changes=False
-            for batch in self.unfinished:
+            for batch in self.unfinished_batches:
                 if batch.job_id in statuses:
                     queue_status = statuses[batch.job_id]
                 else:
@@ -128,13 +143,14 @@ class Cray(Machine):
                     self.check_errorfile(batch)
             if has_changes:
                 self.stdout_table.print_row_by_name("queue_status")
-            if not self.unfinished:
+            if not self.unfinished_batches:
                 return
             time.sleep(1)
 
 
     def read_qstat(self):
-        """run 'qstat' on cray and read output
+        """
+        run 'qstat' on cray and read output
         """
         args=['qstat','-u',self.cray_username]
         if self.remote: 
@@ -153,7 +169,8 @@ class Cray(Machine):
 
 
     def check_errorfile(self,batch):
-        """open error file and parse errrors. 
+        """
+        open error file and parse errrors. 
         Well, parse is a strong word here.
         """
         for errfile in self.errfile_names:
@@ -184,7 +201,8 @@ class Cray(Machine):
 
 
     def allocate_resources(self):
-        """Takes the properties of the batch (number of current samples,
+        """
+        Takes the properties of the batch (number of current samples,
         walltime and cores of current sample) as well as the machine 
         properties or machine input (number of cores per node, max nodes
         etc.) and outputs number of cores and number of parallel runs 
@@ -235,7 +253,8 @@ class Cray(Machine):
 
 
     def get_package_properties(self,batch):
-        """define a "package" of runs to fill a node, 
+        """
+        define a "package" of runs to fill a node, 
         e.g. 4 parallel runs with cores_per_sample=6.
         trivial if cores_per_sample >= 24.
         """
@@ -256,7 +275,8 @@ class Cray(Machine):
 
 
     def get_best_option(self,batch):
-        """Loop over all possible combinations of n_parallel_runs and 
+        """
+        Loop over all possible combinations of n_parallel_runs and 
         n_sequential_runs.
         Get Rating for all of them. Pick the best one.
         """
@@ -281,7 +301,8 @@ class Cray(Machine):
 
 
 class Option():
-    """One combination of n_parallel_runs and n_sequential_runs. 
+    """
+    One combination of n_parallel_runs and n_sequential_runs. 
     Has a Rating based on efficiency (few idling cores) and expcted 
     queuing time.
     Invalid if does not match criteria of selected queue.
@@ -306,7 +327,8 @@ class Option():
         self.check_valid(batch)
 
     def rating(self,batch):
-        """Rating based on efficiency (few idling cores) and expcted 
+        """
+        Rating based on efficiency (few idling cores) and expcted 
         queuing time.
         """
         self.queue_rating = min(batch.ideal_cores / self.n_cores, 
@@ -316,7 +338,8 @@ class Option():
         self.rating = self.effiency_rating ** 3. * self.queue_rating
 
     def check_valid(self,batch):
-        """Invalid if does not match criteria of selected queue.
+        """
+        Invalid if does not match criteria of selected queue.
         """
         self.valid = (    (batch.bounds_parallel[0]    
                            <= self.n_parallel_runs
@@ -327,7 +350,8 @@ class Option():
 
 
 def get_queue(batch):
-    """check which queue the job is eligible for: 
+    """
+    check which queue the job is eligible for: 
     if possible, run on multi. If too small, run on small. 
     If too large, run on long (>4h)
     """
@@ -374,7 +398,8 @@ def get_queue(batch):
 
 
 def small_queue(batch):
-    """multi queue cannot be filled with walltime > 5 min
+    """
+    multi queue cannot be filled with walltime > 5 min
     """
     batch.queue = "small"
     batch.wt_func = [5.*60, 24.*60 ]
@@ -384,7 +409,8 @@ def small_queue(batch):
     batch.bounds_sequential = [1, batch.sequential_runs_max]
 
 def multi_queue(batch):
-    """preferred queue: n_nodes>=48, walltime < 4h
+    """
+    preferred queue: n_nodes>=48, walltime < 4h
     """
     batch.queue = "multi"
     batch.wt_func = [30.*60, 4.*3600 ]
@@ -394,7 +420,8 @@ def multi_queue(batch):
         [batch.sruns_multi_min, batch.sequential_runs4h_max]
 
 def long_queue(batch):
-    """with max_cores, walltime exceeds 4h
+    """
+    with max_cores, walltime exceeds 4h
     """
     batch.queue = "long"
     batch.wt_func = [4.*3600, 8.*3600 ]

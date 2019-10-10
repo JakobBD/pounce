@@ -62,7 +62,6 @@ class Internal(Solver):
 
 
 
-
 class Integral(Internal.QoI):
 
     def prepare_iteration_postproc(self):

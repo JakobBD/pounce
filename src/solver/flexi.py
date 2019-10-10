@@ -9,6 +9,10 @@ from helpers.tools import *
 from helpers import globels
 
 class Flexi(Solver):
+    """ 
+    Runs with the POUNCE-adaptation of FLEXI, i.e. with the 
+    executable flexibatch and the according post-processing tools.
+    """
 
     defaults_ = {
         "prmfile" : "parameter_flexi.ini",
@@ -27,24 +31,33 @@ class Flexi(Solver):
         }
 
     class QoI(QoI):
+        """ 
+        Parent class for all FLEXI QoI's 
+        """
 
         defaults_ = {
             "prmfile" : ""
             }
 
         def get_derived_quantity(self,quantity_name):
-            """ Readin sigma_sq or avg_walltime for MLMC.
+            """ 
+            Readin sigma_sq or avg_walltime for MLMC.
             """
             with h5py.File(self.output_filename, 'r') as h5f:
                 quantity = h5f.attrs[quantity_name]
             return quantity
 
         def get_work_mean(self):
+            """ 
+            For Flexi, avg work is already read from HDF5 file during 
+            check_all_finished
+            """
             return sum(p.current_avg_work for p in self.participants)
 
 
     def prepare(self):
-        """ Prepares the simulation by generating the run_command
+        """ 
+        Prepares the simulation by generating the run_command
         and writing the HDF5 file containing all samples of the current
         iteration and the current samples.
         """
@@ -73,7 +86,8 @@ class Flexi(Solver):
 
 
     def write_hdf5(self,file_name,solver_prms,further_prms):
-        """ Writes the HDF5 file containing all necessary data for
+        """ 
+        Writes the HDF5 file containing all necessary data for
         flexi run to run.
         """
 
@@ -97,6 +111,10 @@ class Flexi(Solver):
 
 
     def h5write(self,h5f,name,prm):
+        """ 
+        helper function for correct data formatting 
+        in Fortran readable HDF5 files. 
+        """
         if isinstance(prm,np.ndarray):
             h5f.create_dataset(name, data=prm)
         elif isinstance(prm,list):
@@ -116,6 +134,11 @@ class Flexi(Solver):
 
 
     def check_finished(self):
+        """ 
+        Check last lines of logfiles (stdout) for confirmation that 
+        the batch is finished. Also retrieve average work, which is 
+        written to the log file as well (as part of flexibatch)
+        """
         try:
             for logfile in self.logfile_names: 
                 args=['tail','-n','4',logfile]
@@ -129,6 +152,13 @@ class Flexi(Solver):
 
 
 class FieldSolution(Flexi.QoI):
+    """ 
+    Takes the whole field solution as quantity of interest. 
+
+    Caution: routines starting with prepare_... 
+    will be renamed to "prepare" as part of the create_by_stage
+    routine. 
+    """
 
     def prepare_iteration_postproc(self):
         # participants[0] is a rather dirty hack
@@ -152,6 +182,13 @@ class FieldSolution(Flexi.QoI):
 
 
 class RecordPoints(Flexi.QoI):
+    """ 
+    Takes a solution time sereis evaluated at record points as QoI.
+
+    Caution: routines starting with prepare_... 
+    will be renamed to "prepare" as part of the create_by_stage
+    routine. 
+    """
 
     defaults_ = {
         "time_span": [0.,1.E10]

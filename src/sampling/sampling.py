@@ -6,15 +6,28 @@ from helpers.printtools import *
 
 
 class Sampling(BaseClass):
+    """
+    parent class with placeholders for the sampling strategies
+    """
 
     def get(self):
+        """
+        get samples
+        """
         pass
 
     def sampling_prms(self):
+        """
+        parameters specific to the sampling strategy which are
+        needed by the solver or by the post-processing routines
+        """
         return {}
 
 
 class MonteCarlo(Sampling):
+    """
+    Vanilla Monte Carlo sampling
+    """
 
     def get(self):
         self.nodes=[]
@@ -29,6 +42,10 @@ class MonteCarlo(Sampling):
 
 
 class Collocation(Sampling):
+    """
+    Sampling at collocation nodes based on ChaosPy routines
+    Smolyak sparse grid is possible
+    """
          
     defaults_={
         "poly_deg": "NODEFAULT",
@@ -46,6 +63,10 @@ class Collocation(Sampling):
         self.n = len(self.nodes)
 
     def sampling_prms(self):
+        """
+        For mean and variance, only weights would be used. 
+        The rest is for response surface creation.
+        """
         return({
             'Weights'          : self.weights,
             'Distributions'    : [i._type        for i in self.stoch_vars],

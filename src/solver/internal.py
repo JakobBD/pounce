@@ -7,6 +7,11 @@ from helpers.tools import *
 from helpers import globels
 
 class Internal(Solver):
+    """ 
+    Dummy python solver for testing.
+    python source files are located in the externals directory
+    I/O via HDF5. 
+    """
 
     defaults_ = {
         "solver_prms" : {
@@ -15,6 +20,9 @@ class Internal(Solver):
         }
 
     class QoI(QoI):
+        """ 
+        Parent class for the dummy solver's QoI(s)
+        """
 
         def get_work_mean(self):
             return self.get_derived_quantity("WorkMean")
@@ -28,7 +36,8 @@ class Internal(Solver):
 
 
     def prepare(self):
-        """ Prepares the simulation by generating the run_command 
+        """ 
+        Prepares the simulation by generating the run_command 
         and writing the HDF5 file containing all samples of the current 
         iteration and the current level.
         """
@@ -45,7 +54,8 @@ class Internal(Solver):
         self.run_commands = ['python3 '+self.exe_path+' '+self.prm_file_name]
 
     def write_hdf5(self,file_name,prms):
-        """ Writes the HDF5 file containing all necessary data for the 
+        """ 
+        Writes the HDF5 file containing all necessary data for the 
         internal to run.
         """
 
@@ -63,6 +73,13 @@ class Internal(Solver):
 
 
 class Integral(Internal.QoI):
+    """ 
+    Takes the integral of the solution as quantity of interest. 
+
+    Caution: routines starting with prepare_... 
+    will be renamed to "prepare" as part of the create_by_stage
+    routine. 
+    """
 
     def prepare_iteration_postproc(self):
         run_command = "python3 "+self.exe_path

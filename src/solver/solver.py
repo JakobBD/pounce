@@ -22,11 +22,16 @@ class Batch(BaseClass):
         }
 
     def check_finished(self):
-        """default: do not carry out a check after a batch is run
+        """
+        default: do not carry out a check after a batch is run
+        simply assume all are finished.
         """
         return True
 
     def prepare(self,simulation):
+        """
+        placeholder; should be overwritten by each subclass.
+        """
         raise Exception("not yet implemented")
 
     @property
@@ -42,6 +47,12 @@ class Batch(BaseClass):
         return len(self.run_commands)
 
     def run_id(self,i):
+        """
+        needed to distinguish input and output files 
+        in the case of several runs per batch (i.e. if one solver is
+        run several times instead of a loop over all samples as part 
+        of the external solver)
+        """
         if self.n_runs == 1:
             return ""
         else:
@@ -79,6 +90,13 @@ class QoI(Batch):
 
     @classmethod
     def create_by_stage(cls,name,prms,*args): 
+        """
+        Some QoI's contain prepare functions for different stages. 
+        Here, the functions are renamed to the general "prepare" 
+        according to the respective stage string given in "name".
+        QoI parameters are joined: some are given for all stages
+        (prms_other), others are stage-specific (prms_loc).
+        """
         if "stages" in prms:
             prms_loc=prms["stages"][name]
             prms_other=copy.deepcopy(prms)
@@ -94,7 +112,6 @@ class QoI(Batch):
                 + " not found in class " + inst.__class__.__name__)
         inst.prepare=getattr(inst,method_name,None)
         return inst
-
 
 
 from . import *

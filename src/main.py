@@ -11,6 +11,7 @@ from helpers.printtools import *
 
 # parse commmand line arguments
 
+# sdtout string for exceptions (explains correct arguments)
 usage="""
 
 Allowed usage:
@@ -33,12 +34,15 @@ is_prm_file = sys.argv[-1].endswith(('yml','yaml'))
 restart_mode = sys.argv[1] in ['-r','--restart']
 
 if n_args == 2 and is_prm_file:
+    # standard use, fresh start
     print_major_section("Start parameter readin and configuration")
     simulation = config.config(sys.argv[-1])
 elif restart_mode and n_args == 2:
+    # restart
     print_major_section("Restart simulation")
     simulation = config.restart()
 elif restart_mode and n_args == 3 and is_prm_file:
+    # restart with changed parameters (not yet implemented)
     print_major_section("Restart simulation")
     simulation = config.restart(prmfile=sys.argv[-1])
 else:

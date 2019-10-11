@@ -8,6 +8,9 @@ from helpers.printtools import *
 
 
 def safe_sqrt(arg):
+    """
+    for sqrt of negative values, print a warning instead of crashing.
+    """
     if arg >= 0.:
         return np.sqrt(arg)
     else:
@@ -25,14 +28,11 @@ def safe_sqrt(arg):
 class Empty():
     pass
 
-def deepmerge(*args): 
-    out=args[0]
-    for arg in args[1:]: 
-        out.update(copy.deepcopy(arg))
-    return out
-
 
 def parse_time_to_seconds(arg): 
+    """
+    parse different formats to give time in the yml parameter file.
+    """
     if isvalidlist(arg):
         return 3600*arg[0] + 60*arg[1] + arg[2]
     if isinstance(arg,str):
@@ -44,6 +44,9 @@ def parse_time_to_seconds(arg):
     return arg
 
 def isvalidlist(arg):
+    """
+    time lists have three entries h,m,s
+    """
     if isinstance(arg,(list,tuple)):
         if len(arg) == 3:
             return True
@@ -51,6 +54,9 @@ def isvalidlist(arg):
         return False
 
 def sec_to_list(sec):
+    """
+    helper for time_sto_str
+    """
     list_=[0.,0.,0.]
     list_[0] = int(int(sec)/3600)
     list_[1] = int(int(sec)/60 - 60*list_[0])

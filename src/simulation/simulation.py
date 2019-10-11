@@ -72,6 +72,14 @@ class Simulation(BaseClass):
 
 
 class Stage():
+    """
+    A Stage is a set of batches that is run externally. 
+    This can be simulations or post-processing. 
+    Processing this stage includes determining the required resources
+    on the system, preparation (writing input) and running the jobs. 
+    Each stage can be run on a different system. The according subclass
+    of Machine therefore inherits from Stage.
+    """
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -82,10 +90,16 @@ class Stage():
         self.multi_sample = multi_sample
 
     def prepare_set(self):
+        """
+        Wrapper for preparation of all batches
+        """
         for batch in self.active_batches: 
             batch.prepare()
 
     def process(self):
+        """
+        core function of the class: process the stage
+        """
         globels.run_step("Allocate resources for "+self.name,
                          self.allocate_resources)
 
@@ -97,6 +111,10 @@ class Stage():
 
     @property
     def active_batches(self):
+        """
+        if no samples are computed in this iteration, 
+        the batch is not active.
+        """
         try: 
             return [b for b in self.batches if b.samples.n > 0]
         except AttributeError: 
@@ -120,6 +138,13 @@ class Stage():
 
 
 class Iteration():
+    """
+    Helper class for iterations. Could be extended in the future 
+    to store all information about samples etc. which is currently
+    overwritten. 
+    Note that the "iteration" decorator is located in globels.
+    """
+    
 
     def __init__(self, n=None, name=None):
         self.finished_steps=[]
@@ -130,6 +155,9 @@ class Iteration():
         self.name = name if name else "iteration " + str(n)
 
     def start(self):
+        """
+        StdOut of A) section and B) skipped steps in case of a restart.
+        """
         print_major_section("Start " + self.name)
         if self.finished_steps:
             p_print(green("Skipping finished steps of iteration:"))

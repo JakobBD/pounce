@@ -62,6 +62,9 @@ class BaseClass():
 
     @classmethod
     def subclass(cls,string):
+        """
+        choose subclass of a class by string
+        """
         for subclass in cls.__subclasses__():
             if string == subclass.name():
                 return subclass
@@ -70,6 +73,10 @@ class BaseClass():
     
     @classmethod
     def defaults_class(cls,key=None):
+        """
+        get defaults for a class from its own class and parents, 
+        via the multi resolution order list.
+        """
         defaults={}
         for c in reversed(cls.__mro__): 
             if key: 
@@ -87,6 +94,11 @@ class BaseClass():
 
     @classmethod
     def defaults(cls,*args,with_type=True): 
+        """
+        get defaults for a class, first from its own class and parents, 
+        then from further input classes.
+        _type (i.e. the subclass name) is added optionally
+        """
         d=cls.defaults_class()
         if args:
             keys=[c.__name__ for c in reversed(cls.__mro__[:-2])]
@@ -99,6 +111,10 @@ class BaseClass():
 
     @classmethod
     def name(cls):
+        """
+        translate class name from camel case (MyClass) to 
+        underscore (my_class) for consistent yml input
+        """
         return inflection.underscore(cls.__name__)
 
 class InputPrmError(Exception):

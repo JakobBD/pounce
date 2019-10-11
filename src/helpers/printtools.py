@@ -42,6 +42,9 @@ def indent_out():
     indent=indent[:-2]
 
 def p_print(msg):
+    """
+    wrapper for normal stdout print commands
+    """
     lines=textwrap.wrap(msg, width=132, initial_indent=indent, 
                         subsequent_indent=indent+"    ")
     for line in lines:
@@ -52,6 +55,9 @@ def print_step(msg):
     print(green(" "+msg)+"\n")
 
 def print_major_section(msg,color="stdcolor"):
+    """
+    such as at the beginning of iterations
+    """
     print("\n"+"="*132)
     print(cyan(" "+msg))
     print("="*132)

@@ -14,19 +14,19 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src/'))
+sys.path.insert(0, '/home/jakob/code/pounce/v1/src')
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'POUNCE'
-copyright = '2019, FM,JD,TK'
-author = 'FM,JD,TK'
+project = 'pounce'
+copyright = '2019, JD'
+author = 'JD'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = ''
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,15 +40,8 @@ release = '0.0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
-    'rinoh.frontend.sphinx',
+    'sphinx.ext.todo',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -68,12 +61,12 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -111,7 +104,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'POUNCEdoc'
+htmlhelp_basename = 'pouncedoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -119,27 +112,27 @@ htmlhelp_basename = 'POUNCEdoc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    'papersize': 'letterpaper',
+    # 'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    'pointsize': '10pt',
+    # 'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
-    'preamble': '',
+    # 'preamble': '',
 
     # Latex figure (float) alignment
     #
-    'figure_align': 'htbp',
+    # 'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'POUNCE.tex', 'POUNCE Documentation',
-     'FM,JD,TK', 'manual'),
+    (master_doc, 'pounce.tex', 'pounce Documentation',
+     'JD', 'manual'),
 ]
 
 
@@ -148,7 +141,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pounce', 'POUNCE Documentation',
+    (master_doc, 'pounce', 'pounce Documentation',
      [author], 1)
 ]
 
@@ -159,8 +152,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'POUNCE', 'POUNCE Documentation',
-     author, 'POUNCE', 'One line description of project.',
+    (master_doc, 'pounce', 'pounce Documentation',
+     author, 'pounce', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -184,11 +177,6 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-
-# -- Options for intersphinx extension ---------------------------------------
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
 
 # -- Options for todo extension ----------------------------------------------
 

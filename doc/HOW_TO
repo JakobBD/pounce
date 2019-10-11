@@ -1,0 +1,10 @@
+1) run 
+   sphinx-quickstart ../src
+   and follow instructions 
+2) uncomment path to source dir in conf.py 
+   (disable main, if errors occur) 
+3) make latexpdf
+
+documentation is located in _build/latex/PROJECTNAME.pdf
+
+

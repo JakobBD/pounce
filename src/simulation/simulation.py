@@ -100,6 +100,9 @@ class Stage():
         """
         core function of the class: process the stage
         """
+        if not self.batches: 
+            return
+
         globels.run_step("Allocate resources for "+self.name,
                          self.allocate_resources)
 

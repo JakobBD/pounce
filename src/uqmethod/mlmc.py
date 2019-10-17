@@ -124,6 +124,7 @@ class Mlmc(UqMethod):
         if i == 1:
             sublevels = [sub_fine]
         level.sublevels = sublevels
+        level.internal_qois = []
         return level
 
     def setup_qoi(self, subdict, level):
@@ -141,8 +142,26 @@ class Mlmc(UqMethod):
             level.n_optimize += 1
             self.qois_optimize.append(qoi)
         level.qois.append(qoi)
-        self.stages[1].batches.append(qoi)
+        if qoi.internal: 
+            level.internal_qois.append(qoi)
+            qoi.u_fine_sum   = 0.
+            qoi.u_coarse_sum = 0.
+            qoi.du_sq_sum    = 0.
+        else:
+            self.stages[1].batches.append(qoi)
 
+    def internal_iteration_postproc(self,qoi): 
+        """
+        Calculate sigma^2 for QoI's internally. 
+        Used for scalar or small vectorial QoI's
+        """
+        u_fine, u_coarse = qoi.get_response()
+        n = qoi.samples.n_previous+qoi.samples.n
+        qoi.u_fine_sum   += sum(u_fine)
+        qoi.u_coarse_sum += sum(u_coarse)
+        qoi.du_sq_sum    += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
+
+        qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
 
     @classmethod
     def default_yml(cls,d):
@@ -169,6 +188,10 @@ class Mlmc(UqMethod):
           (given prescribed tolerance or total work) 
         - approach this numbr carefully and iteratively
         """
+
+        for level in self.levels: 
+            for qoi in level.internal_qois: 
+                self.internal_iteration_postproc(qoi)
 
         stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                    "samples__n_previous","samples__n")

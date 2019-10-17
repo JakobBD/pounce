@@ -87,6 +87,7 @@ class QoI(Batch):
     def __init__(self,*args):
         super().__init__(*args)
         self.multi_sample=False
+        self.internal=False
 
     @classmethod
     def create_by_stage(cls,name,prms,*args): 

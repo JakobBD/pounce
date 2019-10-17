@@ -10,7 +10,7 @@ sampling:
   reset_seed: false
 
 solver:
-  _type: flexi
+  _type: flexi_batch
   prmfile: 'parameter_flexi.ini'
   exe_path: ./flexibatch
   levels:

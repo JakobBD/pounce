@@ -8,7 +8,7 @@ from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
 
-class Flexi(Solver):
+class FlexiBatch(Solver):
     """ 
     Runs with the POUNCE-adaptation of FLEXI, i.e. with the 
     executable flexibatch and the according post-processing tools.
@@ -49,7 +49,7 @@ class Flexi(Solver):
 
         def get_work_mean(self):
             """ 
-            For Flexi, avg work is already read from HDF5 file during 
+            For FlexiBatch, avg work is already read from HDF5 file during 
             check_all_finished
             """
             return sum(p.current_avg_work for p in self.participants)
@@ -151,7 +151,7 @@ class Flexi(Solver):
             return False
 
 
-class FieldSolution(Flexi.QoI):
+class FieldSolution(FlexiBatch.QoI):
     """ 
     Takes the whole field solution as quantity of interest. 
 
@@ -181,7 +181,7 @@ class FieldSolution(Flexi.QoI):
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
 
-class RecordPoints(Flexi.QoI):
+class RecordPoints(FlexiBatch.QoI):
     """ 
     Takes a solution time sereis evaluated at record points as QoI.
 

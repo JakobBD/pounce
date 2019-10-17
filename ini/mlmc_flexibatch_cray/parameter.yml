@@ -38,7 +38,7 @@ machine:
   _type: cray
 
 solver:
-  _type: flexi
+  _type: flexi_batch
   project_name: cavity
   prmfiles: 
     main_solver: 'parameter_flexi.ini'

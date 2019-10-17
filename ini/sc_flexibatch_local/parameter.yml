@@ -10,7 +10,7 @@ solver:
   solver_prms:
     N: 2
     MeshFile: mesh_1.h5
-  _type: flexi
+  _type: flexi_batch
   exe_path: ./flexibatch
   prmfile: parameter_flexi.ini
 

@@ -28,6 +28,8 @@ class UqMethod(Simulation,BaseClass):
         solver = d.process_subclass(Solver)
         d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
 
+    def internal_simulation_postproc(self): 
+        pass
 
 # import subclasses
 from . import *

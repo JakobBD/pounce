@@ -36,8 +36,8 @@ class Local(Machine):
                 else:
                     args=run
                 p_print("run command "+yellow(args))
-                # with open(batch.logfile_names[i],'w+') as f:
-                    # subprocess.run(args,stdout=f,shell=True)
+                with open(batch.logfile_names[i],'w+') as f:
+                    subprocess.run(args,stdout=f,shell=True)
         self.check_all_finished()
 
     def allocate_resources(self):

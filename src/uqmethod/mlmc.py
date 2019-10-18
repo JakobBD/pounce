@@ -99,12 +99,15 @@ class Mlmc(UqMethod):
                 raise Exception("Please specify exactly "
                                 "one QoI to optimize")
 
+        self.internal_qois = []
         for i,sub_dict in enumerate(prms["qois"]): 
             QoILoc = Solver.subclass(prms["solver"]["_type"]).QoI
             qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
             qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
-            if not qoi.internal: 
+            if qoi.internal: 
+                self.internal_qois.append(qoi)
+            else:
                 self.simulation_postproc.batches.append(qoi)
 
     def setup_level(self, i, sub_fine, sub_coarse):
@@ -145,9 +148,11 @@ class Mlmc(UqMethod):
         level.qois.append(qoi)
         if qoi.internal: 
             level.internal_qois.append(qoi)
-            qoi.u_fine_sum   = 0.
-            qoi.u_coarse_sum = 0.
-            qoi.du_sq_sum    = 0.
+            qoi.u_fine_sum      = 0.
+            qoi.u_fine_sq_sum   = 0.
+            qoi.u_coarse_sum    = 0.
+            qoi.u_coarse_sq_sum = 0.
+            qoi.du_sq_sum       = 0.
         else:
             self.stages[1].batches.append(qoi)
 
@@ -158,11 +163,35 @@ class Mlmc(UqMethod):
         """
         u_fine, u_coarse = qoi.get_response()
         n = qoi.samples.n_previous+qoi.samples.n
-        qoi.u_fine_sum   += sum(u_fine)
-        qoi.u_coarse_sum += sum(u_coarse)
-        qoi.du_sq_sum    += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
+        qoi.u_fine_sum      += sum(u_fine)
+        qoi.u_fine_sq_sum   += sum(u_fine**2)
+        qoi.u_coarse_sum    += sum(u_coarse)
+        qoi.u_coarse_sq_sum += sum(u_coarse**2)
+        qoi.du_sq_sum       += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
 
         qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
+
+    def internal_simulation_postproc(self): 
+        """
+        Calculate sigma^2 for QoI's internally. 
+        Used for scalar or small vectorial QoI's
+        """
+        stdout_table = StdOutTable("mean","stddev")
+        stdout_table.set_descriptions("Mean","Standard Deviation")
+        for qoi in self.internal_qois: 
+            qoi.mean, qoi.variance = 0., 0.
+            for p in qoi.participants: 
+                n = p.samples.n_previous
+                p.mean = (p.u_fine_sum - p.u_coarse_sum)/n
+                f = (p.u_fine_sq_sum - p.u_fine_sum**2/n)
+                c = (p.u_coarse_sq_sum - p.u_coarse_sum**2/n)
+                p.variance = (f - c) / (n-1)
+                qoi.mean += p.mean
+                qoi.variance += p.variance
+            qoi.stddev = safe_sqrt(qoi.variance)
+            stdout_table.update(qoi)
+        stdout_table.p_print()
+
 
     @classmethod
     def default_yml(cls,d):
@@ -191,6 +220,8 @@ class Mlmc(UqMethod):
         """
 
         for level in self.levels: 
+            if level.samples.n == 0: 
+                continue
             for qoi in level.internal_qois: 
                 self.internal_iteration_postproc(qoi)
 

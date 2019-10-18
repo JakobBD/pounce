@@ -66,6 +66,7 @@ class Simulation(BaseClass):
 
     @globels.iteration
     def process_simulation_postproc(self):
+        self.internal_simulation_postproc()
         self.simulation_postproc.process()
 
 
@@ -128,7 +129,7 @@ class Stage():
         return [b for b in self.active_batches if not getattr(b,"finished",False)]
 
     def check_all_finished(self):
-        finished = [batch.check_finished() for batch in self.batches]
+        finished = [batch.check_finished() for batch in self.active_batches]
         if all(finished): 
                 p_print("All jobs finished.")
         else:

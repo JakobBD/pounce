@@ -4,7 +4,7 @@ general:
 uq_method:
   _type: mlmc
   n_max_iter: 3
-  tolerance: 0.1
+  tolerance: 0.005
 
 sampling:
   reset_seed: false
@@ -14,12 +14,12 @@ solver:
   prmfile: 'parameter_cfdfv.ini'
   exe_path: ~/CFDFV/bin/cfdfv
   levels:
-  - n_warmup_samples : 3
+  - n_warmup_samples : 5
     cores_per_sample: 24
     solver_prms:
       MeshFile: keil_coarse
 
-  - n_warmup_samples : 2
+  - n_warmup_samples : 3
     cores_per_sample: 24
     solver_prms:
       MeshFile: keil_intermediate

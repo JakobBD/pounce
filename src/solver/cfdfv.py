@@ -60,11 +60,11 @@ class Cfdfv(Solver):
             """ 
             Readin sigma_sq or avg_walltime for MLMC.
             """
-            qty = getattr(self,quantity_name,None)
-            if qty: 
-                return qty
-            else: 
+            qty = getattr(self,quantity_name,"not found")
+            if qty == "not found": 
                 raise Exception("Quantity " + quantity_name + " not found!")
+            else: 
+                return qty
 
         def get_work_mean(self):
             """ 
@@ -141,7 +141,7 @@ class Cfdfv(Solver):
                     break
             if not found: 
                 raise Exception("Value " + name + " not found in stdout!")
-            return vals
+        return vals
 
     def check_finished(self):
         """ 

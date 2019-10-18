@@ -11,18 +11,18 @@ sampling:
 
 solver:
   _type: cfdfv
-  prmfile: 'parameter_flexi.ini'
-  exe_path: ./flexibatch
+  prmfile: 'parameter_cfdfv.ini'
+  exe_path: ~/CFDFV/bin/cfdfv
   levels:
-  - n_warmup_samples : 10
-    cores_per_sample: 24
-    solver_prms:
-      MeshFile: mesh_1.h5
-
   - n_warmup_samples : 3
     cores_per_sample: 24
     solver_prms:
-      MeshFile: mesh_1.h5
+      MeshFile: keil_coarse
+
+  - n_warmup_samples : 2
+    cores_per_sample: 24
+    solver_prms:
+      MeshFile: keil_intermediate
 
 stoch_vars:
 - _type: uniform
@@ -35,11 +35,9 @@ machine:
   mpi: false
 
 qois:
-- _type: c_l
-  internal: True
+- _type: cl
   optimize: True
-- _type: c_d
-  internal: True
+- _type: cd
   optimize: False
 
 

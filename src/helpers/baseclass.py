@@ -68,6 +68,7 @@ class BaseClass():
         for subclass in cls.__subclasses__():
             if string == subclass.name():
                 return subclass
+        print(cls.__subclasses__())
         raise InputPrmError(
             "'{}' is not a valid {}".format(string,cls.name()))
     

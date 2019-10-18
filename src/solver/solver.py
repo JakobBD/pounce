@@ -28,7 +28,7 @@ class Batch(BaseClass):
         """
         return True
 
-    def prepare(self,simulation):
+    def prepare(self):
         """
         placeholder; should be overwritten by each subclass.
         """
@@ -56,7 +56,7 @@ class Batch(BaseClass):
         if self.n_runs == 1:
             return ""
         else:
-            return "_run"+str(i+1)
+            return "_run"+str(i)
 
 
 class Solver(Batch):
@@ -106,6 +106,8 @@ class QoI(Batch):
         else: 
             prms_loc=prms
         inst = cls.create(prms_loc,*args)
+        if getattr(inst,"internal",False): 
+            return inst
 
         method_name =  "prepare_" + name
         if method_name not in inst.__class__.__dict__:

@@ -2,6 +2,8 @@ import h5py
 import numpy as np
 import subprocess
 import glob
+import copy
+import re
 
 from .solver import Solver,QoI
 from helpers.printtools import *
@@ -23,7 +25,7 @@ class Cfdfv(Solver):
 
     defaults_add = { 
         "StochVar": {
-            'i_occurrence': [],
+            'i_occurrence': [1],
             'name' : 'NODEFAULT'
             }
         }
@@ -34,7 +36,7 @@ class Cfdfv(Solver):
         """
 
         defaults_ = {
-            "prmfile" : ""
+            "exe_path" : "dummy_unused"
             }
 
         def __init__(self,*args,**kwargs): 
@@ -46,8 +48,10 @@ class Cfdfv(Solver):
             if not s: 
                 s = self.string_in_stdout
             u_fine = self.participants[0].get_qty_from_stdout(s)
+            u_fine = np.array([float(s) for s in u_fine])
             if len(self.participants)>1: 
                 u_coarse = self.participants[1].get_qty_from_stdout(s)
+                u_coarse = np.array([float(s) for s in u_coarse])
             else: 
                 u_coarse = 0. * u_fine
             return u_fine, u_coarse
@@ -56,7 +60,7 @@ class Cfdfv(Solver):
             """ 
             Readin sigma_sq or avg_walltime for MLMC.
             """
-            qty = get_attr(self,quantity_name,None)
+            qty = getattr(self,quantity_name,None)
             if qty: 
                 return qty
             else: 
@@ -69,10 +73,21 @@ class Cfdfv(Solver):
             """
             return sum(p.current_avg_work for p in self.participants)
 
-
-    def replace_prm(self,prmfile):
-        #TODO
-
+    def find_ind(self,lines,name,i_occurrence=[1]):
+            i_found = 0
+            ii = 0
+            int_out=[]
+            for i,l in enumerate(lines): 
+                if l.split("=")[0].strip() == name: 
+                    i_found += 1
+                    if i_found == i_occurrence[ii]: 
+                        int_out.append(i)
+                        ii+=1
+                        if ii == len(i_occurrence):
+                            break
+            if ii < len(i_occurrence):
+                raise Exception("parameter "+name+" not found enough times in prm file")
+            return int_out
 
     def prepare(self):
         """ 
@@ -81,27 +96,35 @@ class Cfdfv(Solver):
         iteration and the current samples.
         """
 
-        p_print("Write HDF5 parameter file for simulation "+self.name)
         self.project_name = globels.project_name+'_'+self.name
-        self.prm_file_name = 'input_'+self.project_name+'.h5'
-        self.solver_prms.update({"ProjectName":self.project_name})
+        with open(self.prmfile,'r') as pf: 
+            orig = pf.readlines()
+        new = copy.deepcopy(orig)
 
-        # both:
-        stv=self.samples.stoch_vars
-        prms= {'Samples'          : self.samples.nodes,
-               'StochVarNames'    : [s.name         for s in stv],
-               'iOccurrence'      : [s.i_occurrence for s in stv],
-               'iArray'           : [s.i_pos        for s in stv],
-               "nStochVars"       : len(stv),
-               "nGlobalRuns"      : self.samples.n,
-               "nParallelRuns"    : self.n_parallel_runs
-               }
-        prms.update(self.samples.sampling_prms())
+        for key,value in self.solver_prms.items():
+            ind=self.find_ind(orig,key)[0]
+            new[ind] = key + " = " + value + "\n"
 
-        self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
+        for s in self.samples.stoch_vars: 
+            s.line_ind = self.find_ind(orig,s.name,s.i_occurrence)
+        fn_ind = self.find_ind(orig,"FileName")[0]
 
-        self.run_commands = [self.exe_path + ' ' \
-                             + self.prm_file_name + ' ' + self.prmfile]
+        self.run_commands = []
+        self.prmfiles = []
+        for i_sample in range(self.samples.n): 
+            i_sample_glob = i_sample + self.samples.n_previous + 1
+            sample_str = '_'+self.name+'_s'+str(i_sample_glob)
+            for i_var,s in enumerate(self.samples.stoch_vars): 
+                for ind in s.line_ind: 
+                    new[ind] = s.name + " = " + str(self.samples.nodes[i_sample,i_var]) + "\n"
+            new[fn_ind] = "FileName = " + globels.project_name + sample_str + "\n"
+            
+            prmfile = 'parameter'+sample_str+'.ini'
+            with open(prmfile,'w') as pf: 
+                pf.writelines(new)
+            self.prmfiles.append(prmfile)
+
+            self.run_commands.append(self.exe_path + ' ' + prmfile)
 
     def get_qty_from_stdout(self,name): 
         vals = []
@@ -111,15 +134,14 @@ class Cfdfv(Solver):
             output=output.stdout.decode("utf-8").splitlines()
             found = False
             for line in reversed(output): 
-                #TODO
-                v = re.match(r"\s*"+name+"\s*:(.+)",line,)
+                v = re.match(r"\s*"+name+r"\s*:(.+)",line)
                 if v: 
                     vals.append(v.group(1))
-                    print(vals[-1])
                     found = True
                     break
             if not found: 
                 raise Exception("Value " + name + " not found in stdout!")
+            return vals
 
     def check_finished(self):
         """ 
@@ -127,26 +149,27 @@ class Cfdfv(Solver):
         the batch is finished. Also retrieve average work, which is 
         written to the log file as well (as part of flexibatch)
         """
-        try:
-            arr = self.get_qty_from_stdout("Computation Time"): 
-            # remove "s" in the end
-            t_sum = sum(float(item[:-2]) for item in arr)
-            self.current_avg_work=t_sum / self.samples.n
-            return True
-        except:
-            return False
+        # try:
+
+        arr = self.get_qty_from_stdout("Computation Time")
+        # remove "s" in the end
+        t_sum = sum(float(item[:-2]) for item in arr)
+        self.current_avg_work=t_sum / self.samples.n
+        return True
+        # except:
+            # return False
 
 
 
 
-class CL(Cfdfv.QoI):
+class Cl(Cfdfv.QoI):
 
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.string_in_stdout = "cl"
 
 
-class CD(Cfdfv.QoI):
+class Cd(Cfdfv.QoI):
 
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)

@@ -104,7 +104,8 @@ class Mlmc(UqMethod):
             qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
             qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
-            self.simulation_postproc.batches.append(qoi)
+            if not qoi.internal: 
+                self.simulation_postproc.batches.append(qoi)
 
     def setup_level(self, i, sub_fine, sub_coarse):
         """

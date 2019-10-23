@@ -176,6 +176,8 @@ class Mlmc(UqMethod):
         Calculate sigma^2 for QoI's internally. 
         Used for scalar or small vectorial QoI's
         """
+        if not self.internal_qois:
+            return
         stdout_table = StdOutTable("mean","stddev")
         stdout_table.set_descriptions("Mean","Standard Deviation")
         for qoi in self.internal_qois: 

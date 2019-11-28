@@ -116,6 +116,19 @@ class QoI(Batch):
         inst.prepare=getattr(inst,method_name,None)
         return inst
 
+    def get_work_mean(self):
+        """
+        Wrapper: get mean work of current simulation, then update 
+        total mean work
+        """
+        work_mean = self.get_current_work_mean()
+        if self.samples.n_previous > 0:
+            self.work_mean = ((self.samples.n_previous*self.work_mean
+                               + self.samples.n*work_mean)
+                               / (self.samples.n+self.samples.n_previous))
+        else:
+            self.work_mean = work_mean
+
 
 from . import *
 

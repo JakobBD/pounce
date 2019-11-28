@@ -24,7 +24,7 @@ class Internal(Solver):
         Parent class for the dummy solver's QoI(s)
         """
 
-        def get_work_mean(self):
+        def get_current_work_mean(self):
             return self.get_derived_quantity("WorkMean")
 
         def get_derived_quantity(self,quantity_name):

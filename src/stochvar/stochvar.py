@@ -26,7 +26,7 @@ class Normal(StochVar):
 
     def draw_samples(self,n_samples):
         return np.random.normal(self.mean,self.standard_deviation,n_samples) \
-               if n_samples >0 else []
+               if n_samples >0 else np.empty((0,))
 
 
 class Uniform(StochVar):
@@ -46,4 +46,4 @@ class Uniform(StochVar):
 
     def draw_samples(self,n_samples):
         return np.random.uniform(self.bounds[0],self.bounds[1],n_samples) \
-               if n_samples >0 else []
+               if n_samples >0 else np.empty((0,))

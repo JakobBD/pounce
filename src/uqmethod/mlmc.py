@@ -156,20 +156,28 @@ class Mlmc(UqMethod):
         else:
             self.stages[1].batches.append(qoi)
 
-    def internal_iteration_postproc(self,qoi): 
+    def internal_iteration_postproc(self): 
         """
         Calculate sigma^2 for QoI's internally. 
         Used for scalar or small vectorial QoI's
         """
-        u_fine, u_coarse = qoi.get_response()
-        n = qoi.samples.n_previous+qoi.samples.n
-        qoi.u_fine_sum      += sum(u_fine)
-        qoi.u_fine_sq_sum   += sum(u_fine**2)
-        qoi.u_coarse_sum    += sum(u_coarse)
-        qoi.u_coarse_sq_sum += sum(u_coarse**2)
-        qoi.du_sq_sum       += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
+        for level in self.levels: 
+            if level.samples.n == 0: 
+                continue
+            for qoi in level.internal_qois: 
+                u_out = qoi.get_response()
+                if len(u_out) == 1: 
+                    u_fine, u_coarse = u_out
+                else: 
+                    u_fine, u_coarse = u_out[0], 0.*u_out[0]
+                n = qoi.samples.n_previous+qoi.samples.n
+                qoi.u_fine_sum      += sum(u_fine)
+                qoi.u_fine_sq_sum   += sum(u_fine**2)
+                qoi.u_coarse_sum    += sum(u_coarse)
+                qoi.u_coarse_sq_sum += sum(u_coarse**2)
+                qoi.du_sq_sum       += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
 
-        qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
+                qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
 
     def internal_simulation_postproc(self): 
         """
@@ -221,11 +229,7 @@ class Mlmc(UqMethod):
         - approach this numbr carefully and iteratively
         """
 
-        for level in self.levels: 
-            if level.samples.n == 0: 
-                continue
-            for qoi in level.internal_qois: 
-                self.internal_iteration_postproc(qoi)
+        self.internal_iteration_postproc()
 
         stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
                                    "samples__n_previous","samples__n")
@@ -238,12 +242,6 @@ class Mlmc(UqMethod):
             if qoi.samples.n > 0:
                 qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
                 work_mean = qoi.get_work_mean()
-                if qoi.samples.n_previous > 0:
-                    qoi.work_mean = ((qoi.samples.n_previous*qoi.work_mean
-                                      + qoi.samples.n*work_mean)
-                                     / (qoi.samples.n+qoi.samples.n_previous))
-                else:
-                    qoi.work_mean = work_mean
             if qoi.samples.n_previous+qoi.samples.n > 0:
                 sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
 

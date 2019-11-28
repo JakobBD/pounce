@@ -1,0 +1,6 @@
+*
+!.gitignore
+!parameter.yml
+!keil_coarse.msh
+!keil_intermediate.msh
+!parameter_cfdfv.ini

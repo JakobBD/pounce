@@ -47,14 +47,12 @@ class Cfdfv(Solver):
         def get_response(self,s=None): 
             if not s: 
                 s = self.string_in_stdout
-            u_fine = self.participants[0].get_qty_from_stdout(s)
-            u_fine = np.array([float(s) for s in u_fine])
-            if len(self.participants)>1: 
-                u_coarse = self.participants[1].get_qty_from_stdout(s)
-                u_coarse = np.array([float(s) for s in u_coarse])
-            else: 
-                u_coarse = 0. * u_fine
-            return u_fine, u_coarse
+            u_out = []
+            for p in self.participants:
+                u_fine = self.participants[0].get_qty_from_stdout(s)
+                u_fine = np.array([float(s) for s in u_fine])
+                u_out.append(u_fine)
+            return u_out
 
         def get_derived_quantity(self,quantity_name):
             """ 
@@ -66,7 +64,7 @@ class Cfdfv(Solver):
             else: 
                 return qty
 
-        def get_work_mean(self):
+        def get_current_work_mean(self):
             """ 
             For Flexi, avg work is already read from HDF5 file during 
             check_all_finished

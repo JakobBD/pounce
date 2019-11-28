@@ -1,0 +1,41 @@
+general:
+  project_name: keil
+
+uq_method:
+  _type: mfmc
+  total_work: 300
+  n_warmup_samples : 3 
+
+sampling:
+  reset_seed: false
+
+models:
+  _type: cfdfv
+  prmfile: 'parameter_cfdfv.ini'
+  exe_path: ~/CFDFV/bin/cfdfv
+  fidelities:
+  - name: fine
+    solver_prms:
+      MeshFile: keil_intermediate
+  - name: coarse 
+    solver_prms:
+      MeshFile: keil_coarse
+
+
+stoch_vars:
+- _type: uniform
+  bounds: [3.,5.]
+  name: Alpha
+  i_occurrence: [1, 2]
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: cl
+  optimize: False
+- _type: cd
+  optimize: True
+
+

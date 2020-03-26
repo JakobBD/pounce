@@ -123,8 +123,9 @@ class StdOutTable():
         self.str_length=max(11,self.str_length)
         self.l=str(self.str_length)
         self.lm2=str(self.str_length-2)
+        lenstr = "%{}s ║ ".format(self.str_length)
         print(indent+" "*self.descr_length+" ║ "
-              +"".join(["%11s ║ "%(n) for n in self.header_entries]))
+              +"".join([lenstr%(n) for n in self.header_entries]))
         sep_str="═"*self.str_length+"═╬═"
         print(indent+"═"*self.descr_length+"═╬═"+sep_str*n_entries)
         for row in self.rows:

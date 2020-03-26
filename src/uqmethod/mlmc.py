@@ -166,7 +166,7 @@ class Mlmc(UqMethod):
                 continue
             for qoi in level.internal_qois: 
                 u_out = qoi.get_response()
-                if len(u_out) == 1: 
+                if len(u_out) == 2: 
                     u_fine, u_coarse = u_out
                 else: 
                     u_fine, u_coarse = u_out[0], 0.*u_out[0]

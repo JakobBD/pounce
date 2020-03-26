@@ -2,101 +2,103 @@ import h5py
 import numpy as np
 
 from .solver import Solver,QoI
+from .cfdfv import Cfdfv
 from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
 
 class Internal(Solver):
-    """ 
-    Dummy python solver for testing.
-    python source files are located in the externals directory
-    I/O via HDF5. 
+    """
+    dummy solver. all compuations are carried out during the prepare stage
     """
 
     defaults_ = {
-        "solver_prms" : {
-            "nPoints" : "NODEFAULT"
+        "solver_prms" : "dummy_unused",
+        "exe_path" : "dummy_unused",
+        "n_pts" : None                    # use f_mf is None, else f_ml
             }
-        }
 
     class QoI(QoI):
-        """ 
-        Parent class for the dummy solver's QoI(s)
-        """
 
-        def get_current_work_mean(self):
-            return self.get_derived_quantity("WorkMean")
+        defaults_ = {
+            "exe_path" : "dummy_unused"
+                }
+
+        def __init__(self,*args,**kwargs): 
+            super().__init__(*args,**kwargs)
+            self.internal = True
+
+
+        def get_response(self,s=None): 
+            return [np.array(p.u) for p in self.participants]
 
         def get_derived_quantity(self,quantity_name):
-            """ Readin sigma_sq for MLMC.
+            """ 
+            Readin sigma_sq or avg_walltime for MLMC.
             """
-            with h5py.File(self.output_filename, 'r') as h5f:
-                quantity = h5f.attrs[quantity_name]
-            return quantity
+            qty = getattr(self,quantity_name,"not found")
+            if qty == "not found": 
+                raise Exception("Quantity " + quantity_name + " not found!")
+            else: 
+                return qty
 
+        def get_current_work_mean(self):
+            """ 
+            For Flexi, avg work is already read from HDF5 file during 
+            check_all_finished
+            """
+            return sum(p.current_avg_work for p in self.participants)
+
+    def __init__(self,*args,**kwargs): 
+        super().__init__(*args,**kwargs)
+        self.f = self.f_ml if self.n_pts else self.f_mf
 
     def prepare(self):
-        """ 
-        Prepares the simulation by generating the run_command 
-        and writing the HDF5 file containing all samples of the current 
-        iteration and the current level.
-        """
-        p_print("Write HDF5 parameter file for simulation "+self.name)
         self.project_name = globels.project_name+'_'+self.name
-        self.prm_file_name = 'input_'+self.project_name+'.h5'
-        prms={"Samples"    :self.samples.nodes,
-              "ProjectName":self.project_name}
-        prms.update(self.samples.sampling_prms())
-        prms.update(self.solver_prms)
+        self.run_commands = []
 
-        self.write_hdf5(self.prm_file_name,prms)
+    def check_finished(self):
+        self.u, self.w = [], []
+        for xi in self.samples.nodes:
+            f,w = self.f(xi[0])
+            self.u.append(f)
+            self.w.append(w)
+        self.current_avg_work = np.mean(np.array(self.w))
+        return True
 
-        self.run_commands = ['python3 '+self.exe_path+' '+self.prm_file_name]
+    def f_mf(self,xi):
+        t0 = 1.0  * np.sin(np.pi * xi)
+        t1 = 0.2  * np.sign(xi)
+        t2 = 0.1  * np.sin(5. * np.pi * xi)
+        t3 = 0.01 * xi**3
 
-    def write_hdf5(self,file_name,prms):
-        """ 
-        Writes the HDF5 file containing all necessary data for the 
-        internal to run.
-        """
-
-        h5f = h5py.File(file_name, 'w')
-        for name,prm in prms.items():
-            self.h5write(h5f,name,prm)
-        h5f.close()
-
-    def h5write(self,h5f,name,prm):
-        if isinstance(prm,np.ndarray):
-            h5f.create_dataset(name, data=prm)
-        else:
-            h5f.attrs[name]=prm
-
+        if self.name == "hf": 
+            f = t0 #+ t1 + t2 + t3
+            w = 2000.
+        elif self.name == "lf1": 
+            f = t0 + t1 + t2
+            w = 0.2
+        elif self.name == "lf2": 
+            f = t0 + t1
+            w = 0.03
+        elif self.name == "lf3": 
+            f = t0 + t2
+            w = 0.01
+        else: 
+            sys.exit("invalid model name")
+        return f, w
 
 
-class Integral(Internal.QoI):
-    """ 
-    Takes the integral of the solution as quantity of interest. 
+    def f_ml(self,xi):
+        x = np.linspace(-1.,xi,self.n_pts+1)
+        y = np.pi*np.cos(np.pi*x)
+        return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)
 
-    Caution: routines starting with prepare_... 
-    will be renamed to "prepare" as part of the create_by_stage
-    routine. 
-    """
 
-    def prepare_iteration_postproc(self):
-        run_command = "python3 "+self.exe_path
-        # participants[0] is a rather dirty hack
-        self.prm_file_name = self.participants[0].prm_file_name
-        run_command += " " + self.prm_file_name 
-        self.project_name  = self.participants[0].project_name
-        self.output_filename = 'postproc_'+self.project_name+'_integral.h5'
-        for p in self.participants:
-            filename=p.project_name+"_State.h5"
-            run_command += ' ' + filename
-        self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self):
-        self.args=[p.output_filename for p in self.participants]
-        self.run_commands = ["python3 " + self.exe_path \
-                             + " " + " ".join(self.args)]
+class Standard(Internal.QoI):
+    pass
+
 
 
             

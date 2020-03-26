@@ -1,0 +1,38 @@
+general:
+  project_name: keil
+
+uq_method:
+  _type: mfmc
+  total_work: 10000000
+  n_warmup_samples : 10
+
+sampling:
+  reset_seed: false
+
+models:
+  _type: internal
+  fidelities:
+  - name: hf
+  #- name: lf32
+    #n_pts: 32
+  - name: lf16
+    n_pts: 16
+  - name: lf8
+    n_pts: 8
+  - name: lf4
+    n_pts: 4
+
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: standard
+  optimize: True
+
+

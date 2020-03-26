@@ -13,11 +13,12 @@ from helpers import config
 
 
 # TODO: 
-# - check whether v is MSE and what MSE is
 # - get work for model, not for qoi 
 # - fix qoi_optimize vs. all qois 
-# - add variance estimator
-# - print 1-rho instead of rho
+# - slightly nicer stdout 
+# - rename check_all_finished
+# - default yml
+# - update estimates for rho, alpha and estimated MSE
 
 
 
@@ -178,13 +179,14 @@ class Mfmc(UqMethod):
         if len(self.iterations) == 1: 
             for i, qoi in enumerate(self.hfm.internal_qois): 
                 p_print("Evaluate QoI " + qoi.name)
-                stdout_table = StdOutTable("rho_sq","work_mean")
-                stdout_table.set_descriptions("Rho^2","mean work")
+                stdout_table = StdOutTable("om_rho_sq","work_mean")
+                stdout_table.set_descriptions("1-Rho^2","mean work")
                 for model in self.models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
                     qoi.get_work_mean()
                     self.get_rho(self.sampling.n,qoi,self.hfm.qois[i])
+                    qoi.om_rho_sq = 1. - qoi.rho_sq
                     stdout_table.update(qoi)
                 stdout_table.p_print()
 
@@ -218,21 +220,28 @@ class Mfmc(UqMethod):
             stdout_table.p_print()
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
             p_print("Estimated actual required total work: {}".format(self.total_cost))
-            p_print("Estimated achieved MSE: {}".format(self.v_opt)) #TODO
+            p_print("Estimated achieved MSE: {}".format(np.sqrt(self.v_opt))) #TODO
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
                     continue
                 for qoi in model.internal_qois: 
-                    np.concatenate((qoi.u,qoi.get_response()[0]))
+                    qoi.u = np.concatenate((qoi.u,qoi.get_response()[0]))
             n = self.hfm.samples.n + self.hfm.samples.n_previous
-            self.mean = np.sum(self.hfm.qoi_opt.u[:n+1])/n
+            u = self.hfm.qoi_opt.u[:n+1]#.astype(np.float64)
+            self.mean = np.mean(u)
+            self.var = np.var(u,ddof=1)
             for mp, m in zip(self.models_opt[:-1], self.models_opt[1:]):
                 n   =  m.samples.n +  m.samples.n_previous
+                u   = m.qoi_opt.u[:n+1]#.astype(np.float64)
                 np_ = mp.samples.n + mp.samples.n_previous
-                self.mean += m.qoi_opt.alpha * (np.sum(m.qoi_opt.u[:n+1]) / n - np.sum(m.qoi_opt.u[:np_+1]) / np_)
+                up  = m.qoi_opt.u[:np_+1]#.astype(np.float64)
+                self.mean += m.qoi_opt.alpha * (np.mean(u) - np.mean(up))
+                self.var  += m.qoi_opt.alpha * (np.var(u,ddof=1) - np.var(up,ddof=1))
+            self.std = np.sqrt(self.var)
             print()
             p_print("MEAN: {}".format(self.mean))
+            p_print("STD:  {}".format(self.std))
             print()
            
 
@@ -264,8 +273,7 @@ class Mfmc(UqMethod):
             all_lists.append(prev_list)
 
 
-    @staticmethod
-    def get_v(set_): 
+    def get_v(self,set_): 
         for mp, m, mn in zip(set_[:-2], set_[1:-1], set_[2:]):
             qp, q, qn = mp.qoi_opt, m.qoi_opt, mn.qoi_opt
             if (qp.work_mean / q.work_mean) <= (qp.rho_sq - q.rho_sq) / (q.rho_sq - qn.rho_sq):
@@ -274,7 +282,7 @@ class Mfmc(UqMethod):
         for m, mn in zip(set_[:-1], set_[1:]):
             q, qn = m.qoi_opt, mn.qoi_opt
             v += np.sqrt(q.work_mean * (q.rho_sq - qn.rho_sq))
-        return v**2 * set_[0].qoi_opt.sigma_sq / set_[0].qoi_opt.work_mean
+        return v**2 * set_[0].qoi_opt.sigma_sq / self.total_work
 
 
 

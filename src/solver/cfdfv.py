@@ -49,9 +49,9 @@ class Cfdfv(Solver):
                 s = self.string_in_stdout
             u_out = []
             for p in self.participants:
-                u_fine = self.participants[0].get_qty_from_stdout(s)
-                u_fine = np.array([float(s) for s in u_fine])
-                u_out.append(u_fine)
+                u_tmp = p.get_qty_from_stdout(s)
+                u_tmp = np.array([float(s) for s in u_tmp])
+                u_out.append(u_tmp)
             return u_out
 
         def get_derived_quantity(self,quantity_name):

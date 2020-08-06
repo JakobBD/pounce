@@ -4,6 +4,7 @@ import subprocess
 import glob
 
 from .solver import Solver,QoI
+from .cfdfv import Cfdfv
 from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
@@ -24,8 +25,8 @@ class FlexiBatch(Solver):
 
     defaults_add = { 
         "StochVar": {
-            'i_occurrence': {},
-            'i_pos': {},
+            'i_occurrence': 1,
+            'i_pos': 1,
             'name' : 'NODEFAULT'
             }
         }
@@ -77,7 +78,6 @@ class FlexiBatch(Solver):
                "nGlobalRuns"      : self.samples.n,
                "nParallelRuns"    : self.n_parallel_runs
                }
-        prms.update(self.samples.sampling_prms())
 
         self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
 
@@ -132,6 +132,16 @@ class FlexiBatch(Solver):
         else:
             h5f.attrs[name] = prm
 
+    def get_qty_from_stdout(self,name): 
+        """
+        dirty: gets info not from stdout, but from h5 file
+        TODO: rename 
+        """
+        filename=sorted(glob.glob(self.project_name+"_BodyForces_*.h5"))[-1]
+        with h5py.File(filename, 'r') as h5f:
+                dset = h5f['BodyForces_BC_wall'][()]
+        vals=np.array(dset)
+        return vals[:,name]
 
     def check_finished(self):
         """ 
@@ -149,6 +159,21 @@ class FlexiBatch(Solver):
             return True
         except:
             return False
+
+
+class ClBatch(Cfdfv.QoI,FlexiBatch.QoI):
+    """ 
+    first parent is dominant, second adds it to their subclasses dict
+    """
+    defaults_ = {
+        "prmfile": "dummy_unused"
+        }
+
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        # this is also dirty: index of BodyForce
+        self.string_in_stdout = 1
+
 
 
 class FieldSolution(FlexiBatch.QoI):

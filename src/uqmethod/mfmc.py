@@ -19,6 +19,7 @@ from helpers import config
 # - rename check_all_finished
 # - default yml
 # - update estimates for rho, alpha and estimated MSE
+# - get surrogate rho_sq estimate from subsets of hfm
 
 
 
@@ -39,7 +40,9 @@ class Mfmc(UqMethod):
 
     defaults_add = { 
         "Solver": { 
-            "name": "NODEFAULT"
+            "name": "NODEFAULT",
+            "is_surrogate": False,
+            "is_auxiliary": False # sample independently & exclude from postproc
             },
         "QoI": {
             "optimize": False,
@@ -66,36 +69,46 @@ class Mfmc(UqMethod):
         chosen machine.
         """
 
-        # TODO!!!!!!!!!!
-        SolverLoc = Solver.subclass(prms["models"]["_type"])
-        MachineLoc = Machine.subclass(prms["machine"]["_type"])
+        main_simu = Machine.create(prms["machine"])
+
+        # initialize models
+        all_models = config.config_list("models", prms, Solver.create, 
+                                    self, main_simu, sub_list_name="fidelities")
 
         # initialize StochVars
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
-                                             SolverLoc)
+                                             *all_models)
 
-        # initialize sublevels
-        self.models = config.config_list("models", prms, Solver.create, 
-                                    self, MachineLoc, sub_list_name="fidelities")
-        for model in self.models: 
-            model.samples = Empty()
-            model.samples.n = self.n_warmup_samples
+        for model in all_models: 
+            if model.is_auxiliary: 
+                # TODO: allow different kinds of sampling
+                model.samples = MonteCarlo({})
+            else: 
+                model.samples = Empty()
+                model.samples.n = self.n_warmup_samples
             model.samples.n_previous = 0
             model.samples.stoch_vars = self.stoch_vars
             model.internal_qois = []
-        self.hfm = self.models[0]
+        self.hfm = all_models[0]
         self.sampling = MonteCarlo({})
         self.sampling.nodes_all = np.empty((0,len(self.stoch_vars)))
         self.sampling.stoch_vars = self.stoch_vars
 
         #setup stages 
-        main_simu = MachineLoc(prms["machine"])
         main_simu.fill("simulation", True)
-        main_simu.batches = self.models
+        main_simu.batches = [b for b in all_models if not b.is_surrogate]
+        self.auxiliaries = [b for b in all_models if b.is_auxiliary]
+        self.surrogates = [b for b in all_models if b.is_surrogate]
+        self.models = [b for b in all_models if not b.is_auxiliary]
+        temp = [b for b in self.models if not b.is_surrogate]
+        # sorting: auxiliaries, then normal models, then surrogates
+        self.all_models = self.auxiliaries + temp + self.surrogates
         self.stages = [main_simu]
-
+       
         self.qois_optimize = []
-        for model in self.models:
+        for model in self.all_models:
+            # if model.is_surrogate: 
+                # continue
             model.n_optimize = 0
             model.qois = []
             for sub_dict in prms["qois"]: 
@@ -103,8 +116,11 @@ class Mfmc(UqMethod):
             if model.n_optimize != 1: 
                 raise Exception("Please specify exactly "
                                 "one QoI to optimize")
-
-                self.internal_qois = [] #TODO: needed?
+        for sm in self.surrogates:
+            im = all_models[sm.i_model_input]
+            im.samples.n = model.n_samples_input
+            for i_qoi, qoi in enumerate(sm.qois): 
+                qoi.participants = [sm, im, im.qois[i_qoi]]
 
 
     def setup_qoi(self, subdict, model):
@@ -119,13 +135,15 @@ class Mfmc(UqMethod):
         qoi.samples = model.samples
         if qoi.optimize: 
             model.n_optimize += 1
-            self.qois_optimize.append(qoi)
             model.qoi_opt = qoi
+            if not model.is_auxiliary: 
+                self.qois_optimize.append(qoi)
         model.qois.append(qoi)
         model.internal_qois.append(qoi)
         qoi.u_sum      = 0.
         qoi.u_sq_sum   = 0.
         qoi.u_uhfm_sum = 0.
+        qoi.is_surrogate = model.is_surrogate
 
 
     def get_samples(self,dummy):
@@ -137,10 +155,13 @@ class Mfmc(UqMethod):
         if self.sampling.n > 0: 
             self.sampling.get()
         self.sampling.nodes_all = np.concatenate((self.sampling.nodes_all, self.sampling.nodes))
-        for m in self.models: 
-            limit_l = m.samples.n_previous
-            limit_u = m.samples.n_previous + m.samples.n + 1
-            m.samples.nodes = self.sampling.nodes_all[limit_l:limit_u]
+        for m in self.all_models:
+            if m.is_auxiliary: 
+                m.samples.get()
+            else: 
+                limit_l = m.samples.n_previous
+                limit_u = m.samples.n_previous + m.samples.n + 1
+                m.samples.nodes = self.sampling.nodes_all[limit_l:limit_u]
 
 
     @staticmethod
@@ -177,15 +198,17 @@ class Mfmc(UqMethod):
 
     def prepare_next_iteration(self):
         if len(self.iterations) == 1: 
-            for i, qoi in enumerate(self.hfm.internal_qois): 
-                p_print("Evaluate QoI " + qoi.name)
+            for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
+                p_print("Evaluate QoI " + qoi_hfm.name)
                 stdout_table = StdOutTable("om_rho_sq","work_mean")
                 stdout_table.set_descriptions("1-Rho^2","mean work")
-                for model in self.models: 
+                for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
                     qoi.get_work_mean()
-                    self.get_rho(self.sampling.n,qoi,self.hfm.qois[i])
+                    if model.is_auxiliary: 
+                        continue
+                    self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
                     stdout_table.update(qoi)
                 stdout_table.p_print()
@@ -200,7 +223,7 @@ class Mfmc(UqMethod):
             self.qois_optimize.pop(-1) 
 
             # update n samples
-            for m in self.models: 
+            for m in self.all_models: 
                 m.samples.n_previous = m.samples.n
                 m.samples.n = 0
             self.sampling.n_previous = self.sampling.n
@@ -220,7 +243,7 @@ class Mfmc(UqMethod):
             stdout_table.p_print()
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
             p_print("Estimated actual required total work: {}".format(self.total_cost))
-            p_print("Estimated achieved MSE: {}".format(np.sqrt(self.v_opt))) #TODO
+            p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 

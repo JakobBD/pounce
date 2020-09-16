@@ -65,12 +65,21 @@ class BaseClass():
         """
         choose subclass of a class by string
         """
-        for subclass in cls.__subclasses__():
+        coll = []
+        for sc in cls.__subclasses__():
+            cls.recursive_subclasses(coll,sc) 
+        for subclass in coll: 
             if string == subclass.name():
                 return subclass
-        print(cls.__subclasses__())
+        print(coll)
         raise InputPrmError(
             "'{}' is not a valid {}".format(string,cls.name()))
+
+    @classmethod
+    def recursive_subclasses(cls,collection,subclass): 
+        collection.append(subclass)
+        for ssc in subclass.__subclasses__(): 
+            cls.recursive_subclasses(collection,ssc) 
     
     @classmethod
     def defaults_class(cls,key=None):

@@ -9,13 +9,15 @@ from .printtools import *
 sim=None
 archive_level=None
 project_name=None
+do_pickle=None
 
 
 def update_step(string=None):
     if string:
         sim.current_iter.finished_steps.append(string)
-    with open(sim.filename, 'wb') as f:
-        pickle.dump(sim, f, 2)
+    if do_pickle: 
+        with open(sim.filename, 'wb') as f:
+            pickle.dump(sim, f, 2)
 
 
 def run_step(description, func, *args, **kwargs):

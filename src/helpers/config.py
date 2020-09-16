@@ -93,6 +93,7 @@ class GeneralConfig(BaseClass):
 
     defaults_ = {
         "archive_level" : 0,
+        "do_pickle" : True,
         "project_name" : "NODEFAULT"
         }
 
@@ -103,3 +104,4 @@ class GeneralConfig(BaseClass):
     def copy_to_globels(self):
         globels.archive_level=self.archive_level
         globels.project_name=self.project_name
+        globels.do_pickle=self.do_pickle

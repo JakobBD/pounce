@@ -9,7 +9,7 @@ from helpers import globels
 
 class Internal(Solver):
     """
-    dummy solver. all compuations are carried out during the prepare stage
+    dummy solver. all compuations are carried out during the check_finished routine
     """
 
     defaults_ = {
@@ -86,13 +86,13 @@ class Internal(Solver):
             w = 0.01
         else: 
             sys.exit("invalid model name")
-        return f, w
+        return f, w/10000.
 
 
     def f_ml(self,xi):
         x = np.linspace(-1.,xi,self.n_pts+1)
         y = np.pi*np.cos(np.pi*x)
-        return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)
+        return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)/10000.
 
 
 
@@ -100,5 +100,3 @@ class Standard(Internal.QoI):
     pass
 
 
-
-            

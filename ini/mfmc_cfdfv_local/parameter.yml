@@ -10,14 +10,15 @@ sampling:
   reset_seed: false
 
 models:
-  _type: cfdfv
   prmfile: 'parameter_cfdfv.ini'
   exe_path: ~/CFDFV/bin/cfdfv
   fidelities:
   - name: fine
+    _type: cfdfv
     solver_prms:
       MeshFile: keil_intermediate
   - name: coarse 
+    _type: cfdfv
     solver_prms:
       MeshFile: keil_coarse
 

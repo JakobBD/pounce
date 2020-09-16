@@ -39,6 +39,7 @@ class BaseClass():
         # check if all mandatory input prms are set
         for prm_name,prm_value in attributes.items():
             if prm_value is "NODEFAULT":
+                print(self.__class__.__name__)
                 raise InputPrmError("'"+prm_name+"' is not set in parameter"
                                     "file and has no default value!")
 

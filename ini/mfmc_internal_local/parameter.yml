@@ -30,12 +30,14 @@ models:
     is_auxiliary: True
     n_pts: 8
   - name: surname
-    _type: linear_interpolation
+    _type: kriging
     n_samples_input: 10
     i_model_input: 4
 
 
 stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
 - _type: uniform
   bounds: [-1.,1.]
 

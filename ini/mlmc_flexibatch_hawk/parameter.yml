@@ -35,7 +35,7 @@ stoch_vars:
   i_pos: 0
 
 machine:
-  _type: cray
+  _type: hawk
 
 solver:
   _type: flexi_batch

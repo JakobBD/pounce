@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import copy
+from prettytable import PrettyTable
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -187,8 +188,8 @@ class Mlmc(UqMethod):
         """
         if not self.internal_qois:
             return
-        stdout_table = StdOutTable("mean","stddev")
-        stdout_table.set_descriptions("Mean","Standard Deviation")
+        table = PrettyTable()
+        table.field_names = ["Mean","Standard Deviation"]
         for qoi in self.internal_qois: 
             qoi.mean, qoi.variance = 0., 0.
             for p in qoi.participants: 
@@ -200,8 +201,8 @@ class Mlmc(UqMethod):
                 qoi.mean += p.mean
                 qoi.variance += p.variance
             qoi.stddev = safe_sqrt(qoi.variance)
-            stdout_table.update(qoi)
-        stdout_table.p_print()
+            table.add_row([qoi.mean,qoi.stddev])
+        print_table(table)
 
 
     @classmethod
@@ -232,8 +233,8 @@ class Mlmc(UqMethod):
 
         self.internal_iteration_postproc()
 
-        stdout_table = StdOutTable("sigma_sq","work_mean","mlopt_rounded",
-                                   "samples__n_previous","samples__n")
+        table = PrettyTable()
+        table.field_names = ["Mean","Standard Deviation"]
         stdout_table.set_descriptions("SigmaSq","mean work","ML_opt",
                                       "finished Samples","new Samples")
 
@@ -269,9 +270,10 @@ class Mlmc(UqMethod):
             else: 
                 qoi.samples.n = 0
 
-            stdout_table.update(qoi)
+            table.add_row([qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
+                           qoi.samples__n_previous, qoi.samples__n])
 
-        stdout_table.p_print()
+        print_table(table)
 
         print()
         if self.tolerance: 

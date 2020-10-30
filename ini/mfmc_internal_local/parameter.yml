@@ -4,7 +4,7 @@ general:
 
 uq_method:
   _type: mfmc
-  total_work: 10000
+  total_work: 1000
   n_warmup_samples : 10
 
 sampling:

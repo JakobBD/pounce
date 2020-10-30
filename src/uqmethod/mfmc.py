@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import copy
+from prettytable import PrettyTable
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -201,8 +202,8 @@ class Mfmc(UqMethod):
         if len(self.iterations) == 1: 
             for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
                 p_print("Evaluate QoI " + qoi_hfm.name.replace(self.hfm.name+" ",""))
-                stdout_table = StdOutTable("om_rho_sq","work_mean")
-                stdout_table.set_descriptions("1-Rho^2","mean work")
+                table = PrettyTable()
+                table.field_names = ["QoI","1-Rho^2","mean work"]
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
@@ -211,8 +212,8 @@ class Mfmc(UqMethod):
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
-                    stdout_table.update(qoi)
-                stdout_table.p_print()
+                    table.add_row([qoi.name,qoi.om_rho_sq,qoi.work_mean])
+                print_table(table)
 
             self.select_models()
             self.qois_optimize = [m.qoi_opt for m in self.models_opt]
@@ -234,14 +235,14 @@ class Mfmc(UqMethod):
             wv = [m.work_mean for m in self.qois_optimize]
             mlopt1 = self.total_work/np.dot(rv, wv)
             p_print("\nSelected Models and optimal number of samples:")
-            stdout_table = StdOutTable("mlopt","alpha")
-            stdout_table.set_descriptions("M_opt","alpha")
+            table = PrettyTable()
+            table.field_names = ["QoI","M_opt","alpha"]
             for m in self.qois_optimize:
                 m.mlopt = int(np.floor(mlopt1*m.r))
                 m.samples.n = max(m.mlopt - m.samples.n_previous, 0)
                 m.alpha = np.sqrt(m.rho_sq * self.hfm.qoi_opt.sigma_sq / m.sigma_sq)
-                stdout_table.update(m)
-            stdout_table.p_print()
+                table.add_row([m.name,m.mlopt,m.alpha])
+            print_table(table)
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
             p_print("\nEstimated actual required total work: {}".format(self.total_cost))
             p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO

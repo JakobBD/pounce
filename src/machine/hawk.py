@@ -6,6 +6,7 @@ import numpy as np
 import subprocess
 import socket
 import getpass
+import prettytable as pt
 
 from .machine import Machine
 from helpers.printtools import *
@@ -13,9 +14,9 @@ from helpers.tools import *
 from .local import Local
 from helpers import globels
 
-class Cray(Machine):
+class Hawk(Machine):
     """
-    Definition of Cray Hazelhen machine.
+    Definition of HPE Hawk machine.
     """
 
     defaults_={
@@ -27,7 +28,7 @@ class Cray(Machine):
 
     def __init__(self,class_dict):
         """
-        check if POUNCE is run on Cray or locally on a mounted
+        check if POUNCE is run on Hawk or locally on a mounted
         directory. In the latter case, ssh is used to submit jobs
         and supervise the queuing status.
         """
@@ -40,13 +41,13 @@ class Cray(Machine):
             job = subprocess.run(args,stdout=subprocess.PIPE,
                                  universal_newlines=True)
             line = job.stdout.split('\n')[1]
-            self.cray_username = line.split("@")[0]
-            mount_dir_on_cray = line.split()[0].split(":")[1]
+            self.hawk_username = line.split("@")[0]
+            mount_dir_on_hawk = line.split()[0].split(":")[1]
             mount_dir_local = line.split()[-1]
             cwd = os.getcwd()
-            self.dir_on_cray=mount_dir_on_cray+cwd.replace(mount_dir_local,"")
+            self.dir_on_hawk=mount_dir_on_hawk+cwd.replace(mount_dir_local,"")
         else: 
-            self.cray_username = getpass.getuser()
+            self.hawk_username = getpass.getuser()
             if self.local_postproc: 
                 raise Exception("Local postproc is only possible if POUNCE is "
                                 "run on remote machine.")
@@ -64,12 +65,23 @@ class Cray(Machine):
 
         # stdout 
         print()
-        self.stdout_table=StdOutTable("job_id","queue_status")
-        self.stdout_table.set_descriptions("Job ID","Status")
-        [self.stdout_table.update(batch) for batch in self.active_batches]
-        self.stdout_table.p_print()
+        table = pt.PrettyTable()
+        table.field_names = [" "] + [yellow(b.name) for b in self.active_batches]
+        table.add_row([yellow("Job ID")] + [b.job_id       for b in self.active_batches])
+        table.add_row([yellow("Status")] + [b.queue_status for b in self.active_batches])
+        table.vertical_char = "║"
+        table.horizontal_char = "═"
+        table.junction_char = "╬"
 
-        self.wait_finished()
+        for row in table.__str__().split("\n")[:-1]: 
+            print(row)
+        table.header = False
+        table.hrules = pt.NONE
+
+        self.wait_finished(table)
+
+        table.hrules = pt.FRAME
+        print(table.__str__().split("\n")[-1]) 
 
         self.check_all_finished()
 
@@ -116,12 +128,12 @@ class Cray(Machine):
         the original command appears as one argument and thus one 
         string)
         """
-        command = "cd "+self.dir_on_cray+" && "+" ".join(args)
-        return ['ssh',self.cray_username+"@hazelhen.hww.de",command]
+        command = "cd "+self.dir_on_hawk+" && "+" ".join(args)
+        return ['ssh',self.hawk_username+"@hawk.hww.hlrs.de",command]
 
-    def wait_finished(self):
+    def wait_finished(self,table):
         """
-        Monitors all jobs on Cray Hazelhen HPC queue. 
+        Monitors all jobs on HPE Hawk HPC queue. 
         Checks if jobfile finished.
         """
         while True:
@@ -137,12 +149,13 @@ class Cray(Machine):
                 if not queue_status == batch.queue_status:
                     # new status
                     batch.queue_status=queue_status
-                    self.stdout_table.update(batch)
+                    table.clear_rows()
+                    table.add_row(["Status"] + [b.queue_status for b in self.active_batches])
                     has_changes=True
                 if queue_status=='C':
                     self.check_errorfile(batch)
             if has_changes:
-                self.stdout_table.print_row_by_name("queue_status")
+                print_table(table)
             if not self.unfinished_batches:
                 return
             time.sleep(1)
@@ -150,9 +163,9 @@ class Cray(Machine):
 
     def read_qstat(self):
         """
-        run 'qstat' on cray and read output
+        run 'qstat' on hawk and read output
         """
-        args=['qstat','-u',self.cray_username]
+        args=['qstat','-u',self.hawk_username]
         if self.remote: 
            args=self.to_ssh(args)
         job = subprocess.run(args,stdout=subprocess.PIPE,
@@ -174,7 +187,7 @@ class Cray(Machine):
         Well, parse is a strong word here.
         """
         for errfile in self.errfile_names:
-            # sometimes cray needs a while to finish up jobs
+            # sometimes hawk needs a while to finish up jobs
             if not os.path.isfile(errfile):
                 time.sleep(5)
             with open(errfile) as f:
@@ -216,12 +229,10 @@ class Cray(Machine):
             return
 
         self.walltime_factor = 1.2
-        stdout_table=StdOutTable(
-            "queue","max_rating","n_parallel_runs","n_sequential_runs",
-            "n_cores","n_nodes","batch_walltime")
-        stdout_table.set_descriptions(
-            "Queue","Rating (%)","# parallel runs","# sequential runs",
-            "# cores","# nodes","batch walltime")
+        table = pt.PrettyTable()
+        table.field_names = ["Queue","Rating (%)","# parallel runs",
+                             "# sequential runs", "# cores","# nodes",
+                             "batch walltime"]
 
         for batch in self.active_batches:
             batch.scaled_avg_walltime=self.walltime_factor*batch.avg_walltime
@@ -248,8 +259,14 @@ class Cray(Machine):
             if self.total_work > self.max_total_work:
                 raise Exception("Max total core hours exceeded!")
 
-            stdout_table.update(batch)
-        stdout_table.p_print()
+            table.add_row([batch.queue,
+                           batch.max_rating,
+                           batch.n_parallel_runs,
+                           batch.n_sequential_runs,
+                           batch.n_cores,
+                           batch.n_nodes,
+                           batch.batch_walltime])
+        print_table(table)
 
 
     def get_package_properties(self,batch):

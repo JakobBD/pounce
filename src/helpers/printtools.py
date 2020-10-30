@@ -79,92 +79,23 @@ def print_header():
     print("="*132)
 
 
-
-class StdOutTable():
-    """
-    Buffers several values for each batch for stdout in ordered table.
-    Called in three steps:
-    - before loop over batches: init class and set_descriptions
-    - during loop over batches: update (for each batch) 
-    - after  loop over batches: print
-    """
-
-    def __init__(self,*args):
-        self.rows=[]
-        for arg in args:
-            self.rows.append(TableRow(arg))
-            self.header_entries=[]
-
-    def set_descriptions(self,*args):
-        for i_arg,arg in enumerate(args):
-            self.rows[i_arg].description=arg
-
-    def update(self,level):
-        name=level.name
-        # name=level.__class__.__name__+" "+level.name
-        if name in self.header_entries: 
-            i_col=self.header_entries.index(name)
-        else: 
-            i_col=len(self.header_entries)
-            self.header_entries.append(name)
-            [row.values.append('dummy') for row in self.rows]
-        attr_names=[row.attr for row in self.rows]
-        for attr_name in attr_names:
-            attr=level
-            for word in attr_name.split("__"):
-                attr=getattr(attr,word)
-            for row in self.rows: 
-                if row.attr==attr_name:
-                    row.values[i_col]=attr
-
-    def p_print(self):
-        self.descr_length=max([len(row.description) for row in self.rows])
-        n_entries=len(self.header_entries)
-        self.str_length=max([len(h) for h in self.header_entries])
-        self.str_length=max(11,self.str_length)
-        self.l=str(self.str_length)
-        self.lm2=str(self.str_length-2)
-        lenstr = "%{}s ║ ".format(self.str_length)
-        print(indent+" "*self.descr_length+" ║ "
-              +"".join([lenstr%(n) for n in self.header_entries]))
-        sep_str="═"*self.str_length+"═╬═"
-        print(indent+"═"*self.descr_length+"═╬═"+sep_str*n_entries)
-        for row in self.rows:
-            row.descr_length=self.descr_length
-            row.str_length=self.str_length
-            row.p_print(self.l,self.lm2)
-
-    def print_row_by_name(self,attr):
-        for row in self.rows:
-            if row.attr == attr: 
-                row.p_print(self.l,self.lm2)
-
-
-class TableRow():
-    def __init__(self,attr):
-        self.attr=attr
-        self.values=[]
-
-    def p_print(self,l,lm2):
-        self.string=" "*(self.descr_length-len(self.description))\
-                    +self.description+" ║ "
-        for value in self.values: 
-            if "time" in self.description.lower():
-                self.add_string(("%"+l+"s")%(time_to_str2(value)))
-            elif "%" in self.description:
-                self.add_string(("%"+lm2+".1f %%")%(100*value))
-            elif isinstance(value,str): 
-                self.add_string(("%"+l+"s")%(value))
-            elif isinstance(value,int): 
-                self.add_string(("%"+l+"d")%(value))
-            elif isinstance(value,(float,np.ndarray)): 
-                self.add_string(("%"+l+".4e")%(value))
-            else:
-                raise Exception("unknown type",type(value))
-        print(indent+self.string)
-
-    def add_string(self,string):
-        self.string+=yellow(string)+" ║ "
+def print_table(table): 
+    table.field_names = [yellow(s) for s in table.field_names]
+    for r in table._rows: 
+        for i,f in enumerate(r): 
+            if "time" in table.field_names[i]:
+                r[i] = ("%0s")%(time_to_str2(f))
+            elif "%" in table.field_names[i]:
+                r[i] = ("%0.1f %%")%(100*f)
+            elif isinstance(f,(float,np.ndarray)): 
+                r[i] = ("%0.4e")%(f)
+        r[0] = yellow(r[0])
+    table.vertical_char = "║"
+    table.horizontal_char = "═"
+    table.junction_char = "╬"
+    table.align = "r"
+    print(table)
+    print()
 
 
 def time_to_str2(sec):

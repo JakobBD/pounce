@@ -96,7 +96,7 @@ class Internal(Solver):
 
 
 
-class Standard(Internal.QoI):
+class InternalStandard(Internal.QoI):
     pass
 
 

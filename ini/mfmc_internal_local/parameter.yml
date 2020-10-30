@@ -4,7 +4,7 @@ general:
 
 uq_method:
   _type: mfmc
-  total_work: 1000
+  total_work: 10000
   n_warmup_samples : 10
 
 sampling:
@@ -15,6 +15,7 @@ models:
   - name: hf
     _type: internal
   #- name: lf32
+    #_type: internal
     #n_pts: 32
   - name: lf16
     _type: internal
@@ -25,14 +26,14 @@ models:
   - name: lf4
     _type: internal
     n_pts: 4
-  - name: lf8_aux
-    _type: internal
-    is_auxiliary: True
-    n_pts: 8
-  - name: surname
-    _type: kriging
-    n_samples_input: 10
-    i_model_input: 4
+  #- name: lf8_aux
+    #_type: internal
+    #is_auxiliary: True
+    #n_pts: 8
+  #- name: kriging
+    #_type: kriging
+    #n_samples_input: 10
+    #i_model_input: 4
 
 
 stoch_vars:

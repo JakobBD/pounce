@@ -90,26 +90,29 @@ class QoI(Batch):
         self.internal=False
 
     @classmethod
-    def create_by_stage(cls,name,prms,*args): 
+    def create_by_stage(cls,stage_name,prms,SolCls,*args): 
         """
         Some QoI's contain prepare functions for different stages. 
         Here, the functions are renamed to the general "prepare" 
-        according to the respective stage string given in "name".
+        according to the respective stage string given in "stage_name".
         QoI parameters are joined: some are given for all stages
         (prms_other), others are stage-specific (prms_loc).
         """
         if "stages" in prms:
-            prms_loc=prms["stages"][name]
+            prms_loc=prms["stages"][stage_name]
             prms_other=copy.deepcopy(prms)
             del prms_other["stages"]
             prms_loc.update(prms_other)
         else: 
             prms_loc=prms
+        tmp = prms_loc["_type"]
+        prms_loc["_type"] = SolCls.name()+"_"+prms_loc["_type"]
         inst = cls.create(prms_loc,*args)
+        prms_loc["_type"] = tmp
         if getattr(inst,"internal",False): 
             return inst
 
-        method_name =  "prepare_" + name
+        method_name = "prepare_" + stage_name
         if method_name not in inst.__class__.__dict__:
             raise Exception(method_name 
                 + " not found in class " + inst.__class__.__name__)

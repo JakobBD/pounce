@@ -161,7 +161,7 @@ class FlexiBatch(Solver):
             return False
 
 
-class ClBatch(Cfdfv.QoI,FlexiBatch.QoI):
+class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict
     """
@@ -176,7 +176,7 @@ class ClBatch(Cfdfv.QoI,FlexiBatch.QoI):
 
 
 
-class FieldSolution(FlexiBatch.QoI):
+class FlexiBatchFieldSolution(FlexiBatch.QoI):
     """ 
     Takes the whole field solution as quantity of interest. 
 
@@ -206,7 +206,7 @@ class FieldSolution(FlexiBatch.QoI):
         self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
 
 
-class RecordPoints(FlexiBatch.QoI):
+class FlexiBatchRecordPoints(FlexiBatch.QoI):
     """ 
     Takes a solution time sereis evaluated at record points as QoI.
 

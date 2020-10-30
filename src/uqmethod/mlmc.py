@@ -101,8 +101,9 @@ class Mlmc(UqMethod):
 
         self.internal_qois = []
         for i,sub_dict in enumerate(prms["qois"]): 
-            QoILoc = Solver.subclass(prms["solver"]["_type"]).QoI
-            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
+            SolCls = Solver.subclass(prms["solver"]["_type"])
+            QoILoc = SolCls.QoI
+            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,SolCls,self)
             qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
             if qoi.internal: 

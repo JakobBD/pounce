@@ -100,7 +100,8 @@ class StdOutTable():
             self.rows[i_arg].description=arg
 
     def update(self,level):
-        name=level.__class__.__name__+" "+level.name
+        name=level.name
+        # name=level.__class__.__name__+" "+level.name
         if name in self.header_entries: 
             i_col=self.header_entries.index(name)
         else: 

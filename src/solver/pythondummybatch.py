@@ -6,7 +6,7 @@ from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
 
-class Internal(Solver):
+class PythonDummyBatch(Solver):
     """ 
     Dummy python solver for testing.
     python source files are located in the externals directory
@@ -72,7 +72,7 @@ class Internal(Solver):
 
 
 
-class Integral(Internal.QoI):
+class PythonDummyBatchIntegral(PythonDummyBatch.QoI):
     """ 
     Takes the integral of the solution as quantity of interest. 
 

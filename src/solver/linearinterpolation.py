@@ -9,7 +9,7 @@ class LinearInterpolation(SurrogateModel):
     """
     pass
 
-class Standard(LinearInterpolation.QoI):
+class LinearInterpolationStandard(LinearInterpolation.QoI):
 
     def get_response(self,s=None): 
         own_model, model_in, qoi_in = self.participants

@@ -128,10 +128,11 @@ class Mfmc(UqMethod):
         set up quantity of interest for a model and make the 
         sublevels its participants
         """
-        QoILoc = model.__class__.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
+        SolCls = model.__class__
+        QoILoc = SolCls.QoI
+        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
         qoi.participants = [model]
-        qoi.name = qoi.__class__.name()+"_"+model.name
+        qoi.name = model.name + " " + qoi.__class__.name().replace(model.__class__.name()+"_", "")
         qoi.samples = model.samples
         if qoi.optimize: 
             model.n_optimize += 1
@@ -199,7 +200,7 @@ class Mfmc(UqMethod):
     def prepare_next_iteration(self):
         if len(self.iterations) == 1: 
             for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
-                p_print("Evaluate QoI " + qoi_hfm.name)
+                p_print("Evaluate QoI " + qoi_hfm.name.replace(self.hfm.name+" ",""))
                 stdout_table = StdOutTable("om_rho_sq","work_mean")
                 stdout_table.set_descriptions("1-Rho^2","mean work")
                 for model in self.all_models: 
@@ -232,7 +233,7 @@ class Mfmc(UqMethod):
             rv = [m.r         for m in self.qois_optimize]
             wv = [m.work_mean for m in self.qois_optimize]
             mlopt1 = self.total_work/np.dot(rv, wv)
-            p_print("Selected Models and optimal number of samples:")
+            p_print("\nSelected Models and optimal number of samples:")
             stdout_table = StdOutTable("mlopt","alpha")
             stdout_table.set_descriptions("M_opt","alpha")
             for m in self.qois_optimize:
@@ -242,8 +243,10 @@ class Mfmc(UqMethod):
                 stdout_table.update(m)
             stdout_table.p_print()
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
-            p_print("Estimated actual required total work: {}".format(self.total_cost))
+            p_print("\nEstimated actual required total work: {}".format(self.total_cost))
             p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
+            with open("results.dat","a") as f: 
+                f.write(str(self.total_cost)+", "+str(np.sqrt(self.v_opt))+", ")
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
@@ -266,8 +269,9 @@ class Mfmc(UqMethod):
             p_print("MEAN: {}".format(self.mean))
             p_print("STD:  {}".format(self.std))
             print()
+            with open("results.dat","a") as f: 
+                f.write(str(self.mean)+", "+str(self.std)+"\n")
            
-
 
     def select_models(self): 
         models = sorted(self.models, key=lambda m: m.qoi_opt.rho_sq, reverse=True)
@@ -278,15 +282,9 @@ class Mfmc(UqMethod):
         dummy.qoi_opt.rho_sq = 0.
         for s in sets:
             s.append(dummy)
-        s = sets.pop(0)
-        v = self.get_v(s)
-        for s_loc in sets: 
-            v_loc = self.get_v(s_loc)
-            if v_loc: 
-                v = min(v, v_loc)
-                s = s_loc
-        self.models_opt = s
-        self.v_opt = v
+        self.models_opt = min(sets, key=self.get_v)
+        self.v_opt = self.get_v(self.models_opt)
+
 
     def all_subsets(self,all_lists, prev_list, fut_list):
         if fut_list: 
@@ -300,7 +298,7 @@ class Mfmc(UqMethod):
         for mp, m, mn in zip(set_[:-2], set_[1:-1], set_[2:]):
             qp, q, qn = mp.qoi_opt, m.qoi_opt, mn.qoi_opt
             if (qp.work_mean / q.work_mean) <= (qp.rho_sq - q.rho_sq) / (q.rho_sq - qn.rho_sq):
-                return None
+                return 1.E100
         v = 0.
         for m, mn in zip(set_[:-1], set_[1:]):
             q, qn = m.qoi_opt, mn.qoi_opt

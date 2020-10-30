@@ -160,14 +160,14 @@ class Cfdfv(Solver):
 
 
 
-class Cl(Cfdfv.QoI):
+class CfdfvCl(Cfdfv.QoI):
 
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.string_in_stdout = "cl"
 
 
-class Cd(Cfdfv.QoI):
+class CfdfvCd(Cfdfv.QoI):
 
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)

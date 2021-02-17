@@ -89,11 +89,16 @@ class Internal(Solver):
         return f, w/10000.
 
 
-    def f_ml(self,xi):
-        x = np.linspace(-1.,xi,self.n_pts+1)
-        y = np.pi*np.cos(np.pi*x)
-        return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)/10000.
+    # def f_ml(self,xi):
+        # x = np.linspace(-1.,xi,self.n_pts+1)
+        # y = np.pi*np.cos(np.pi*x)
+        # return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)/10000.
 
+    def f_ml(self,xi):
+        dx = (1. + xi) / self.n_pts
+        x = np.linspace(-1.,xi-dx,self.n_pts)
+        y = np.pi*np.cos(np.pi*x)
+        return np.sum(y)*dx, float(self.n_pts**2)/10000.
 
 
 class InternalStandard(Internal.QoI):

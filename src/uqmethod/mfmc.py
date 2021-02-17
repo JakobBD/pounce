@@ -14,6 +14,7 @@ from helpers import config
 
 
 # TODO: 
+# - do not re-use pilot models in second iteration
 # - get work for model, not for qoi 
 # - fix qoi_optimize vs. all qois 
 # - slightly nicer stdout 
@@ -36,6 +37,7 @@ class Mfmc(UqMethod):
         # "tolerance" : None,
         "total_work" : "NODEFAULT",
         "n_warmup_samples": "NODEFAULT",
+        "reuse_warmup_samples": False,
         "reset_seed" : False
         }
 
@@ -225,10 +227,11 @@ class Mfmc(UqMethod):
             self.qois_optimize.pop(-1) 
 
             # update n samples
-            for m in self.all_models: 
-                m.samples.n_previous = m.samples.n
-                m.samples.n = 0
-            self.sampling.n_previous = self.sampling.n
+            if self.reuse_warmup_samples: 
+                for m in self.all_models: 
+                    m.samples.n_previous = m.samples.n
+                    # m.samples.n = 0
+                self.sampling.n_previous = self.sampling.n
             
             # get mlopt and alpha
             rv = [m.r         for m in self.qois_optimize]
@@ -246,14 +249,17 @@ class Mfmc(UqMethod):
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
             p_print("\nEstimated actual required total work: {}".format(self.total_cost))
             p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
-            with open("results.dat","a") as f: 
-                f.write(str(self.total_cost)+", "+str(np.sqrt(self.v_opt))+", ")
+            # with open("results.dat","a") as f: 
+                # f.write(str(self.total_cost)+", "+str(np.sqrt(self.v_opt))+", ")
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
                     continue
                 for qoi in model.internal_qois: 
-                    qoi.u = np.concatenate((qoi.u,qoi.get_response()[0]))
+                    if self.reuse_warmup_samples: 
+                        qoi.u = np.concatenate((qoi.u,qoi.get_response()[0]))
+                    else: 
+                        qoi.u = qoi.get_response()[0]
             n = self.hfm.samples.n + self.hfm.samples.n_previous
             u = self.hfm.qoi_opt.u[:n+1]#.astype(np.float64)
             self.mean = np.mean(u)
@@ -270,8 +276,8 @@ class Mfmc(UqMethod):
             p_print("MEAN: {}".format(self.mean))
             p_print("STD:  {}".format(self.std))
             print()
-            with open("results.dat","a") as f: 
-                f.write(str(self.mean)+", "+str(self.std)+"\n")
+            # with open("results.dat","a") as f: 
+                # f.write(str(self.mean)+", "+str(self.std)+"\n")
            
 
     def select_models(self): 

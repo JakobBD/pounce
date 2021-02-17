@@ -4,8 +4,9 @@ general:
 
 uq_method:
   _type: mfmc
-  total_work: 1000
+  total_work: 100
   n_warmup_samples : 10
+  reuse_warmup_samples : False
 
 sampling:
   reset_seed: false
@@ -16,7 +17,7 @@ models:
     _type: internal
   #- name: lf32
     #_type: internal
-    #n_pts: 32
+    n_pts: 32
   - name: lf16
     _type: internal
     n_pts: 16
@@ -26,6 +27,9 @@ models:
   - name: lf4
     _type: internal
     n_pts: 4
+  - name: lf2
+    _type: internal
+    n_pts: 2
   #- name: lf8_aux
     #_type: internal
     #is_auxiliary: True

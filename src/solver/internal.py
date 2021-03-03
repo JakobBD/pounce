@@ -67,7 +67,7 @@ class Internal(Solver):
         return True
 
     def f_mf(self,xi):
-        t0 = 1.0  * np.sin(np.pi * xi)
+        t0 = 1.0  * np.sin(np.pi * xi)      + 100.*np.maximum(0.,xi-0.9)
         t1 = 0.2  * np.sign(xi)
         t2 = 0.1  * np.sin(5. * np.pi * xi)
         t3 = 0.01 * xi**3
@@ -95,9 +95,14 @@ class Internal(Solver):
         # return np.trapz(y, dx = (1. + xi) / self.n_pts), float(self.n_pts**2)/10000.
 
     def f_ml(self,xi):
+        # first order integration of pi*cos(pi*x) from -1 to xi 
+        # exact solution is sin(pi*xi)
         dx = (1. + xi) / self.n_pts
         x = np.linspace(-1.,xi-dx,self.n_pts)
         y = np.pi*np.cos(np.pi*x)
+        # integrand += 50 for x > 0.9
+        # mean exact solution += 50*max(0.,x-0.9)
+        # y += (1.+np.sign(x-0.9))*50.
         return np.sum(y)*dx, float(self.n_pts**2)/10000.
 
 

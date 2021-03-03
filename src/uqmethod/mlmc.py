@@ -138,8 +138,9 @@ class Mlmc(UqMethod):
         set up quantity of interest for a level and make the 
         sublevels its participants
         """
-        QoILoc = level.sublevels[0].__class__.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
+        SolCls = level.sublevels[0].__class__
+        QoILoc = SolCls.QoI
+        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
         qoi.participants = level.sublevels
         qoi.name = "postproc_"+level.name
 
@@ -202,6 +203,8 @@ class Mlmc(UqMethod):
                 qoi.variance += p.variance
             qoi.stddev = safe_sqrt(qoi.variance)
             table.add_row([qoi.mean,qoi.stddev])
+        self.mean = self.internal_qois[0].mean
+        self.stddev = self.internal_qois[0].stddev
         print_table(table)
 
 
@@ -234,9 +237,8 @@ class Mlmc(UqMethod):
         self.internal_iteration_postproc()
 
         table = PrettyTable()
-        table.field_names = ["Mean","Standard Deviation"]
-        stdout_table.set_descriptions("SigmaSq","mean work","ML_opt",
-                                      "finished Samples","new Samples")
+        table.field_names = ["SigmaSq","mean work","ML_opt",
+                             "finished Samples","new Samples"]
 
         # build sum over levels of sqrt(sigma^2/w)
         sum_sigma_w = 0.
@@ -271,7 +273,7 @@ class Mlmc(UqMethod):
                 qoi.samples.n = 0
 
             table.add_row([qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
-                           qoi.samples__n_previous, qoi.samples__n])
+                           qoi.samples.n_previous, qoi.samples.n])
 
         print_table(table)
 
@@ -286,8 +288,9 @@ class Mlmc(UqMethod):
             self.est_tolerance = sum(
                 [q.sigma_sq/max(q.mlopt, q.samples.n_previous) \
                     for q in self.qois_optimize])
-            p_print("Estimated achieved tolerance for given total work: %e" \
-                    %(2.*np.sqrt(self.est_tolerance)))
+            self.est_tolerance = np.sqrt(self.est_tolerance)
+            p_print("Estimated achieved MSE for given total work: %e" \
+                    %(self.est_tolerance))
 
         self.iter_loop_finished = len(self.stages[0].active_batches) == 0
 

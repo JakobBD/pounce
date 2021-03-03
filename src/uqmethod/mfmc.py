@@ -38,6 +38,7 @@ class Mfmc(UqMethod):
         "total_work" : "NODEFAULT",
         "n_warmup_samples": "NODEFAULT",
         "reuse_warmup_samples": False,
+        "update_alpha": False,
         "reset_seed" : False
         }
 
@@ -62,6 +63,8 @@ class Mfmc(UqMethod):
             np.random.seed(0)
         self.n_max_iter = 2
         self.has_simulation_postproc = False
+        if self.update_alpha and not self.reuse_warmup_samples: 
+            raise Exception("update alpha only possible if warmup samples are resued!")
 
     def setup(self, prms):
         """
@@ -237,6 +240,10 @@ class Mfmc(UqMethod):
             rv = [m.r         for m in self.qois_optimize]
             wv = [m.work_mean for m in self.qois_optimize]
             mlopt1 = self.total_work/np.dot(rv, wv)
+            if self.reuse_warmup_samples: 
+                self.work_warmup = 0.
+            else: 
+                self.work_warmup = np.sum(wv)*self.n_warmup_samples
             p_print("\nSelected Models and optimal number of samples:")
             table = PrettyTable()
             table.field_names = ["QoI","M_opt","alpha"]
@@ -261,6 +268,14 @@ class Mfmc(UqMethod):
                     else: 
                         qoi.u = qoi.get_response()[0]
             n = self.hfm.samples.n + self.hfm.samples.n_previous
+            if self.update_alpha: 
+                qoi_hfm = self.hfm.qoi_opt
+                for m in self.models_opt:
+                    if model.is_auxiliary: 
+                        continue
+                    q = m.qoi_opt
+                    self.get_rho(n,q,qoi_hfm)
+                    q.alpha = np.sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
             u = self.hfm.qoi_opt.u[:n+1]#.astype(np.float64)
             self.mean = np.mean(u)
             self.var = np.var(u,ddof=1)

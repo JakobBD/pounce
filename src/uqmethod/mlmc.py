@@ -2,6 +2,7 @@ import numpy as np
 import os
 import copy
 from prettytable import PrettyTable
+from scipy.stats import chi2, norm
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -23,8 +24,11 @@ class Mlmc(UqMethod):
 
     defaults_ = {
         "n_max_iter" : "NODEFAULT",
-        "tolerance" : None,
+        "eps" : None,
         "total_work" : None,
+        "use_ci" : False,
+        "ci_conf_tot" : 0.95,
+        "dof_adj" : False,
         "reset_seed" : False
         }
 
@@ -41,8 +45,8 @@ class Mlmc(UqMethod):
 
     def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
-        if bool(self.tolerance) == bool(self.total_work): 
-            raise Exception("MLMC: Prescribe either tolerance or total_work")
+        if bool(self.eps) == bool(self.total_work): 
+            raise Exception("MLMC: Prescribe either eps or total_work")
         self.has_simulation_postproc = True
         if self.reset_seed:
             p_print("Reset RNG seed to 0")
@@ -112,6 +116,9 @@ class Mlmc(UqMethod):
             else:
                 self.simulation_postproc.batches.append(qoi)
 
+        if self.use_ci: 
+            self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
+
     def setup_level(self, i, sub_fine, sub_coarse):
         """
         set up a level, connect to its sublevels, and 
@@ -156,7 +163,15 @@ class Mlmc(UqMethod):
             qoi.u_coarse_sum    = 0.
             qoi.u_coarse_sq_sum = 0.
             qoi.du_sq_sum       = 0.
+            if self.use_ci: 
+                if self.dof_adj: 
+                    qoi.du_e3_sum = 0.
+                    qoi.du_e4_sum = 0.
+                qoi.w_sum = 0.
+                qoi.w_sq_sum = 0.
         else:
+            if self.use_ci: 
+                raise Exception("Confidence intervals only implemented for internal QoIs")
             self.stages[1].batches.append(qoi)
 
     def internal_iteration_postproc(self): 
@@ -179,8 +194,40 @@ class Mlmc(UqMethod):
                 qoi.u_coarse_sum    += sum(u_coarse)
                 qoi.u_coarse_sq_sum += sum(u_coarse**2)
                 qoi.du_sq_sum       += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
-
                 qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
+                if self.use_ci: 
+                    # TODO: hack for convtest
+                    if qoi.samples.n_previous == 0: 
+                        if self.dof_adj: 
+                            qoi.du_e3_sum = 0.
+                            qoi.du_e4_sum = 0.
+                        qoi.w_sum = 0.
+                        qoi.w_sq_sum = 0.
+                        self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
+                    # end hack
+                    if self.dof_adj: 
+                        qoi.du_e3_sum   += sum([(f-c)**3 for f,c in zip(u_fine,u_coarse)])
+                        qoi.du_e4_sum   += sum([(f-c)**4 for f,c in zip(u_fine,u_coarse)])
+                        mu = (qoi.u_fine_sum-qoi.u_coarse_sum)/n
+                        mom4 = qoi.du_e4_sum - 4.*mu*qoi.du_e3_sum + 6.*mu**2*qoi.du_sq_sum - 4.*mu**3*mu*n + n*mu**4
+                        ex_kurt = n*(n+1.)/((n-1.)*(n-2.)*(n-3.))*mom4/qoi.SigmaSq**2 - 3*(n-1.)**2/((n-2.)*(n-3.))
+                        dof = 2*n/(ex_kurt+2*n/(n-1.))
+                    else: 
+                        dof = n-1
+                    alpha = (1.-self.ci_conf_loc)*2.
+                    qoi.v_lower = dof*qoi.SigmaSq/chi2.interval(1.-alpha,dof)[1]
+                    qoi.v_upper = dof*qoi.SigmaSq/chi2.interval(1.-alpha,dof)[0]
+
+                    w = np.array(qoi.participants[0].w)
+                    if len(qoi.participants)>1:
+                        w += np.array(qoi.participants[1].w)
+                    qoi.w_sum += np.sum(w)
+                    qoi.w_sq_sum += np.sum(w**2)
+                    mean_w = qoi.w_sum/n
+                    var_w  = (qoi.w_sq_sum-(qoi.w_sum**2)/n)/(n-1.)
+                    qoi.w_lower = mean_w - norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
+                    qoi.w_upper = mean_w + norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
+
 
     def internal_simulation_postproc(self): 
         """
@@ -230,7 +277,7 @@ class Mlmc(UqMethod):
         Compute number of samples for next iteration. 
         - evaluate sigma^2 and avg work. 
         - get optimal number of samples on every level
-          (given prescribed tolerance or total work) 
+          (given prescribed eps or total work) 
         - approach this numbr carefully and iteratively
         """
 
@@ -242,33 +289,56 @@ class Mlmc(UqMethod):
 
         # build sum over levels of sqrt(sigma^2/w)
         sum_sigma_w = 0.
+        sum_sigma_w_bound = 0.
         for qoi in self.qois_optimize:
             if qoi.samples.n > 0:
                 qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
-                work_mean = qoi.get_work_mean()
+                qoi.get_work_mean()
             if qoi.samples.n_previous+qoi.samples.n > 0:
                 sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
+                if self.use_ci: 
+                    if self.eps: 
+                        sum_sigma_w_bound += safe_sqrt(qoi.v_lower*qoi.w_lower)
+                    elif self.total_work: 
+                        sum_sigma_w_bound += safe_sqrt(qoi.v_upper*qoi.w_upper)
+
 
         for qoi in self.qois_optimize:
-            if self.tolerance: 
+            if self.eps: 
                 qoi.mlopt = (sum_sigma_w
                              * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
-                             / (self.tolerance*self.tolerance/4.))
+                             / self.eps**2)
             elif self.total_work: 
                 qoi.mlopt = (self.total_work
                              * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
                              / sum_sigma_w)
+
             qoi.mlopt_rounded = int(round(qoi.mlopt)) if qoi.mlopt > 1 \
                 else qoi.mlopt
             qoi.samples.n_previous += qoi.samples.n
 
-            # slowly approach mlopt... heuristic solution
             n_iter_remain = self.n_max_iter-self.current_iter.n
             if n_iter_remain > 0: 
-                expo = 1./sum(0.15**i for i in range(n_iter_remain))
-                n_total_new = qoi.mlopt**expo * qoi.samples.n**(1-expo)
-                qoi.samples.n = \
-                    max(int(np.ceil(n_total_new))-qoi.samples.n_previous , 0)
+                if self.use_ci: 
+                    if self.eps: 
+                        qoi.ml_lower = (sum_sigma_w_bound
+                                     * safe_sqrt(qoi.v_lower/qoi.w_upper)
+                                     / self.eps**2)
+                    elif self.total_work: 
+                        qoi.ml_lower = (self.total_work
+                                     * safe_sqrt(qoi.v_lower/qoi.w_upper)
+                                     / sum_sigma_w_bound)
+                    if self.n_max_iter == 2:
+                        xi = 0.
+                    else: 
+                        xi = (self.n_max_iter-self.current_iter.n-1.)/(self.n_max_iter-2.)
+                        # xi = 1.
+                    n_total_new = xi*qoi.ml_lower + (1.-xi)*qoi.mlopt
+                else: 
+                    # slowly approach mlopt... heuristic solution
+                    expo = 1./sum(0.15**i for i in range(n_iter_remain))
+                    n_total_new = qoi.mlopt**expo * qoi.samples.n**(1-expo)
+                qoi.samples.n = max(int(np.ceil(n_total_new))-qoi.samples.n_previous , 0)
             else: 
                 qoi.samples.n = 0
 
@@ -278,19 +348,19 @@ class Mlmc(UqMethod):
         print_table(table)
 
         print()
-        if self.tolerance: 
+        if self.eps: 
             self.est_total_work = sum(
                 [q.work_mean*max(q.mlopt, q.samples.n_previous) \
                     for q in self.qois_optimize])
             p_print("Estimated required total work to achieve prescribed "
-                    "tolerance: %d core-seconds"%(int(self.est_total_work)))
+                    "eps: %d core-seconds"%(int(self.est_total_work)))
         elif self.total_work: 
-            self.est_tolerance = sum(
+            self.est_eps = sum(
                 [q.sigma_sq/max(q.mlopt, q.samples.n_previous) \
                     for q in self.qois_optimize])
-            self.est_tolerance = np.sqrt(self.est_tolerance)
-            p_print("Estimated achieved MSE for given total work: %e" \
-                    %(self.est_tolerance))
+            self.est_eps = np.sqrt(self.est_eps)
+            p_print("Estimated achieved RMSE for given total work: %e" \
+                    %(self.est_eps))
 
         self.iter_loop_finished = len(self.stages[0].active_batches) == 0
 

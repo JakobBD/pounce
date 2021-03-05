@@ -173,9 +173,9 @@ class Mfmc(UqMethod):
 
     @staticmethod
     def get_rho(n,qoi,qoi_hfm):
-        qoi.u_sum      = np.sum(qoi.u)
-        qoi.u_sq_sum   = np.sum(qoi.u**2)
-        qoi.u_uhfm_sum = np.sum(qoi.u*qoi_hfm.u)
+        qoi.u_sum      = np.sum(qoi.u[:n])
+        qoi.u_sq_sum   = np.sum(qoi.u[:n]**2)
+        qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n])
 
         qoi.sigma_sq = (qoi.u_sq_sum - (qoi.u_sum**2 / n)) / (n-1)
         tmp = qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n
@@ -256,8 +256,6 @@ class Mfmc(UqMethod):
             self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
             p_print("\nEstimated actual required total work: {}".format(self.total_cost))
             p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
-            # with open("results.dat","a") as f: 
-                # f.write(str(self.total_cost)+", "+str(np.sqrt(self.v_opt))+", ")
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
@@ -291,8 +289,6 @@ class Mfmc(UqMethod):
             p_print("MEAN: {}".format(self.mean))
             p_print("STD:  {}".format(self.std))
             print()
-            # with open("results.dat","a") as f: 
-                # f.write(str(self.mean)+", "+str(self.std)+"\n")
            
 
     def select_models(self): 

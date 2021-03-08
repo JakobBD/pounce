@@ -2,6 +2,7 @@ import sys
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 from helpers import config
 from helpers.printtools import *
@@ -9,8 +10,8 @@ from helpers import globels
 
 
 
-n_runs = 5
-work_vec = [10.,50.,250.]
+n_runs = 1000
+work_vec = [10.,20., 40., 80., 160., 320., 640.]
 basedir = "/home/jakob/diss/plots/conv/csv_mc"
 
 
@@ -56,6 +57,7 @@ def write(prefix,x_data,y_data):
         for x, y in zip(x_data,y_data): 
             f.write("\n"+str(x)+" "+str(y))
 
+start_time = time.time()
 
 for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
     dirloc = basedir + "/" + folder
@@ -127,6 +129,8 @@ for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
         write("nsamples_std",work_vec,nsamples_std_vec)
         #TODO: nSamples EXTRA!
 
+print()
+print(time.time()-start_time)
 
 
 # plt.figure()

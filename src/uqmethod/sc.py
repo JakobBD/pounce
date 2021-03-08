@@ -1,3 +1,6 @@
+from prettytable import PrettyTable
+import numpy as np
+
 from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
@@ -50,18 +53,37 @@ class Sc(UqMethod):
         self.solver.name = ""
         self.solver.samples = Collocation(prms["sampling"])
         self.solver.samples.stoch_vars = self.stoch_vars
+
+        self.internal_qois = []
         for sub_dict in prms["qois"]: 
-            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
+            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, SolverLoc, self)
             qoi.participants = [self.solver]
             qoi.name = "postproc"
-            self.stages[1].batches.append(qoi)
+            if qoi.internal: 
+                self.internal_qois.append(qoi)
+            else: 
+                self.stages[1].batches.append(qoi)
 
     def prepare_next_iteration(self):
         """
         There is only one "iteration", so no next 
         one needs to be prepared.
         """
-        pass
+        self.internal_iteration_postproc()
+
+    def internal_iteration_postproc(self): 
+        table = PrettyTable()
+        table.field_names = ["Mean","Standard Deviation"]
+        for qoi in self.internal_qois: 
+            u_out = qoi.get_response()[0]
+            n = self.solver.samples.n
+            qoi.mean = np.dot(u_out,self.solver.samples.weights)
+            qoi.stddev = np.sqrt(np.dot(u_out**2,self.solver.samples.weights)) 
+            table.add_row([qoi.mean,qoi.stddev])
+        self.mean = self.internal_qois[0].mean
+        self.stddev = self.internal_qois[0].stddev
+        print_table(table)
+
 
     @classmethod
     def default_yml(cls,d):

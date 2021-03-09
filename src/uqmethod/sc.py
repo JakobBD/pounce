@@ -78,7 +78,7 @@ class Sc(UqMethod):
             u_out = qoi.get_response()[0]
             n = self.solver.samples.n
             qoi.mean = np.dot(u_out,self.solver.samples.weights)
-            qoi.stddev = np.sqrt(np.dot(u_out**2,self.solver.samples.weights)) 
+            qoi.stddev = np.sqrt(np.dot(u_out**2,self.solver.samples.weights) - qoi.mean**2.)
             table.add_row([qoi.mean,qoi.stddev])
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev

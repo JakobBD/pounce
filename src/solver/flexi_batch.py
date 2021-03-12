@@ -169,10 +169,8 @@ class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
         "prmfile": "dummy_unused"
         }
 
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        # this is also dirty: index of BodyForce
-        self.string_in_stdout = 1
+    # this is dirty: index of BodyForce
+    string_in_stdout = 1 
 
 
 

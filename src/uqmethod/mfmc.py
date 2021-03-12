@@ -138,7 +138,7 @@ class Mfmc(UqMethod):
         QoILoc = SolCls.QoI
         qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
         qoi.participants = [model]
-        qoi.name = model.name + " " + qoi.__class__.name().replace(model.__class__.name()+"_", "")
+        qoi.name = model.name + " " + qoi.qoiname
         qoi.samples = model.samples
         if qoi.optimize: 
             model.n_optimize += 1
@@ -173,9 +173,9 @@ class Mfmc(UqMethod):
 
     @staticmethod
     def get_rho(n,qoi,qoi_hfm):
-        qoi.u_sum      = np.sum(qoi.u[:n])
-        qoi.u_sq_sum   = np.sum(qoi.u[:n]**2)
-        qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n])
+        qoi.u_sum      = np.sum(qoi.u[:n],axis=0)
+        qoi.u_sq_sum   = np.sum(qoi.u[:n]**2,axis=0)
+        qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n],axis=0)
 
         qoi.sigma_sq = (qoi.u_sq_sum - (qoi.u_sum**2 / n)) / (n-1)
         tmp = qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n
@@ -206,9 +206,6 @@ class Mfmc(UqMethod):
     def prepare_next_iteration(self):
         if len(self.iterations) == 1: 
             for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
-                p_print("Evaluate QoI " + qoi_hfm.name.replace(self.hfm.name+" ",""))
-                table = PrettyTable()
-                table.field_names = ["QoI","1-Rho^2","mean work"]
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
@@ -217,14 +214,20 @@ class Mfmc(UqMethod):
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
-                    table.add_row([qoi.name,qoi.om_rho_sq,qoi.work_mean])
-                print_table(table)
+                if qoi_hfm.do_print:
+                    p_print("Evaluate QoI " + qoi_hfm.qoiname)
+                    table = PrettyTable()
+                    for model in self.all_models: 
+                        qoi = model.internal_qois[i]
+                        table.add_row([model.name,qoi.om_rho_sq,qoi.work_mean])
+                    table.field_names = ["Model","1-Rho^2","mean work"]
+                    print_table(table)
 
             self.select_models()
             self.qois_optimize = [m.qoi_opt for m in self.models_opt]
-            m1, m2 = self.qois_optimize[0:2]
-            for m, mn in zip( self.qois_optimize[:-1], self.qois_optimize[1:] ):
-                m.r = np.sqrt(m1.work_mean * (m.rho_sq - mn.rho_sq)/(m.work_mean * (1. - m2.rho_sq)))
+            q1, q2 = self.qois_optimize[0:2]
+            for q, qn in zip( self.qois_optimize[:-1], self.qois_optimize[1:] ):
+                q.r = np.sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
             # remove dummy at the end
             self.models_opt.pop(-1) 
             self.qois_optimize.pop(-1) 
@@ -237,24 +240,31 @@ class Mfmc(UqMethod):
                 self.sampling.n_previous = self.sampling.n
             
             # get mlopt and alpha
-            rv = [m.r         for m in self.qois_optimize]
-            wv = [m.work_mean for m in self.qois_optimize]
+            rv = [q.r         for q in self.qois_optimize]
+            wv = [q.work_mean for q in self.qois_optimize]
             mlopt1 = self.total_work/np.dot(rv, wv)
             if self.reuse_warmup_samples: 
                 self.work_warmup = 0.
             else: 
                 self.work_warmup = np.sum(wv)*self.n_warmup_samples
+
+            for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
+                for model in self.models_opt: 
+                    qoi = model.internal_qois[i]
+                    qoi.alpha = np.sqrt(qoi.rho_sq * qoi_hfm.sigma_sq / qoi.sigma_sq)
+
             p_print("\nSelected Models and optimal number of samples:")
             table = PrettyTable()
-            table.field_names = ["QoI","M_opt","alpha"]
-            for m in self.qois_optimize:
-                m.mlopt = int(np.floor(mlopt1*m.r))
-                m.samples.n = max(m.mlopt - m.samples.n_previous, 0)
-                m.alpha = np.sqrt(m.rho_sq * self.hfm.qoi_opt.sigma_sq / m.sigma_sq)
-                table.add_row([m.name,m.mlopt,m.alpha])
+            table.field_names = ["Model","M_opt","alpha"]
+            for m in self.models_opt: 
+                q = m.qoi_opt
+                q.mlopt = int(np.floor(mlopt1*q.r))
+                q.samples.n = max(q.mlopt - q.samples.n_previous, 0)
+                table.add_row([m.name,q.mlopt,q.alpha])
             print_table(table)
-            self.total_cost = np.dot(wv, [m.mlopt for m in self.qois_optimize])
-            p_print("\nEstimated actual required total work: {}".format(self.total_cost))
+            self.total_cost = np.dot(wv, [q.mlopt for q in self.qois_optimize])
+            print()
+            p_print("Estimated actual required total work: {}".format(self.total_cost))
             p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
         else: 
             for model in self.models_opt: 
@@ -266,29 +276,35 @@ class Mfmc(UqMethod):
                     else: 
                         qoi.u = qoi.get_response()[0]
             n = self.hfm.samples.n + self.hfm.samples.n_previous
-            if self.update_alpha: 
-                qoi_hfm = self.hfm.qoi_opt
-                for m in self.models_opt:
-                    if model.is_auxiliary: 
-                        continue
-                    q = m.qoi_opt
-                    self.get_rho(n,q,qoi_hfm)
-                    q.alpha = np.sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
-            u = self.hfm.qoi_opt.u[:n+1]#.astype(np.float64)
-            self.mean = np.mean(u)
-            self.var = np.var(u,ddof=1)
-            for mp, m in zip(self.models_opt[:-1], self.models_opt[1:]):
-                n   =  m.samples.n +  m.samples.n_previous
-                u   = m.qoi_opt.u[:n+1]#.astype(np.float64)
-                np_ = mp.samples.n + mp.samples.n_previous
-                up  = m.qoi_opt.u[:np_+1]#.astype(np.float64)
-                self.mean += m.qoi_opt.alpha * (np.mean(u) - np.mean(up))
-                self.var  += m.qoi_opt.alpha * (np.var(u,ddof=1) - np.var(up,ddof=1))
-            self.std = np.sqrt(self.var)
-            print()
-            p_print("MEAN: {}".format(self.mean))
-            p_print("STD:  {}".format(self.std))
-            print()
+
+            table = PrettyTable()
+            table.field_names = ["QoI","Mean","Standard Deviation"]
+            for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
+                if self.update_alpha: 
+                    for m in self.models_opt:
+                        if model.is_auxiliary: 
+                            continue
+                        q = m.internal_qois[i]
+                        self.get_rho(n,q,qoi_hfm)
+                        q.alpha = np.sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
+                u = qoi_hfm.u[:n+1]#.astype(np.float64)
+                qoi_hfm.mean = np.mean(u,axis = 0)
+                qoi_hfm.var = np.var(u,axis=0,ddof=1)
+                for mp, m in zip(self.models_opt[:-1], self.models_opt[1:]):
+                    q = m.internal_qois[i]
+                    n   =  m.samples.n +  m.samples.n_previous
+                    u   = q.u[:n+1]#.astype(np.float64)
+                    np_ = mp.samples.n + mp.samples.n_previous
+                    up  = q.u[:np_+1]#.astype(np.float64)
+                    qoi_hfm.mean += q.alpha * (np.mean(u,axis = 0) - np.mean(up,axis=0))
+                    qoi_hfm.var  += q.alpha * (np.var(u,axis=0,ddof=1) - np.var(up,axis=0,ddof=1))
+                qoi_hfm.stddev = np.sqrt(qoi_hfm.var)
+                qoi_hfm.write_to_file()
+                if qoi_hfm.do_print:
+                    table.add_row([qoi_hfm.qoiname,qoi_hfm.mean,qoi_hfm.stddev])
+            self.mean   = self.hfm.qoi_opt.mean
+            self.stddev = self.hfm.qoi_opt.stddev
+            print_table(table)
            
 
     def select_models(self): 

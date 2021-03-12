@@ -1,0 +1,41 @@
+general:
+  project_name: keil
+
+uq_method:
+  _type: mlmc
+  total_work: 100.
+  use_ci: True
+  ci_conf_tot: 0.95
+  n_max_iter: 2
+
+sampling:
+  reset_seed: false
+
+solver:
+  _type: internal
+  n_warmup_samples : 10
+  levels:
+  #- name: hf
+  - n_pts: 4
+  - n_pts: 8
+  - n_pts: 16
+  - n_pts: 32
+  #- name: lf4
+    #n_pts: 4
+
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: standard
+  optimize: True
+- _type: double
+  do_write: True
+
+

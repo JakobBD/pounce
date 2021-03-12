@@ -57,8 +57,8 @@ class BaseClass():
         """
         subclass_key=class_dict["_type"]
         subcls=cls.subclass(subclass_key)
-        p_print("Chosen subclass of "+yellow(cls.name())
-                +" is "+yellow(subcls.name())+".")
+        p_print("Chosen subclass of "+yellow(cls.cname())
+                +" is "+yellow(subcls.cname())+".")
         return subcls(class_dict,*args)
 
     @classmethod
@@ -70,11 +70,11 @@ class BaseClass():
         for sc in cls.__subclasses__():
             cls.recursive_subclasses(coll,sc) 
         for subclass in coll: 
-            if string == subclass.name():
+            if string == subclass.cname():
                 return subclass
         print(coll)
         raise InputPrmError(
-            "'{}' is not a valid {}".format(string,cls.name()))
+            "'{}' is not a valid {}".format(string,cls.cname()))
 
     @classmethod
     def recursive_subclasses(cls,collection,subclass): 
@@ -117,11 +117,11 @@ class BaseClass():
             for key in keys: 
                 d.update(arg.defaults_class(key))
         if with_type:
-            d.update({"_type": cls.name()})
+            d.update({"_type": cls.cname()})
         return d
 
     @classmethod
-    def name(cls):
+    def cname(cls):
         """
         translate class name from camel case (MyClass) to 
         underscore (my_class) for consistent yml input

@@ -109,7 +109,7 @@ class Mlmc(UqMethod):
             SolCls = Solver.subclass(prms["solver"]["_type"])
             QoILoc = SolCls.QoI
             qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,SolCls,self)
-            qoi.name = "combinelevels"
+            # qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
             if qoi.internal: 
                 self.internal_qois.append(qoi)
@@ -149,7 +149,8 @@ class Mlmc(UqMethod):
         QoILoc = SolCls.QoI
         qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
         qoi.participants = level.sublevels
-        qoi.name = "postproc_"+level.name
+        qoi.name = level.name+"_"+qoi.qoiname
+        qoi.levelname = level.name
 
         qoi.samples = level.samples
         if qoi.optimize: 
@@ -237,7 +238,7 @@ class Mlmc(UqMethod):
         if not self.internal_qois:
             return
         table = PrettyTable()
-        table.field_names = ["Mean","Standard Deviation"]
+        table.field_names = ["QoI","Mean","Standard Deviation"]
         for qoi in self.internal_qois: 
             qoi.mean, qoi.variance = 0., 0.
             for p in qoi.participants: 
@@ -249,7 +250,9 @@ class Mlmc(UqMethod):
                 qoi.mean += p.mean
                 qoi.variance += p.variance
             qoi.stddev = safe_sqrt(qoi.variance)
-            table.add_row([qoi.mean,qoi.stddev])
+            if qoi.do_print:
+                table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+            qoi.write_to_file()
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev
         print_table(table)
@@ -284,7 +287,7 @@ class Mlmc(UqMethod):
         self.internal_iteration_postproc()
 
         table = PrettyTable()
-        table.field_names = ["SigmaSq","mean work","ML_opt",
+        table.field_names = ["Level","SigmaSq","mean work","ML_opt",
                              "finished Samples","new Samples"]
 
         # build sum over levels of sqrt(sigma^2/w)
@@ -342,8 +345,9 @@ class Mlmc(UqMethod):
             else: 
                 qoi.samples.n = 0
 
-            table.add_row([qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
-                           qoi.samples.n_previous, qoi.samples.n])
+            if qoi.do_print:
+                table.add_row([qoi.levelname, qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
+                               qoi.samples.n_previous, qoi.samples.n])
 
         print_table(table)
 

@@ -24,10 +24,7 @@ class Internal(Solver):
             "exe_path" : "dummy_unused"
                 }
 
-        def __init__(self,*args,**kwargs): 
-            super().__init__(*args,**kwargs)
-            self.internal = True
-
+        internal = True
 
         def get_response(self,s=None): 
             return [np.array(p.u) for p in self.participants]
@@ -108,5 +105,31 @@ class Internal(Solver):
 
 class InternalStandard(Internal.QoI):
     pass
+
+
+class InternalDouble(Internal.QoI):
+
+    do_print = False
+    defaults_ = {
+        "do_write" : False
+         }
+
+    def get_response(self,s=None): 
+        def double(a): 
+            a_ext = np.array(a)[:,np.newaxis]
+            return np.concatenate((a_ext,a_ext),axis=1)
+        return [double(p.u) for p in self.participants]
+
+    def write_to_file(self): 
+        if self.do_write: 
+            self.outfilename = "output_" + self.qoiname + ".csv"
+            with open(self.outfilename,"w") as f: 
+                f.write("mean stddev")
+                for x, y in zip(self.mean,self.stddev): 
+                    f.write("\n"+str(x)+" "+str(y))
+
+
+
+
 
 

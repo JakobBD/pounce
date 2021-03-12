@@ -74,10 +74,10 @@ for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
             mse = 0.
             meanmean=0.
             est_mse = 0.
-            if simulation.name() == "mlmc": 
+            if simulation.cname() == "mlmc": 
                 nsamples = [0 for l in simulation.levels]
                 nsamples_sq = [0 for l in simulation.levels]
-            elif simulation.name() == "mfmc": 
+            elif simulation.cname() == "mfmc": 
                 nsamples = [0 for l in simulation.models]
                 nsamples_sq = [0 for l in simulation.models]
             for i in range(n_runs): 
@@ -86,10 +86,10 @@ for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
                 globels.sim = sim_current
                 # run simulation
                 sim_current.run()
-                if sim_current.name() == "mfmc": 
+                if sim_current.cname() == "mfmc": 
                     mean_sim    = sim_current.mean
                     est_mse_sim = np.sqrt(sim_current.v_opt)
-                elif sim_current.name() == "mlmc": 
+                elif sim_current.cname() == "mlmc": 
                     mean_sim    = sim_current.mean
                     est_mse_sim = sim_current.est_eps
                 else: 
@@ -99,11 +99,11 @@ for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
                 # mse += (mean_sim-0.25)**2.
                 meanmean += (mean_sim-0.25)
                 est_mse += est_mse_sim
-                if sim_current.name() == "mlmc": 
+                if sim_current.cname() == "mlmc": 
                     for il, l in enumerate(sim_current.levels): 
                         nsamples[il] += l.samples.n_previous
                         nsamples_sq[il] += l.samples.n_previous**2
-                elif sim_current.name() == "mfmc": 
+                elif sim_current.cname() == "mfmc": 
                     for il, l in enumerate(sim_current.models): 
                         nsamples[il] += l.samples.n_previous + l.samples.n
                         nsamples_sq[il] += (l.samples.n_previous + l.samples.n)**2
@@ -120,7 +120,7 @@ for folder,prmfile,n_variants in zip(folders,prmfiles,n_var_all):
             est_mse_vec.append(est_mse/n_runs)
             meanmean_vec.append(meanmean)
 
-        if sim_current.name() == "mfmc": 
+        if sim_current.cname() == "mfmc": 
             work_vec = [w+sim_current.work_warmup for w in work_vec]
 
         write("mse",work_vec,mse_vec)

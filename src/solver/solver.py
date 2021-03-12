@@ -73,9 +73,8 @@ class Solver(Batch):
         "solver_prms" :  "NODEFAULT"
         }
 
-    def __init__(self,*args):
-        super().__init__(*args)
-        self.multi_sample=True
+    multi_sample = True
+    is_surrogate = False
 
 
 class QoI(Batch):
@@ -84,10 +83,9 @@ class QoI(Batch):
     to the chosen Solver. 
     """
 
-    def __init__(self,*args):
-        super().__init__(*args)
-        self.multi_sample=False
-        self.internal=False
+    multi_sample=False
+    internal=False
+    do_print=True
 
     @classmethod
     def create_by_stage(cls,stage_name,prms,SolCls,*args): 
@@ -106,8 +104,9 @@ class QoI(Batch):
         else: 
             prms_loc=prms
         tmp = prms_loc["_type"]
-        prms_loc["_type"] = SolCls.name()+"_"+prms_loc["_type"]
+        prms_loc["_type"] = SolCls.cname()+"_"+prms_loc["_type"]
         inst = cls.create(prms_loc,*args)
+        inst.qoiname = inst.cname().replace(SolCls.cname()+"_", "")
         prms_loc["_type"] = tmp
         if getattr(inst,"internal",False): 
             return inst
@@ -117,6 +116,7 @@ class QoI(Batch):
             raise Exception(method_name 
                 + " not found in class " + inst.__class__.__name__)
         inst.prepare=getattr(inst,method_name,None)
+
         return inst
 
     def get_work_mean(self):
@@ -131,6 +131,12 @@ class QoI(Batch):
                                / (self.samples.n+self.samples.n_previous))
         else:
             self.work_mean = work_mean
+
+    def write_to_file(self): 
+        """ 
+        optional for internal QoIs: Write result to file
+        """
+        pass 
 
 
 from . import *

@@ -58,7 +58,6 @@ class Sc(UqMethod):
         for sub_dict in prms["qois"]: 
             qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, SolverLoc, self)
             qoi.participants = [self.solver]
-            qoi.name = "postproc"
             if qoi.internal: 
                 self.internal_qois.append(qoi)
             else: 
@@ -73,13 +72,15 @@ class Sc(UqMethod):
 
     def internal_iteration_postproc(self): 
         table = PrettyTable()
-        table.field_names = ["Mean","Standard Deviation"]
+        table.field_names = ["QoI","Mean","Standard Deviation"]
         for qoi in self.internal_qois: 
             u_out = qoi.get_response()[0]
             n = self.solver.samples.n
-            qoi.mean = np.dot(u_out,self.solver.samples.weights)
-            qoi.stddev = np.sqrt(np.dot(u_out**2,self.solver.samples.weights) - qoi.mean**2.)
-            table.add_row([qoi.mean,qoi.stddev])
+            qoi.mean = np.dot(np.transpose(u_out),self.solver.samples.weights)
+            qoi.stddev = np.sqrt(np.dot(np.transpose(u_out**2),self.solver.samples.weights) - qoi.mean**2.)
+            if qoi.do_print:
+                table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+            qoi.write_to_file()
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev
         print_table(table)

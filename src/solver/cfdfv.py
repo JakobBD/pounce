@@ -39,9 +39,7 @@ class Cfdfv(Solver):
             "exe_path" : "dummy_unused"
             }
 
-        def __init__(self,*args,**kwargs): 
-            super().__init__(*args,**kwargs)
-            self.internal = True
+        internal = True
 
 
         def get_response(self,s=None): 
@@ -162,13 +160,9 @@ class Cfdfv(Solver):
 
 class CfdfvCl(Cfdfv.QoI):
 
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self.string_in_stdout = "cl"
+    string_in_stdout = "cl"
 
 
 class CfdfvCd(Cfdfv.QoI):
 
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self.string_in_stdout = "cd"
+    string_in_stdout = "cd"

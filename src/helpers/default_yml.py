@@ -74,7 +74,7 @@ class DefaultFile():
         """
         subclass = self.inquire_subclass(parent)
         # add defaults for this class to dict with all defaults
-        self.all_defaults[parent.name()] = subclass.defaults(*self.subclasses)
+        self.all_defaults[parent.cname()] = subclass.defaults(*self.subclasses)
         # add to subclasses list, as might influence other class defaults
         self.subclasses.append(subclass)
         return subclass
@@ -82,7 +82,7 @@ class DefaultFile():
     def get_machine(self): 
         machine = self.process_subclass(Machine)
         self.all_defaults["machine"] = machine.defaults()
-        if not machine.name() == "local": 
+        if not machine.cname() == "local": 
             if self.inquire("Perform post-processing locally?"):
                 MachineLocal = Machine.subclass("local")
                 self.all_defaults["machine_postproc"] = MachineLocal.defaults()
@@ -105,10 +105,10 @@ class DefaultFile():
         """
         Asks for user input to choose one of the available subclasses
         """
-        msg = "Please choose a "+parent_class.name()+":"
+        msg = "Please choose a "+parent_class.cname()+":"
         if description: 
             msg = description+": "+msg
-        subclasses = {c.name(): c for c in parent_class.__subclasses__()}
+        subclasses = {c.cname(): c for c in parent_class.__subclasses__()}
         subclass_name,_=pick(list(subclasses.keys()), msg)
         return subclasses[subclass_name]
 

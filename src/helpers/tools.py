@@ -11,9 +11,9 @@ def safe_sqrt(arg,silent=False):
     """
     for sqrt of negative values, print a warning instead of crashing.
     """
-    if arg >= 0.:
+    if np.all(arg >= 0.):
         return np.sqrt(arg)
-    elif abs(arg)>1.E-13:
+    elif np.any(abs(arg)>1.E-13):
         info=inspect.getouterframes( inspect.currentframe() )[1]
         p_print(red("Warning: ")+"Sqrt received invalid value "
                 +str(arg)+". Is set to 0.")
@@ -23,7 +23,7 @@ def safe_sqrt(arg,silent=False):
         p_print("file:     "+str(info.filename))
         p_print("line no:  "+str(info.lineno)+"\n")
         indent_out()
-    return 0.
+    return np.sqrt(np.maximum(0.,arg))
 
 class Empty():
     pass

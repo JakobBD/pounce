@@ -5,6 +5,7 @@ import glob
 
 from .solver import Solver,QoI
 from .cfdfv import Cfdfv
+from .internal import Internal
 from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
@@ -172,6 +173,43 @@ class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
     # this is dirty: index of BodyForce
     string_in_stdout = 1 
 
+
+class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
+    """ 
+    first parent is dominant, second adds it to their subclasses dict
+    """
+    defaults_ = {
+        "exe_path" : "NODEFAULT",
+        "prmfile": "dummy_unused",
+        "do_write" : True,
+        "refstate" : "NODEFAULT"
+        }
+
+    do_print = False
+
+    def get_response(self,s=None): 
+        u_out = []
+        for p in self.participants:
+            statefilename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
+            run_command = self.exe_path + " " + statefilename
+            # TODO: very dirty still...
+            with open("dummy_log_file",'w+') as f:
+                subprocess.run(run_command,stdout=f,shell=True)
+            with h5py.File(statefilename, 'r') as h5f:
+                    dset = h5f['SwimCP'][()]
+            pres =np.array(dset)
+            u_inf = np.array(self.refstate)
+            cp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
+            u_out.append(cp)
+        return u_out
+
+    def write_to_file(self): 
+        if self.do_write: 
+            self.outfilename = "output_" + self.qoiname + ".csv"
+            with open(self.outfilename,"w") as f: 
+                f.write("mean stddev")
+                for x, y in zip(self.mean,self.stddev): 
+                    f.write("\n"+str(x)+" "+str(y))
 
 
 class FlexiBatchFieldSolution(FlexiBatch.QoI):

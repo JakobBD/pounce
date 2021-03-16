@@ -1,5 +1,6 @@
 general:
   project_name: keil
+  stdout_log_file: stdout_log.dat
 
 uq_method:
   _type: mlmc

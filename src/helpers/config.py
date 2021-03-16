@@ -1,6 +1,8 @@
 # ---------- external imports ----------
 import yaml
 import pickle
+import sys
+import re
 # ---------- local imports -------------
 from uqmethod.uqmethod import UqMethod
 from helpers.baseclass import BaseClass
@@ -27,6 +29,10 @@ def config(prmfile):
     sim = UqMethod.create(prms["uq_method"])
     sim.cfg = GeneralConfig(prms["general"])
 
+    if sim.cfg.stdout_log_file: 
+        sys.stdout = Logger(sim.cfg.stdout_log_file)
+
+
     # in the multilevel case, some further setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
     sim.setup(prms)
@@ -52,6 +58,10 @@ def restart(prmfile=None):
 
     globels.sim = sim
     sim.cfg.copy_to_globels()
+
+    if sim.cfg.stdout_log_file: 
+        sys.stdout = Logger(sim.cfg.stdout_log_file)
+
     return sim
 
 
@@ -94,7 +104,8 @@ class GeneralConfig(BaseClass):
     defaults_ = {
         "archive_level" : 0,
         "do_pickle" : True,
-        "project_name" : "NODEFAULT"
+        "project_name" : "NODEFAULT",
+        "stdout_log_file": None
         }
 
     def __init__(self,*args): 
@@ -105,3 +116,21 @@ class GeneralConfig(BaseClass):
         globels.archive_level=self.archive_level
         globels.project_name=self.project_name
         globels.do_pickle=self.do_pickle
+
+class Logger(object):
+   def __init__(self,filename):
+      self.terminal = sys.stdout
+      self.log = open(filename, "a")
+      self.ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+   def write(self, message):
+      self.terminal.write(message)
+      logmsg = self.ansi_escape.sub('', message)
+      self.log.write(logmsg)
+
+   def flush(self):
+      #this flush method is needed for python 3 compatibility.
+      #this handles the flush command by doing nothing.
+      #you might want to specify some extra behavior here.
+      pass
+

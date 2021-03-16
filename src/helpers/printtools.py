@@ -30,7 +30,6 @@ def blue  (text): return Bcolors.BLUE  +text+Bcolors.ENDC
 def yellow(text): return Bcolors.YELLOW+text+Bcolors.ENDC
 def cyan  (text): return Bcolors.CYAN  +text+Bcolors.ENDC
 
-
 indent=" "
 
 def indent_in():

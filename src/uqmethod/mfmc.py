@@ -240,8 +240,9 @@ class Mfmc(UqMethod):
             if self.reuse_warmup_samples: 
                 for m in self.all_models: 
                     m.samples.n_previous = m.samples.n
-                    # m.samples.n = 0
                 self.sampling.n_previous = self.sampling.n
+            for m in self.all_models: 
+                m.samples.n = 0
             
             # get mlopt and alpha
             rv = [q.r         for q in self.qois_optimize]

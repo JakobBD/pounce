@@ -251,8 +251,12 @@ class Mlmc(UqMethod):
                 qoi.mean += p.mean
                 qoi.variance += p.variance
             qoi.stddev = safe_sqrt(qoi.variance)
-            if qoi.do_print:
+            if isinstance(qoi.mean,(float,np.float)):
                 table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+            else:
+                table.add_row([qoi.qoiname + " (Int.)",
+                               qoi.integrate(qoi.mean),
+                               np.sqrt(qoi.integrate(qoi.variance))])
             qoi.write_to_file()
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev
@@ -346,9 +350,8 @@ class Mlmc(UqMethod):
             else: 
                 qoi.samples.n = 0
 
-            if qoi.do_print:
-                table.add_row([qoi.levelname, qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
-                               qoi.samples.n_previous, qoi.samples.n])
+            table.add_row([qoi.levelname, qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
+                           qoi.samples.n_previous, qoi.samples.n])
 
         print_table(table)
 

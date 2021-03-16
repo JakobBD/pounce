@@ -78,8 +78,12 @@ class Sc(UqMethod):
             n = self.solver.samples.n
             qoi.mean = np.dot(np.transpose(u_out),self.solver.samples.weights)
             qoi.stddev = np.sqrt(np.dot(np.transpose(u_out**2),self.solver.samples.weights) - qoi.mean**2.)
-            if qoi.do_print:
+            if isinstance(qoi.mean,(float,np.float)):
                 table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+            else:
+                table.add_row([qoi.qoiname + " (Int.)",
+                               qoi.integrate(qoi.mean),
+                               np.sqrt(qoi.integrate(qoi.stddev**2))])
             qoi.write_to_file()
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev

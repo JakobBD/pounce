@@ -85,7 +85,6 @@ class QoI(Batch):
 
     multi_sample=False
     internal=False
-    do_print=True
 
     @classmethod
     def create_by_stage(cls,stage_name,prms,SolCls,*args): 

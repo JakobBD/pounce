@@ -185,8 +185,6 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
         "refstate" : "NODEFAULT"
         }
 
-    do_print = False
-
     def get_response(self,s=None): 
         u_out = []
         for p in self.participants:

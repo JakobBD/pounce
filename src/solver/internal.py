@@ -109,7 +109,6 @@ class InternalStandard(Internal.QoI):
 
 class InternalDouble(Internal.QoI):
 
-    do_print = False
     defaults_ = {
         "do_write" : False
          }

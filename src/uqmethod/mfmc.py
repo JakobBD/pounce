@@ -2,6 +2,7 @@ import numpy as np
 import os
 import copy
 from prettytable import PrettyTable
+import collections
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -217,14 +218,14 @@ class Mfmc(UqMethod):
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
-                if qoi_hfm.do_print:
-                    p_print("Evaluate QoI " + qoi_hfm.qoiname)
-                    table = PrettyTable()
-                    for model in self.all_models: 
-                        qoi = model.internal_qois[i]
-                        table.add_row([model.name,qoi.om_rho_sq,qoi.work_mean])
-                    table.field_names = ["Model","1-Rho^2","mean work"]
-                    print_table(table)
+                add_str = " (Optimized)" if qoi_hfm is self.hfm.qoi_opt else ""
+                p_print("Evaluate QoI " + qoi_hfm.qoiname + add_str)
+                table = PrettyTable()
+                for model in self.all_models: 
+                    qoi = model.internal_qois[i]
+                    table.add_row([model.name,qoi.om_rho_sq,qoi.work_mean])
+                table.field_names = ["Model","1-Rho^2","mean work"]
+                print_table(table)
 
             self.select_models()
             self.qois_optimize = [m.qoi_opt for m in self.models_opt]
@@ -303,8 +304,12 @@ class Mfmc(UqMethod):
                     qoi_hfm.var  += q.alpha * (np.var(u,axis=0,ddof=1) - np.var(up,axis=0,ddof=1))
                 qoi_hfm.stddev = np.sqrt(qoi_hfm.var)
                 qoi_hfm.write_to_file()
-                if qoi_hfm.do_print:
+                if isinstance(qoi_hfm.mean,(float,np.float)):
                     table.add_row([qoi_hfm.qoiname,qoi_hfm.mean,qoi_hfm.stddev])
+                else:
+                    table.add_row([qoi_hfm.qoiname + " (Int.)",
+                                   qoi_hfm.integrate(qoi_hfm.mean),
+                                   np.sqrt(qoi_hfm.integrate(qoi_hfm.var))])
             self.mean   = self.hfm.qoi_opt.mean
             self.stddev = self.hfm.qoi_opt.stddev
             print_table(table)

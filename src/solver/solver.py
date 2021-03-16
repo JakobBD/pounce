@@ -138,6 +138,13 @@ class QoI(Batch):
         """
         pass 
 
+    def integrate(self,qty): 
+        """
+        For vectorial internal QoIs: integration rule to obtain norm
+        Scalar QoIs need not be integrated, hence scalar value is simplyy returned.
+        """
+        return qty
+
 
 from . import *
 

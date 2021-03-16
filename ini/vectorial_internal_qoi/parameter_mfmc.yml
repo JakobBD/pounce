@@ -53,8 +53,8 @@ machine:
 
 qois:
 - _type: standard
-  optimize: True
 - _type: double
   do_write: True
+  optimize: True
 
 

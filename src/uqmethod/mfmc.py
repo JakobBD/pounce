@@ -181,6 +181,9 @@ class Mfmc(UqMethod):
         tmp = qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n
         qoi.rho_sq = tmp**2 / (qoi.sigma_sq * qoi_hfm.sigma_sq * (n-1)**2)
 
+        qoi.sigma_sq = qoi.integrate(qoi.sigma_sq)
+        qoi.rho_sq   = qoi.integrate(qoi.rho_sq)
+
 
 
     # @classmethod

@@ -196,6 +196,7 @@ class Mlmc(UqMethod):
                 qoi.u_coarse_sq_sum += sum(u_coarse**2)
                 qoi.du_sq_sum       += sum([(f-c)**2 for f,c in zip(u_fine,u_coarse)])
                 qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
+                qoi.SigmaSq = qoi.integrate(qoi.SigmaSq)
                 if self.use_ci: 
                     # TODO: hack for convtest
                     if qoi.samples.n_previous == 0: 

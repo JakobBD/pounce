@@ -128,6 +128,9 @@ class InternalDouble(Internal.QoI):
                 for x, y in zip(self.mean,self.stddev): 
                     f.write("\n"+str(x)+" "+str(y))
 
+    def integrate(self,qty): 
+        return np.mean(qty)
+
 
 
 

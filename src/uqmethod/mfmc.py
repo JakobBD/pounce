@@ -263,9 +263,11 @@ class Mfmc(UqMethod):
             table.field_names = ["Model","M_opt","alpha"]
             for m in self.models_opt: 
                 q = m.qoi_opt
-                q.mlopt = int(np.floor(mlopt1*q.r))
+                mlopt = mlopt1*q.r
+                q.mlopt = int(round(mlopt))
                 q.samples.n = max(q.mlopt - q.samples.n_previous, 0)
-                table.add_row([m.name,q.mlopt,q.alpha])
+                mlopt_print = q.mlopt if q.mlopt > 1 else mlopt
+                table.add_row([m.name,mlopt_print,q.alpha])
             print_table(table)
             self.total_cost = np.dot(wv, [q.mlopt for q in self.qois_optimize])
             print()
@@ -280,7 +282,7 @@ class Mfmc(UqMethod):
                         qoi.u = np.concatenate((qoi.u,qoi.get_response()[0]))
                     else: 
                         qoi.u = qoi.get_response()[0]
-            n = self.hfm.samples.n + self.hfm.samples.n_previous
+            n_hfm = self.hfm.samples.n + self.hfm.samples.n_previous
 
             table = PrettyTable()
             table.field_names = ["QoI","Mean","Standard Deviation"]
@@ -290,9 +292,9 @@ class Mfmc(UqMethod):
                         if model.is_auxiliary: 
                             continue
                         q = m.internal_qois[i]
-                        self.get_rho(n,q,qoi_hfm)
+                        self.get_rho(n_hfm,q,qoi_hfm)
                         q.alpha = np.sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
-                u = qoi_hfm.u[:n+1]#.astype(np.float64)
+                u = qoi_hfm.u[:n_hfm+1]#.astype(np.float64)
                 qoi_hfm.mean = np.mean(u,axis = 0)
                 qoi_hfm.var = np.var(u,axis=0,ddof=1)
                 for mp, m in zip(self.models_opt[:-1], self.models_opt[1:]):

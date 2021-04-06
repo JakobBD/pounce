@@ -16,6 +16,8 @@ class Cfdfv(Solver):
     executable flexibatch and the according post-processing tools.
     """
 
+    cname = "cfdfv"
+
     defaults_ = {
         "prmfile" : "parameter_cfdfv.ini",
         "solver_prms" : {
@@ -34,6 +36,8 @@ class Cfdfv(Solver):
         """ 
         Parent class for all FLEXI QoI's 
         """
+
+        stages = {"all"}
 
         defaults_ = {
             "exe_path" : "dummy_unused"
@@ -157,12 +161,26 @@ class Cfdfv(Solver):
 
 
 
+class Cfdfv2(Cfdfv): 
+
+    cname = "cfdfv2"
+    stage = "2"
+
+    def prepare(self):
+        print("hello")
+        super().__init(self)
+
+
 
 class CfdfvCl(Cfdfv.QoI):
+
+    cname = "cl"
 
     string_in_stdout = "cl"
 
 
 class CfdfvCd(Cfdfv.QoI):
+
+    cname = "cd"
 
     string_in_stdout = "cd"

@@ -13,6 +13,8 @@ class PythonDummyBatch(Solver):
     I/O via HDF5. 
     """
 
+    cname = "python_dummy_batch"
+
     defaults_ = {
         "solver_prms" : {
             "nPoints" : "NODEFAULT"
@@ -80,8 +82,14 @@ class PythonDummyBatchIntegral(PythonDummyBatch.QoI):
     will be renamed to "prepare" as part of the create_by_stage
     routine. 
     """
+    stages = set()
 
-    def prepare_iteration_postproc(self):
+
+class PythonDummyBatchIntegralIterPostproc(PythonDummyBatchIntegral):
+
+    stages = {"iteration_postproc"}
+
+    def prepare(self):
         run_command = "python3 "+self.exe_path
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
@@ -93,7 +101,12 @@ class PythonDummyBatchIntegral(PythonDummyBatch.QoI):
             run_command += ' ' + filename
         self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self):
+
+class PythonDummyBatchIntegralSimuPostproc(PythonDummyBatchIntegral):
+
+    stages = {"simulation_postproc"}
+
+    def prepare(self):
         self.args=[p.output_filename for p in self.participants]
         self.run_commands = ["python3 " + self.exe_path \
                              + " " + " ".join(self.args)]

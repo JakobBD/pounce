@@ -16,6 +16,8 @@ class Sc(UqMethod):
     Stochastic Collocation (non-adaptive)
     """
 
+    cname = "sc"
+
     SamplingMethod = Collocation
 
     def __init__(self, input_prm_dict):
@@ -56,7 +58,7 @@ class Sc(UqMethod):
 
         self.internal_qois = []
         for sub_dict in prms["qois"]: 
-            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, SolverLoc, self)
+            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
             qoi.participants = [self.solver]
             if qoi.internal: 
                 self.internal_qois.append(qoi)
@@ -79,9 +81,9 @@ class Sc(UqMethod):
             qoi.mean = np.dot(np.transpose(u_out),self.solver.samples.weights)
             qoi.stddev = np.sqrt(np.dot(np.transpose(u_out**2),self.solver.samples.weights) - qoi.mean**2.)
             if isinstance(qoi.mean,(float,np.float)):
-                table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+                table.add_row([qoi.cname,qoi.mean,qoi.stddev])
             else:
-                table.add_row([qoi.qoiname + " (Int.)",
+                table.add_row([qoi.cname + " (Int.)",
                                qoi.integrate(qoi.mean),
                                np.sqrt(qoi.integrate(qoi.stddev**2))])
             qoi.write_to_file()

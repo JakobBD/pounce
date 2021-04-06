@@ -19,6 +19,8 @@ class Hawk(Machine):
     Definition of HPE Hawk machine.
     """
 
+    cname = "hawk"
+
     defaults_={
         "walltime_factor" : 1.2,
         "n_max_cores" : 10000,

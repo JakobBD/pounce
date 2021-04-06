@@ -7,9 +7,13 @@ class LinearInterpolation(SurrogateModel):
     """
     Only works for one stochastic variable!
     """
-    pass
+
+    cname = "linear_interpolation"
 
 class LinearInterpolationStandard(LinearInterpolation.QoI):
+
+    cname = "standard"
+    stages = {"all"}
 
     def get_response(self,s=None): 
         own_model, model_in, qoi_in = self.participants

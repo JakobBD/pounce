@@ -5,6 +5,7 @@ import types
 
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
+from helpers.tools import *
 # from uqmethod.uqmethod import UqMethod
 
 
@@ -59,6 +60,35 @@ class Batch(BaseClass):
             return "_run"+str(i)
 
 
+    @classmethod
+    def create_by_stage(cls,stage_name,prms,*args): 
+        """
+        Some batches contain functions for different stages. 
+        Here, the functions are renamed to the general "prepare" 
+        according to the respective stage string given in "stage_name".
+        QoI parameters are joined: some are given for all stages
+        (prms_other), others are stage-specific (prms_loc).
+        """
+        if "stages" in prms:
+            prms_loc=prms["stages"][stage_name]
+            prms_other=copy.deepcopy(prms)
+            del prms_other["stages"]
+            prms_loc.update(prms_other)
+        else: 
+            prms_loc=prms
+        qoiname = prms_loc["_type"]
+        QoiSub =cls.subclass(qoiname)
+        # stagesub = QoiSub.subclass(stage_name,id_func=lambda c:c.stage)
+        stage_subs = []
+        QoiSub.recursive_subclasses(stage_subs,QoiSub) 
+        for StageSub in stage_subs: 
+            if StageSub.stages & {stage_name, "all"}:
+                return StageSub(prms_loc,*args)
+        raise InputPrmError(
+            "no {} subclass for stage {}".format(QoiSub,stage_name))
+
+
+
 class Solver(Batch):
     """
     Solver is the parent class to subclasses which include 
@@ -85,38 +115,6 @@ class QoI(Batch):
 
     multi_sample=False
     internal=False
-
-    @classmethod
-    def create_by_stage(cls,stage_name,prms,SolCls,*args): 
-        """
-        Some QoI's contain prepare functions for different stages. 
-        Here, the functions are renamed to the general "prepare" 
-        according to the respective stage string given in "stage_name".
-        QoI parameters are joined: some are given for all stages
-        (prms_other), others are stage-specific (prms_loc).
-        """
-        if "stages" in prms:
-            prms_loc=prms["stages"][stage_name]
-            prms_other=copy.deepcopy(prms)
-            del prms_other["stages"]
-            prms_loc.update(prms_other)
-        else: 
-            prms_loc=prms
-        tmp = prms_loc["_type"]
-        prms_loc["_type"] = SolCls.cname()+"_"+prms_loc["_type"]
-        inst = cls.create(prms_loc,*args)
-        inst.qoiname = inst.cname().replace(SolCls.cname()+"_", "")
-        prms_loc["_type"] = tmp
-        if getattr(inst,"internal",False): 
-            return inst
-
-        method_name = "prepare_" + stage_name
-        if method_name not in inst.__class__.__dict__:
-            raise Exception(method_name 
-                + " not found in class " + inst.__class__.__name__)
-        inst.prepare=getattr(inst,method_name,None)
-
-        return inst
 
     def get_work_mean(self):
         """

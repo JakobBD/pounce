@@ -16,6 +16,8 @@ class FlexiBatch(Solver):
     executable flexibatch and the according post-processing tools.
     """
 
+    cname = "flexi_batch"
+
     defaults_ = {
         "prmfile" : "parameter_flexi.ini",
         "solver_prms" : {
@@ -166,6 +168,11 @@ class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict
     """
+
+    cname = "cl_batch"
+
+    stages = {"all"}
+
     defaults_ = {
         "prmfile": "dummy_unused"
         }
@@ -178,6 +185,11 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict
     """
+
+    cname = "cp"
+
+    stages = {"all"}
+
     defaults_ = {
         "exe_path" : "NODEFAULT",
         "prmfile": "dummy_unused",
@@ -203,7 +215,7 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
 
     def write_to_file(self): 
         if self.do_write: 
-            self.outfilename = "output_" + self.qoiname + ".csv"
+            self.outfilename = "output_" + self.cname + ".csv"
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")
                 for x, y in zip(self.mean,self.stddev): 
@@ -222,7 +234,16 @@ class FlexiBatchFieldSolution(FlexiBatch.QoI):
     routine. 
     """
 
-    def prepare_iteration_postproc(self):
+    cname = "field_solution"
+
+    stages = set()
+
+
+class FlexiBatchFieldSolutionIterPostProc(FlexiBatchFieldSolution):
+
+    stages = {"iteration_postproc"}
+
+    def prepare(self):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         run_command = self.exe_path \
@@ -235,7 +256,11 @@ class FlexiBatchFieldSolution(FlexiBatch.QoI):
             run_command += " " + filename
         self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self):
+class FlexiBatchFieldSolutionSimuPostProc(FlexiBatchFieldSolution):
+
+    stages = {"simulation_postproc"}
+
+    def prepare(self):
         self.args=[p.output_filename for p in self.participants]
         self.run_commands = [self.exe_path \
                             + " " + " ".join(self.args)]
@@ -252,11 +277,19 @@ class FlexiBatchRecordPoints(FlexiBatch.QoI):
     routine. 
     """
 
-    defaults_ = {
+    cname = "record_points"
+
+    stages = set()
+
+    defaults_ = { # TODO: move to IterPostProc
         "time_span": [0.,1.E10]
         }
 
-    def prepare_iteration_postproc(self):
+class FlexiBatchRecordPointsIterPostProc(FlexiBatchRecordPoints):
+
+    stages = {"iteration_postproc"}
+
+    def prepare(self):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
         n_files = len(glob.glob(participants[0].project_name+"_RP_*.h5"))
@@ -275,7 +308,12 @@ class FlexiBatchRecordPoints(FlexiBatch.QoI):
                     run_command += " "+fn
         self.run_commands = [run_command]
 
-    def prepare_simulation_postproc(self):
+
+class FlexiBatchRecordPointsSimuPostProc(FlexiBatchRecordPoints):
+
+    stages = {"simulation_postproc"}
+
+    def prepare(self):
         self.args=[p.output_filename for p in self.participants]
         self.run_commands = [self.exe_path \
                             + " " + " ".join(self.args)]

@@ -34,6 +34,8 @@ class Mfmc(UqMethod):
     (convergence rate and work per sample are obtained empirically).
     """
 
+    cname = "mfmc"
+
     defaults_ = {
         # "tolerance" : None,
         "total_work" : "NODEFAULT",
@@ -137,9 +139,9 @@ class Mfmc(UqMethod):
         """
         SolCls = model.__class__
         QoILoc = SolCls.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
+        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
         qoi.participants = [model]
-        qoi.name = model.name + " " + qoi.qoiname
+        qoi.name = model.name + " " + qoi.cname
         qoi.samples = model.samples
         if qoi.optimize: 
             model.n_optimize += 1
@@ -219,7 +221,7 @@ class Mfmc(UqMethod):
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
                 add_str = " (Optimized)" if qoi_hfm is self.hfm.qoi_opt else ""
-                p_print("Evaluate QoI " + qoi_hfm.qoiname + add_str)
+                p_print("Evaluate QoI " + qoi_hfm.cname + add_str)
                 table = PrettyTable()
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
@@ -308,9 +310,9 @@ class Mfmc(UqMethod):
                 qoi_hfm.stddev = np.sqrt(qoi_hfm.var)
                 qoi_hfm.write_to_file()
                 if isinstance(qoi_hfm.mean,(float,np.float)):
-                    table.add_row([qoi_hfm.qoiname,qoi_hfm.mean,qoi_hfm.stddev])
+                    table.add_row([qoi_hfm.cname,qoi_hfm.mean,qoi_hfm.stddev])
                 else:
-                    table.add_row([qoi_hfm.qoiname + " (Int.)",
+                    table.add_row([qoi_hfm.cname + " (Int.)",
                                    qoi_hfm.integrate(qoi_hfm.mean),
                                    np.sqrt(qoi_hfm.integrate(qoi_hfm.var))])
             self.mean   = self.hfm.qoi_opt.mean

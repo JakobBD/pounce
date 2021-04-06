@@ -4,7 +4,7 @@ general:
 uq_method:
   _type: mlmc
   n_max_iter: 3
-  tolerance: 0.005
+  eps: 0.005
 
 sampling:
   reset_seed: false

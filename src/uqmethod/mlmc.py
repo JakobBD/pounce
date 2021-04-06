@@ -22,6 +22,8 @@ class Mlmc(UqMethod):
     (convergence rate and work per sample are obtained empirically).
     """
 
+    cname = "mlmc"
+
     defaults_ = {
         "n_max_iter" : "NODEFAULT",
         "eps" : None,
@@ -106,9 +108,8 @@ class Mlmc(UqMethod):
 
         self.internal_qois = []
         for i,sub_dict in enumerate(prms["qois"]): 
-            SolCls = Solver.subclass(prms["solver"]["_type"])
-            QoILoc = SolCls.QoI
-            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,SolCls,self)
+            QoILoc = Solver.subclass(prms["solver"]["_type"]).QoI
+            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
             # qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
             if qoi.internal: 
@@ -145,11 +146,10 @@ class Mlmc(UqMethod):
         set up quantity of interest for a level and make the 
         sublevels its participants
         """
-        SolCls = level.sublevels[0].__class__
-        QoILoc = SolCls.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, SolCls, self)
+        QoILoc = level.sublevels[0].__class__.QoI
+        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
         qoi.participants = level.sublevels
-        qoi.name = level.name+"_"+qoi.qoiname
+        qoi.name = level.name+"_"+qoi.cname
         qoi.levelname = level.name
 
         qoi.samples = level.samples
@@ -252,9 +252,9 @@ class Mlmc(UqMethod):
                 qoi.variance += p.variance
             qoi.stddev = safe_sqrt(qoi.variance)
             if isinstance(qoi.mean,(float,np.float)):
-                table.add_row([qoi.qoiname,qoi.mean,qoi.stddev])
+                table.add_row([qoi.cname,qoi.mean,qoi.stddev])
             else:
-                table.add_row([qoi.qoiname + " (Int.)",
+                table.add_row([qoi.cname + " (Int.)",
                                qoi.integrate(qoi.mean),
                                np.sqrt(qoi.integrate(qoi.variance))])
             qoi.write_to_file()

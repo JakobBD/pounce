@@ -105,7 +105,8 @@ class GeneralConfig(BaseClass):
         "archive_level" : 0,
         "do_pickle" : True,
         "project_name" : "NODEFAULT",
-        "stdout_log_file": None
+        "stdout_log_file": None,
+        "main_stages": ["main"]
         }
 
     def __init__(self,*args): 

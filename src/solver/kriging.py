@@ -7,9 +7,14 @@ from helpers import globels
 from .surrogate import SurrogateModel
 
 class Kriging(SurrogateModel): 
-    pass
+
+    cname = "kriging"
 
 class KrigingStandard(Kriging.QoI):
+
+    stages = {"all"}
+
+    cname = "standard"
 
     def get_response(self,s=None): 
         own_model, model_in, qoi_in = self.participants

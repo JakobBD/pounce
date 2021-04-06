@@ -12,6 +12,8 @@ class Internal(Solver):
     dummy solver. all compuations are carried out during the check_finished routine
     """
 
+    cname = "internal"
+
     defaults_ = {
         "solver_prms" : "dummy_unused",
         "exe_path" : "dummy_unused",
@@ -19,6 +21,8 @@ class Internal(Solver):
             }
 
     class QoI(QoI):
+
+        stages = {"all"}
 
         defaults_ = {
             "exe_path" : "dummy_unused"
@@ -104,10 +108,13 @@ class Internal(Solver):
 
 
 class InternalStandard(Internal.QoI):
-    pass
+
+    cname = "standard"
 
 
 class InternalDouble(Internal.QoI):
+
+    cname = "double"
 
     defaults_ = {
         "do_write" : False
@@ -121,7 +128,7 @@ class InternalDouble(Internal.QoI):
 
     def write_to_file(self): 
         if self.do_write: 
-            self.outfilename = "output_" + self.qoiname + ".csv"
+            self.outfilename = "output_" + self.cname + ".csv"
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")
                 for x, y in zip(self.mean,self.stddev): 

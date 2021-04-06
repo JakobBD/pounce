@@ -12,6 +12,8 @@ class Local(Machine):
     to very basic routines.
     """
 
+    cname = "local"
+
     defaults_={
         "mpi" : "NODEFAULT"
         }

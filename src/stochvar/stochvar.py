@@ -14,6 +14,8 @@ class Normal(StochVar):
     uses numpy and chaospy routines
     """
 
+    cname = "normal"
+
     defaults_ = {
         'mean' : 'NODEFAULT',
         'standard_deviation' : 'NODEFAULT',
@@ -34,6 +36,8 @@ class Uniform(StochVar):
     uniform distribution
     uses numpy and chaospy routines
     """
+
+    cname = "uniform"
 
     defaults_ = {
         'bounds' : 'NODEFAULT'

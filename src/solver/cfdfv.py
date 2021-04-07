@@ -18,6 +18,8 @@ class Cfdfv(Solver):
 
     cname = "cfdfv"
 
+    stages = {"all"}
+
     defaults_ = {
         "prmfile" : "parameter_cfdfv.ini",
         "solver_prms" : {

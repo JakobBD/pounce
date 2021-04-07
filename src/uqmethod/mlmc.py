@@ -64,36 +64,41 @@ class Mlmc(UqMethod):
         """
 
         SolverLoc = Solver.subclass(prms["solver"]["_type"])
-        MachineLoc = Machine.subclass(prms["machine"]["_type"])
+        # MachineLoc = Machine.subclass(prms["machine"]["_type"])
 
         # initialize StochVars
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
                                              SolverLoc)
 
-        # initialize sublevels
-        subs_fine = config.config_list("solver", prms, Solver.create, 
-                                       self, MachineLoc, sub_list_name="levels")
-        subs_coarse=[Empty()]
-        subs_coarse.extend(copy.deepcopy(subs_fine[:-1]))
-        # initialize levels and connect to sublevels
-        iterator=zip(range(1,len(subs_fine)+1),subs_fine,subs_coarse)
-        self.levels = [self.setup_level(*args) for args in iterator]
+        for i_stage, stage in enumerate(self.stages): 
+            # initialize sublevels
+            subs_fine = config.config_list("solver", prms, Solver.create_by_stage_from_list, i_stage, 
+                                           stage.name, self, stage.__class__, sub_list_name="levels")
+            subs_coarse=[Empty()]
+            subs_coarse.extend(copy.deepcopy(subs_fine[:-1]))
+            if i_stage == 0: 
+                samplers = [self.setup_samples(s.n_warmup_samples) for s in subs_fine]
+            # initialize levels and connect to sublevels
+            iterator=zip(range(1,len(subs_fine)+1),subs_fine,subs_coarse,samplers)
+            stage.levels = [self.setup_level(*args) for args in iterator]
 
-        #setup stages 
-        main_simu = MachineLoc(prms["machine"])
-        main_simu.fill("simulation", True)
-        main_simu.batches = []
-        for level in self.levels:
-            main_simu.batches.extend(level.sublevels)
+            #setup stages 
+            stage.batches = []
+            for level in stage.levels:
+                stage.batches.extend(level.sublevels)
+
+        self.levels = self.stages[-1].levels 
+
         if "machine_postproc" in prms: 
             MachineLoc = Machine.subclass("local")
             sub_dict = prms["machine_postproc"]
+            pp_mach = MachineLoc(sub_dict)
         else: 
-            sub_dict = prms["machine"]
-        iter_postproc = MachineLoc(sub_dict)
+            pp_mach = self.machines["default"]
+        iter_postproc = copy.deepcopy(pp_mach)
         iter_postproc.fill("iteration_postproc", False)
-        self.stages = [main_simu, iter_postproc]
-        self.simulation_postproc = MachineLoc(sub_dict)
+        self.stages.append(iter_postproc)
+        self.simulation_postproc = copy.deepcopy(pp_mach)
         self.simulation_postproc.fill("simulation_postproc", False)
 
         self.qois_optimize = []
@@ -109,7 +114,7 @@ class Mlmc(UqMethod):
         self.internal_qois = []
         for i,sub_dict in enumerate(prms["qois"]): 
             QoILoc = Solver.subclass(prms["solver"]["_type"]).QoI
-            qoi = QoILoc.create_by_stage("simulation_postproc",sub_dict,self)
+            qoi = QoILoc.create_by_stage(sub_dict,"simulation_postproc",self)
             # qoi.name = "combinelevels"
             qoi.participants = [l.qois[i] for l in self.levels]
             if qoi.internal: 
@@ -120,17 +125,14 @@ class Mlmc(UqMethod):
         if self.use_ci: 
             self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
 
-    def setup_level(self, i, sub_fine, sub_coarse):
+    def setup_level(self, i, sub_fine, sub_coarse, sampler):
         """
         set up a level, connect to its sublevels, and 
         add the samples container
         """ 
         level=Empty()
         level.name = str(i)
-        level.samples = MonteCarlo({})
-        level.samples.stoch_vars = self.stoch_vars
-        level.samples.n = sub_fine.n_warmup_samples
-        level.samples.n_previous = 0
+        level.samples = sampler
         sublevels = [sub_fine, sub_coarse]
         for sub, sub_name in zip(sublevels,['f', 'c']):
             sub.samples = level.samples
@@ -141,13 +143,20 @@ class Mlmc(UqMethod):
         level.internal_qois = []
         return level
 
+    def setup_samples(self,n_warmup): 
+        samples = MonteCarlo({})
+        samples.stoch_vars = self.stoch_vars
+        samples.n = n_warmup
+        samples.n_previous = 0
+        return samples
+
     def setup_qoi(self, subdict, level):
         """ 
         set up quantity of interest for a level and make the 
         sublevels its participants
         """
         QoILoc = level.sublevels[0].__class__.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
+        qoi = QoILoc.create_by_stage(subdict,"iteration_postproc", self)
         qoi.participants = level.sublevels
         qoi.name = level.name+"_"+qoi.cname
         qoi.levelname = level.name

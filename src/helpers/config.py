@@ -5,6 +5,7 @@ import sys
 import re
 # ---------- local imports -------------
 from uqmethod.uqmethod import UqMethod
+from machine.machine import Machine
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
 from helpers.tools import *
@@ -31,6 +32,22 @@ def config(prmfile):
 
     if sim.cfg.stdout_log_file: 
         sys.stdout = Logger(sim.cfg.stdout_log_file)
+
+    machines_loc = [Machine.create(subdict) for subdict in prms["machines"]]
+    if sum((m.name=="default") for m in machines_loc) != 1: 
+        raise Exception("please make exactly one machine the default")
+    sim.machines = {m.name:m for m in machines_loc}
+
+    sim.stages = []
+    for stage in sim.cfg.main_stages: 
+        m_str = stage["machine"] if "machine" in stage else "default"
+        m = copy.deepcopy(sim.machines[m_str])
+        m.fill(stage["name"],True)
+        sim.stages.append(m)
+
+
+        
+
 
 
     # in the multilevel case, some further setup is needed for the
@@ -73,20 +90,7 @@ def config_list(name,prms,class_init,*args,sub_list_name=None):
     if name not in prms:
         raise Exception("Required parameter '"
                         +name+"' is not set in parameter file!")
-    if sub_list_name: 
-        try:
-            prms_loc=prms[name][sub_list_name]
-            for_all = copy.deepcopy(prms[name])
-            del for_all[sub_list_name]
-            for entry in prms_loc: 
-                entry.update(for_all)
-        except KeyError: 
-            print(prms)
-            raise Exception("Revise input prm structure of "+name+"!")
-    else: 
-        prms_loc=prms[name]
-    if not isinstance(prms_loc,list):
-        raise Exception("Parameter'"+name+"' needs to be defined as a list!")
+    prms_loc = expand_prms_by_sublist(prms[name],sub_list_name)
     p_print("Setup "+yellow(name)+" - Number of " + name + " is "
             + yellow(str(len(prms_loc))) + ".")
     indent_in()
@@ -94,6 +98,24 @@ def config_list(name,prms,class_init,*args,sub_list_name=None):
     indent_out()
     return classes
 
+
+def expand_prms_by_sublist(prms,sub_list_name): 
+    if isinstance(prms,list):
+        return prms
+    try:
+        prms_loc=prms[sub_list_name]
+        for_all = copy.deepcopy(prms)
+        del for_all[sub_list_name]
+        for entry in prms_loc: 
+            entry.update(for_all)
+    except KeyError: 
+        print(prms)
+        raise Exception("Revise input prm structure! key '"
+                        +sub_list_name
+                        +"' missing in subdict and subdict not defined as list!")
+
+    return prms_loc
+        
 
 class GeneralConfig(BaseClass):
     """
@@ -106,7 +128,7 @@ class GeneralConfig(BaseClass):
         "do_pickle" : True,
         "project_name" : "NODEFAULT",
         "stdout_log_file": None,
-        "main_stages": ["main"]
+        "main_stages": [{"name":"main"}] # TODO: own class with default
         }
 
     def __init__(self,*args): 

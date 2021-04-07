@@ -12,7 +12,9 @@ class Machine(Stage,BaseClass):
     subclasses.
     """
 
-    pass
+    defaults_ = {
+        "name" : "default"
+        }
 
 
 

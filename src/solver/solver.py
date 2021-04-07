@@ -6,6 +6,7 @@ import types
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
 from helpers.tools import *
+from helpers import config
 # from uqmethod.uqmethod import UqMethod
 
 
@@ -60,32 +61,18 @@ class Batch(BaseClass):
             return "_run"+str(i)
 
 
+
     @classmethod
-    def create_by_stage(cls,stage_name,prms,*args): 
-        """
-        Some batches contain functions for different stages. 
-        Here, the functions are renamed to the general "prepare" 
-        according to the respective stage string given in "stage_name".
-        QoI parameters are joined: some are given for all stages
-        (prms_other), others are stage-specific (prms_loc).
-        """
-        if "stages" in prms:
-            prms_loc=prms["stages"][stage_name]
-            prms_other=copy.deepcopy(prms)
-            del prms_other["stages"]
-            prms_loc.update(prms_other)
-        else: 
-            prms_loc=prms
-        qoiname = prms_loc["_type"]
-        QoiSub =cls.subclass(qoiname)
-        # stagesub = QoiSub.subclass(stage_name,id_func=lambda c:c.stage)
+    def create_by_stage(cls,prms,stage_name,*args): 
+        typename = prms["_type"]
+        TypeSub =cls.subclass(typename)
         stage_subs = []
-        QoiSub.recursive_subclasses(stage_subs,QoiSub) 
+        TypeSub.recursive_subclasses(stage_subs,TypeSub) 
         for StageSub in stage_subs: 
             if StageSub.stages & {stage_name, "all"}:
-                return StageSub(prms_loc,*args)
+                return StageSub(prms,*args)
         raise InputPrmError(
-            "no {} subclass for stage {}".format(QoiSub,stage_name))
+            "no {} subclass for stage {}".format(TypeSub,stage_name))
 
 
 
@@ -100,11 +87,20 @@ class Solver(Batch):
     defaults_ = {
         'cores_per_sample' : "NODEFAULT",
         'avg_walltime' : "NODEFAULT",
-        "solver_prms" :  "NODEFAULT"
+        "solver_prms" :  "NODEFAULT"#,
+        # "stages" :  [{}]
         }
 
     multi_sample = True
     is_surrogate = False
+
+    @classmethod
+    def create_by_stage_from_list(cls,prms,i_stage,stage_name,*args): 
+        if "stages" in prms: 
+            prms_loc = config.expand_prms_by_sublist(prms,"stages")[i_stage]
+        else: 
+            prms_loc = prms
+        return cls.create_by_stage(prms_loc,stage_name,*args)
 
 
 class QoI(Batch):

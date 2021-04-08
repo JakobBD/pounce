@@ -89,17 +89,9 @@ class Mlmc(UqMethod):
 
         self.levels = self.stages[-1].levels 
 
-        if "machine_postproc" in prms: 
-            MachineLoc = Machine.subclass("local")
-            sub_dict = prms["machine_postproc"]
-            pp_mach = MachineLoc(sub_dict)
-        else: 
-            pp_mach = self.machines["default"]
-        iter_postproc = copy.deepcopy(pp_mach)
-        iter_postproc.fill("iteration_postproc", False)
+        iter_postproc = config.config_pp_mach(prms,self,"iteration_postproc")
         self.stages.append(iter_postproc)
-        self.simulation_postproc = copy.deepcopy(pp_mach)
-        self.simulation_postproc.fill("simulation_postproc", False)
+        self.simulation_postproc = config.config_pp_mach(prms,self,"simulation_postproc")
 
         self.qois_optimize = []
         for level in self.levels:

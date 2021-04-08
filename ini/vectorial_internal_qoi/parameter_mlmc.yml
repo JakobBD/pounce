@@ -1,6 +1,9 @@
 general:
   project_name: keil
   stdout_log_file: stdout_log.dat
+  main_stages:
+  - name: main
+  - name: replica
 
 uq_method:
   _type: mlmc

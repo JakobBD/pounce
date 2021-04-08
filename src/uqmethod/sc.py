@@ -31,39 +31,33 @@ class Sc(UqMethod):
         """
 
         SolverLoc = Solver.subclass(prms["solver"]["_type"])
-        MachineLoc = Machine.subclass(prms["machine"]["_type"])
 
         # initialize StochVars
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
                                              SolverLoc)
+        
+        self.samples = Collocation(prms["sampling"])
+        self.samples.stoch_vars = self.stoch_vars
 
-        # initialize lists of classes for all levels, stoch_vars and qois
-        self.solver = Solver.create(prms["solver"], self, MachineLoc)
+        for i_stage, stage in enumerate(self.stages): 
+            solver = Solver.create_by_stage_from_list(prms["solver"],i_stage,
+                                                         stage.name,self,stage.__class__)
+            solver.name = ""
+            solver.samples = self.samples
+            stage.batches = [solver]
 
-        self.stages = [Machine.create(prms["machine"])]
-        self.stages[0].fill("simulation", True)
-        self.stages[0].batches = [self.solver]
-        if "machine_postproc" in prms: 
-            MachineLoc = Machine.subclass("local")
-            sub_dict = prms["machine_postproc"]
-        else: 
-            sub_dict = prms["machine"]
+        postproc = config.config_pp_mach(prms,self,"postproc")
+        self.stages.append(postproc)
 
-        self.stages.append(MachineLoc(sub_dict))
-        self.stages[1].fill("postproc", False)
-
-        self.solver.name = ""
-        self.solver.samples = Collocation(prms["sampling"])
-        self.solver.samples.stoch_vars = self.stoch_vars
 
         self.internal_qois = []
         for sub_dict in prms["qois"]: 
-            qoi = SolverLoc.QoI.create_by_stage("iteration_postproc",sub_dict, self)
-            qoi.participants = [self.solver]
+            qoi = SolverLoc.QoI.create_by_stage(sub_dict,"iteration_postproc",self)
+            qoi.participants = self.stages[-2].batches
             if qoi.internal: 
                 self.internal_qois.append(qoi)
             else: 
-                self.stages[1].batches.append(qoi)
+                self.stages[-1].batches.append(qoi)
 
     def prepare_next_iteration(self):
         """
@@ -77,9 +71,9 @@ class Sc(UqMethod):
         table.field_names = ["QoI","Mean","Standard Deviation"]
         for qoi in self.internal_qois: 
             u_out = qoi.get_response()[0]
-            n = self.solver.samples.n
-            qoi.mean = np.dot(np.transpose(u_out),self.solver.samples.weights)
-            qoi.stddev = np.sqrt(np.dot(np.transpose(u_out**2),self.solver.samples.weights) - qoi.mean**2.)
+            n = self.samples.n
+            qoi.mean = np.dot(np.transpose(u_out),self.samples.weights)
+            qoi.stddev = np.sqrt(np.dot(np.transpose(u_out**2),self.samples.weights) - qoi.mean**2.)
             if isinstance(qoi.mean,(float,np.float)):
                 table.add_row([qoi.cname,qoi.mean,qoi.stddev])
             else:

@@ -84,6 +84,8 @@ class Solver(Batch):
     which are defined separately. 
     """
 
+    stages = {"all"}
+
     defaults_ = {
         'cores_per_sample' : "NODEFAULT",
         'avg_walltime' : "NODEFAULT",

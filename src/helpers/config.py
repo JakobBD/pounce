@@ -33,6 +33,12 @@ def config(prmfile):
     if sim.cfg.stdout_log_file: 
         sys.stdout = Logger(sim.cfg.stdout_log_file)
 
+    # backwards compatibility
+    if "machine" in prms: 
+        prms["machine"]["name"] = "default"
+        prms["machines"] = [prms["machine"]]
+        del prms["machine"]
+
     machines_loc = [Machine.create(subdict) for subdict in prms["machines"]]
     if sum((m.name=="default") for m in machines_loc) != 1: 
         raise Exception("please make exactly one machine the default")
@@ -45,15 +51,9 @@ def config(prmfile):
         m.fill(stage["name"],True)
         sim.stages.append(m)
 
-
-        
-
-
-
     # in the multilevel case, some further setup is needed for the
     # levels (mainly sorting prms into sublevels f and c)
     sim.setup(prms)
-
 
     globels.sim = sim
     return sim
@@ -116,6 +116,16 @@ def expand_prms_by_sublist(prms,sub_list_name):
 
     return prms_loc
         
+def config_pp_mach(prms,sim,stage_name):
+    if "machine_postproc" in prms: 
+        MachineLoc = Machine.subclass("local")
+        sub_dict = prms["machine_postproc"]
+        pp_mach = MachineLoc(sub_dict)
+    else: 
+        pp_mach = sim.machines["default"]
+    pp_out = copy.deepcopy(pp_mach)
+    pp_out.fill(stage_name, False)
+    return pp_out
 
 class GeneralConfig(BaseClass):
     """

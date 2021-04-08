@@ -1,5 +1,8 @@
 general:
   project_name: integ
+  main_stages:
+  - name: main
+  - name: replica
 
 uq_method:
   _type: sc

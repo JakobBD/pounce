@@ -74,8 +74,6 @@ class BaseClass():
         for subclass in coll: 
             if string == subclass.cname:
                 return subclass
-        if not raise_err: 
-            return None
         print(coll)
         raise InputPrmError(
             "'{}' is not a valid {}".format(string,cls.__name__))

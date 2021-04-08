@@ -1,6 +1,9 @@
 general:
   project_name: keil
   do_pickle: False
+  main_stages:
+  - name: main
+  - name: replica
 
 uq_method:
   _type: mfmc

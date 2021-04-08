@@ -78,41 +78,52 @@ class Mfmc(UqMethod):
         chosen machine.
         """
 
-        main_simu = Machine.create(prms["machine"])
 
-        # initialize models
-        all_models = config.config_list("models", prms, Solver.create, 
-                                    self, main_simu, sub_list_name="fidelities")
+        # initialize models (first: only last stage, as it forms input to postproc)
+        stage = self.stages[-1]
+        i_stage = len(self.stages)-1 
+        all_models = config.config_list("models", prms, Solver.create_by_stage_from_list, i_stage, 
+                                        stage.name, self, stage.__class__, sub_list_name="fidelities")
+        self.stages[-1].batches = [b for b in all_models if not b.is_surrogate]
 
         # initialize StochVars
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
                                              *all_models)
 
+        self.samplers = []
         for model in all_models: 
             if model.is_auxiliary: 
                 # TODO: allow different kinds of sampling
-                model.samples = MonteCarlo({})
+                sampler = MonteCarlo({})
             else: 
-                model.samples = Empty()
-                model.samples.n = self.n_warmup_samples
-            model.samples.n_previous = 0
-            model.samples.stoch_vars = self.stoch_vars
+                sampler = Empty()
+                sampler.n = self.n_warmup_samples
+            sampler.n_previous = 0
+            sampler.stoch_vars = self.stoch_vars
+            self.samplers.append(sampler)
+            model.samples = sampler 
             model.internal_qois = []
+
+        #other stages 
+        for i_stage, stage in enumerate(self.stages[:-1]): 
+            models_loc = config.config_list("models", prms, Solver.create_by_stage_from_list, i_stage, 
+                                             stage.name, self, stage.__class__, sub_list_name="fidelities")
+            for sampler, model in zip(self.samplers,models_loc): 
+                model.samples = sampler 
+            stage.batches = [b for b in models_loc if not b.is_surrogate]
+
         self.hfm = all_models[0]
         self.sampling = MonteCarlo({})
         self.sampling.nodes_all = np.empty((0,len(self.stoch_vars)))
         self.sampling.stoch_vars = self.stoch_vars
 
         #setup stages 
-        main_simu.fill("simulation", True)
-        main_simu.batches = [b for b in all_models if not b.is_surrogate]
         self.auxiliaries = [b for b in all_models if b.is_auxiliary]
         self.surrogates = [b for b in all_models if b.is_surrogate]
         self.models = [b for b in all_models if not b.is_auxiliary]
         temp = [b for b in self.models if not b.is_surrogate]
         # sorting: auxiliaries, then normal models, then surrogates
         self.all_models = self.auxiliaries + temp + self.surrogates
-        self.stages = [main_simu]
        
         self.qois_optimize = []
         for model in self.all_models:
@@ -139,7 +150,7 @@ class Mfmc(UqMethod):
         """
         SolCls = model.__class__
         QoILoc = SolCls.QoI
-        qoi = QoILoc.create_by_stage("iteration_postproc",subdict, self)
+        qoi = QoILoc.create_by_stage(subdict,"iteration_postproc",self)
         qoi.participants = [model]
         qoi.name = model.name + " " + qoi.cname
         qoi.samples = model.samples

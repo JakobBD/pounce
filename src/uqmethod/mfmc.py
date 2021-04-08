@@ -79,20 +79,17 @@ class Mfmc(UqMethod):
         """
 
 
-        # initialize models (first: only last stage, as it forms input to postproc)
-        stage = self.stages[-1]
-        i_stage = len(self.stages)-1 
-        all_models = config.config_list("models", prms, Solver.create_by_stage_from_list, i_stage, 
-                                        stage.name, self, stage.__class__, sub_list_name="fidelities")
-        self.stages[-1].batches = [b for b in all_models if not b.is_surrogate]
+        prms_models = config.expand_prms_by_sublist(prms["models"],"fidelities")
+        model_classes = [Solver.subclass(sd["_type"]) for sd in prms_models]
 
         # initialize StochVars
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
-                                             *all_models)
+                                             *model_classes)
 
+        # samplers 
         self.samplers = []
-        for model in all_models: 
-            if model.is_auxiliary: 
+        for subdict in prms_models: 
+            if subdict.get("is_auxiliary"):
                 # TODO: allow different kinds of sampling
                 sampler = MonteCarlo({})
             else: 
@@ -101,16 +98,18 @@ class Mfmc(UqMethod):
             sampler.n_previous = 0
             sampler.stoch_vars = self.stoch_vars
             self.samplers.append(sampler)
-            model.samples = sampler 
-            model.internal_qois = []
 
-        #other stages 
-        for i_stage, stage in enumerate(self.stages[:-1]): 
-            models_loc = config.config_list("models", prms, Solver.create_by_stage_from_list, i_stage, 
+        #stages 
+        for i_stage, stage in enumerate(self.stages): 
+            stage.all_models = config.config_list("models", prms, Solver.create_by_stage_from_list, i_stage, 
                                              stage.name, self, stage.__class__, sub_list_name="fidelities")
-            for sampler, model in zip(self.samplers,models_loc): 
+            stage.batches = [b for b in stage.all_models if not b.is_surrogate]
+            for sampler, model in zip(self.samplers,stage.all_models): 
                 model.samples = sampler 
-            stage.batches = [b for b in models_loc if not b.is_surrogate]
+                model.internal_qois = []
+
+
+        all_models = self.stages[-1].all_models # last stage is input to QoI
 
         self.hfm = all_models[0]
         self.sampling = MonteCarlo({})
@@ -126,13 +125,15 @@ class Mfmc(UqMethod):
         self.all_models = self.auxiliaries + temp + self.surrogates
        
         self.qois_optimize = []
-        for model in self.all_models:
+        for model, ModelClass in zip(all_models,model_classes):
             # if model.is_surrogate: 
                 # continue
             model.n_optimize = 0
             model.qois = []
             for sub_dict in prms["qois"]: 
-                self.setup_qoi(sub_dict,model)
+                # model class is required since model itself can be a stage subclass and QoIs
+                # are no subclasses of StageSub.QoI
+                self.setup_qoi(sub_dict,model,ModelClass.QoI)
             if model.n_optimize != 1: 
                 raise Exception("Please specify exactly "
                                 "one QoI to optimize")
@@ -143,13 +144,11 @@ class Mfmc(UqMethod):
                 qoi.participants = [sm, im, im.qois[i_qoi]]
 
 
-    def setup_qoi(self, subdict, model):
+    def setup_qoi(self, subdict, model, QoILoc):
         """ 
         set up quantity of interest for a model and make the 
         sublevels its participants
         """
-        SolCls = model.__class__
-        QoILoc = SolCls.QoI
         qoi = QoILoc.create_by_stage(subdict,"iteration_postproc",self)
         qoi.participants = [model]
         qoi.name = model.name + " " + qoi.cname

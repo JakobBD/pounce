@@ -98,7 +98,7 @@ class Mlmc(UqMethod):
             level.n_optimize = 0
             level.qois = []
             for sub_dict in prms["qois"]: 
-                self.setup_qoi(sub_dict,level)
+                self.setup_qoi(sub_dict,level,SolverLoc.QoI)
             if level.n_optimize != 1: 
                 raise Exception("Please specify exactly "
                                 "one QoI to optimize")
@@ -142,12 +142,11 @@ class Mlmc(UqMethod):
         samples.n_previous = 0
         return samples
 
-    def setup_qoi(self, subdict, level):
+    def setup_qoi(self, subdict, level, QoiLoc):
         """ 
         set up quantity of interest for a level and make the 
         sublevels its participants
         """
-        QoILoc = level.sublevels[0].__class__.QoI
         qoi = QoILoc.create_by_stage(subdict,"iteration_postproc", self)
         qoi.participants = level.sublevels
         qoi.name = level.name+"_"+qoi.cname

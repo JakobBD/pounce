@@ -18,6 +18,8 @@ class Cfdfv(Solver):
 
     cname = "cfdfv"
 
+    stages = {"main"}
+
     defaults_ = {
         "prmfile" : "parameter_cfdfv.ini",
         "solver_prms" : {
@@ -164,11 +166,11 @@ class Cfdfv(Solver):
 class Cfdfv2(Cfdfv): 
 
     cname = "cfdfv2"
-    stage = "2"
+    stages = {"replica"}
 
     def prepare(self):
         print("hello")
-        super().__init(self)
+        super().prepare()
 
 
 

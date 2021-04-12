@@ -10,27 +10,20 @@ from helpers.printtools import *
 from helpers.tools import *
 from helpers import globels
 
-class FlexiBatch(Solver):
+class Ice(Solver):
     """ 
     Runs with the POUNCE-adaptation of FLEXI, i.e. with the 
     executable flexibatch and the according post-processing tools.
     """
 
-    cname = "flexi_batch"
+    cname = "ice"
+    stages = {"main"}
 
     defaults_ = {
         "prmfile" : "parameter_flexi.ini",
+        "mesh_dir" : "mesh",
         "solver_prms" : {
-            "N" : "NODEFAULT",
-            "MeshFile" : "NODEFAULT"
-            }
-        }
-
-    defaults_add = { 
-        "StochVar": {
-            'i_occurrence': 1,
-            'i_pos': 1,
-            'name' : 'NODEFAULT'
+            "N" : "NODEFAULT"
             }
         }
 
@@ -40,7 +33,7 @@ class FlexiBatch(Solver):
         """
 
         defaults_ = {
-            "prmfile" : ""
+            "exe_path": "dummy_unused"
             }
 
         def get_derived_quantity(self,quantity_name):
@@ -53,7 +46,7 @@ class FlexiBatch(Solver):
 
         def get_current_work_mean(self):
             """ 
-            For FlexiBatch, avg work is already read from HDF5 file during 
+            For Ice, avg work is already read from HDF5 file during 
             check_all_finished
             """
             return sum(p.current_avg_work for p in self.participants)
@@ -72,14 +65,11 @@ class FlexiBatch(Solver):
 
         # both:
         stv=self.samples.stoch_vars
-        prms= {'Samples'          : self.samples.nodes,
-               'StochVarNames'    : [s.name         for s in stv],
-               'iOccurrence'      : [s.i_occurrence for s in stv],
-               'iArray'           : [s.i_pos        for s in stv],
-               "nStochVars"       : len(stv),
+        prms= {"nStochVars"       : 0,
                "nGlobalRuns"      : self.samples.n,
                "nParallelRuns"    : self.n_parallel_runs
                }
+
 
         self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
 
@@ -109,7 +99,14 @@ class FlexiBatch(Solver):
             self.h5write(h5f,'LevelVarNames'+suffix,names)
             self.h5write(h5f,'LevelVars'    +suffix,values)
 
+        meshfiles = [self.to_meshfile(i) for i in range(self.samples.n)]
+        h5f.create_dataset("MeshFiles", data=meshfiles, shape = (self.samples.n,), dtype='S255')
+
         h5f.close()
+
+
+    def to_meshfile(self,i):
+        return (self.mesh_dir+"/"+self.project_name+"_"+str(i+1)+'_mesh.h5').encode("latin-1").ljust(255)
 
 
     def h5write(self,h5f,name,prm):
@@ -161,9 +158,83 @@ class FlexiBatch(Solver):
             return True
         except:
             return False
+        
+
+class IceMesh(Ice):
+
+    cname = "ice_mesh"
+    stages = {"mesh"}
+
+    defaults_ = {
+        "pythonfile" : "NODEFAULT",
+        "hopr_path" : "NODEFAULT",
+        "sortsides_path" : "NODEFAULT",
+        "exe_path" : "dummy_unused",
+        "prmfile" : "dummy_unused"
+        }
+
+    def prepare(self):
+        self.run_commands = ["python3 "+self.pythonfile+" NONE "
+                             +self.mesh_dir+"/"+self.project_name
+                             +" 0 0 0 0 0 0 0"]
+        for i_run, node in enumerate(self.samples.nodes): 
+            namestr = self.mesh_dir+"/"+self.project_name+"_"+str(i_run+1)
+            args = ["python3", self.pythonfile, "'"+self.hopr_path+"'", "'"+namestr+"'"]
+            for n in node: 
+                args.append(str(n))
+            for i in range(7-len(node)): # fill with zeros
+                args.append("0")
+            self.run_commands.append(" ".join(args))
+            if i_run == 0:
+                sortsides_cmd = self.sortsides_path + " " +  namestr+"_mesh.h5"
+        self.run_commands.append(sortsides_cmd)
+
+    def check_stdout(self,fn,nlines,stringcmp):
+        args=['tail','-n',str(nlines),fn]
+        output=subprocess.run(args,stdout=subprocess.PIPE)
+        output=output.stdout.decode("utf-8")
+        return output.startswith(stringcmp)
+
+    def check_finished(self):
+        try: 
+            if not self.check_stdout(self.logfile_names[0],3,"msh file:"): 
+                return False
+            for logfile in self.logfile_names[1:-1]: 
+                if not self.check_stdout(logfile,2," HOPR successfully finished"): 
+                    return False
+            if not self.check_stdout(self.logfile_names[-1],2," SORT ICING SIDES TOOL FINISHED!"):
+                return False
+            return True
+        except:
+            return False
 
 
-class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
+class IceSwim(Ice):
+
+    cname = "ice_swim"
+    stages = {"swim"}
+    defaults_ = {
+        "prmfile" : "dummy_unused",
+        "refstate" : "NODEFAULT"
+            }
+
+    def prepare(self):
+        self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
+        self.run_commands = [self.exe_path + " " + self.statefilename]
+
+    def check_finished(self):
+        # try: 
+            with h5py.File(self.statefilename, 'r') as h5f:
+                    dset = h5f['SwimCP'][()]
+            pres =np.array(dset)
+            u_inf = np.array(self.refstate)
+            self.cp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
+            return True
+        # except:
+            # return False
+
+
+class FlexiBatchClBatch(Cfdfv.QoI,Ice.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict
     """
@@ -180,7 +251,7 @@ class FlexiBatchClBatch(Cfdfv.QoI,FlexiBatch.QoI):
     string_in_stdout = 1 
 
 
-class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
+class FlexiBatchCp(Internal.QoI,Ice.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict
     """
@@ -190,27 +261,12 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
     stages = {"all"}
 
     defaults_ = {
-        "exe_path" : "NODEFAULT",
         "prmfile": "dummy_unused",
-        "do_write" : True,
-        "refstate" : "NODEFAULT"
+        "do_write" : True
         }
 
     def get_response(self,s=None): 
-        u_out = []
-        for p in self.participants:
-            statefilename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
-            run_command = self.exe_path + " " + statefilename
-            # TODO: very dirty still...
-            with open("dummy_log_file",'w+') as f:
-                subprocess.run(run_command,stdout=f,shell=True)
-            with h5py.File(statefilename, 'r') as h5f:
-                    dset = h5f['SwimCP'][()]
-            pres =np.array(dset)
-            u_inf = np.array(self.refstate)
-            cp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
-            u_out.append(cp)
-        return u_out
+        return [p.cp for p in self.participants]
 
     def write_to_file(self): 
         if self.do_write: 
@@ -224,95 +280,3 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
         return np.mean(qty)
 
 
-class FlexiBatchFieldSolution(FlexiBatch.QoI):
-    """ 
-    Takes the whole field solution as quantity of interest. 
-
-    Caution: routines starting with prepare_... 
-    will be renamed to "prepare" as part of the create_by_stage
-    routine. 
-    """
-
-    cname = "field_solution"
-
-    stages = set()
-
-
-class FlexiBatchFieldSolutionIterPostProc(FlexiBatchFieldSolution):
-
-    stages = {"iteration_postproc"}
-
-    def prepare(self):
-        # participants[0] is a rather dirty hack
-        self.prm_file_name = self.participants[0].prm_file_name
-        run_command = self.exe_path \
-                      + " " + self.prmfile \
-                      + " " + self.prm_file_name
-        self.project_name  = self.participants[0].project_name
-        self.output_filename = 'postproc_'+self.project_name+'_state.h5'
-        for p in self.participants:
-            filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
-            run_command += " " + filename
-        self.run_commands = [run_command]
-
-class FlexiBatchFieldSolutionSimuPostProc(FlexiBatchFieldSolution):
-
-    stages = {"simulation_postproc"}
-
-    def prepare(self):
-        self.args=[p.output_filename for p in self.participants]
-        self.run_commands = [self.exe_path \
-                            + " " + " ".join(self.args)]
-        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
-
-
-class FlexiBatchRecordPoints(FlexiBatch.QoI):
-    """ 
-    Takes a solution time sereis evaluated at record points as QoI.
-
-    Caution: routines starting with prepare_... 
-    will be renamed to "prepare" as part of the create_by_stage
-    routine. 
-    """
-
-    cname = "record_points"
-
-    stages = set()
-
-    defaults_ = { # TODO: move to IterPostProc
-        "time_span": [0.,1.E10]
-        }
-
-class FlexiBatchRecordPointsIterPostProc(FlexiBatchRecordPoints):
-
-    stages = {"iteration_postproc"}
-
-    def prepare(self):
-        # participants[0] is a rather dirty hack
-        self.prm_file_name = self.participants[0].prm_file_name
-        n_files = len(glob.glob(participants[0].project_name+"_RP_*.h5"))
-        run_command = self.exe_path \
-                      + " " + self.prmfile \
-                      + " " + self.prm_file_name \
-                      + " " + str(n_files)
-        self.project_name = self.participants[0].project_name
-        self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
-        for p in self.participants:
-            filenames=sorted(glob.glob(p.project_name+"_RP_*.h5"))
-            fn_add=[]
-            for fn in filenames:
-                time=float(fn.split("_")[-1][:-3])
-                if self.time_span[0] <= time <= self.time_span[1]:
-                    run_command += " "+fn
-        self.run_commands = [run_command]
-
-
-class FlexiBatchRecordPointsSimuPostProc(FlexiBatchRecordPoints):
-
-    stages = {"simulation_postproc"}
-
-    def prepare(self):
-        self.args=[p.output_filename for p in self.participants]
-        self.run_commands = [self.exe_path \
-                            + " " + " ".join(self.args)]
-        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'

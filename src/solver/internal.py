@@ -55,7 +55,6 @@ class Internal(Solver):
         self.f = self.f_ml if self.n_pts else self.f_mf
 
     def prepare(self):
-        self.project_name = globels.project_name+'_'+self.name
         self.run_commands = []
 
     def check_finished(self):

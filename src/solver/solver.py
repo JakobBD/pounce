@@ -7,6 +7,7 @@ from helpers.baseclass import BaseClass
 from helpers.printtools import *
 from helpers.tools import *
 from helpers import config
+from helpers import globels
 # from uqmethod.uqmethod import UqMethod
 
 
@@ -37,12 +38,23 @@ class Batch(BaseClass):
         raise Exception("not yet implemented")
 
     @property
+    def project_name(self): 
+        return globels.project_name+'_'+self.name
+
+    @property
+    def name_with_stage(self): 
+        if hasattr(self,"stage_name"):
+            return self.name + "_" + self.stage_name 
+        else: 
+            return self.name
+
+    @property
     def logfile_names(self): 
-        return ["log_"+self.name+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
+        return ["log_"+self.name_with_stage+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
 
     @property
     def errfile_names(self): 
-        return ["err_"+self.name+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
+        return ["err_"+self.name_with_stage+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
 
     @property
     def n_runs(self):
@@ -70,7 +82,9 @@ class Batch(BaseClass):
         TypeSub.recursive_subclasses(stage_subs,TypeSub) 
         for StageSub in stage_subs: 
             if StageSub.stages & {stage_name, "all"}:
-                return StageSub(prms,*args)
+                inst = StageSub(prms,*args)
+                inst.stage_name = stage_name
+                return inst
         raise InputPrmError(
             "no {} subclass for stage {}".format(TypeSub,stage_name))
 

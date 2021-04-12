@@ -42,7 +42,7 @@ class Sc(UqMethod):
         for i_stage, stage in enumerate(self.stages): 
             solver = Solver.create_by_stage_from_list(prms["solver"],i_stage,
                                                          stage.name,self,stage.__class__)
-            solver.name = ""
+            solver.name = "sc"
             solver.samples = self.samples
             stage.batches = [solver]
 

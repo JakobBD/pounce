@@ -98,7 +98,6 @@ class Cfdfv(Solver):
         iteration and the current samples.
         """
 
-        self.project_name = globels.project_name+'_'+self.name
         with open(self.prmfile,'r') as pf: 
             orig = pf.readlines()
         new = copy.deepcopy(orig)

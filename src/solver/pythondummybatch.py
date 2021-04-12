@@ -44,7 +44,6 @@ class PythonDummyBatch(Solver):
         iteration and the current level.
         """
         p_print("Write HDF5 parameter file for simulation "+self.name)
-        self.project_name = globels.project_name+'_'+self.name
         self.prm_file_name = 'input_'+self.project_name+'.h5'
         prms={"Samples"    :self.samples.nodes,
               "ProjectName":self.project_name}

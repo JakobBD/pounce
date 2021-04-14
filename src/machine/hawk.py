@@ -35,21 +35,21 @@ class Hawk(Machine):
         and supervise the queuing status.
         """
         super().__init__(class_dict)
-        self.cores_per_node = 24
+        self.cores_per_node = 128
         self.total_work = 0.
-        self.remote = not socket.gethostname().startswith('eslogin')
+        self.remote = not socket.gethostname().startswith('hawk-login')
         if self.remote: 
             args = "df -P .".split()
             job = subprocess.run(args,stdout=subprocess.PIPE,
                                  universal_newlines=True)
             line = job.stdout.split('\n')[1]
-            self.hawk_username = line.split("@")[0]
+            self.ssh_command = line.split(":")[0]
             mount_dir_on_hawk = line.split()[0].split(":")[1]
             mount_dir_local = line.split()[-1]
             cwd = os.getcwd()
             self.dir_on_hawk=mount_dir_on_hawk+cwd.replace(mount_dir_local,"")
         else: 
-            self.hawk_username = getpass.getuser()
+            # self.hawk_username = getpass.getuser()
             if self.local_postproc: 
                 raise Exception("Local postproc is only possible if POUNCE is "
                                 "run on remote machine.")
@@ -101,13 +101,15 @@ class Hawk(Machine):
               '#!/bin/bash\n'
             + '#PBS -N {}\n'.format(getattr(batch,"project_name",
                                             globels.project_name))
-            + '#PBS -l nodes={}:ppn=24\n'.format(batch.n_nodes)
+            + '#PBS -l select={}:node_type=rome:mpiprocs=128\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+time_to_str(batch.batch_walltime)+"\n\n"
+            + 'module load aocl/2.1.0\n'
+            # + 'module load hfd5/1.10.5\n\n'
             + 'cd $PBS_O_WORKDIR\n\n')
 
         for i,run in enumerate(batch.run_commands): 
-            jobfile_string += 'aprun -n  {}  -N {} {} 1> {} 2> {}\n'.format(
-                batch.n_cores, min(batch.n_cores,24), run,
+            jobfile_string += 'mpirun -np {} {} 1> {} 2> {}\n'.format(
+                batch.n_cores, run,
                 batch.logfile_names[i], batch.errfile_names[i] )
         batch.jobfile_name = 'jobfile_{}'.format(batch.name)
         with open(batch.jobfile_name,'w+') as jf:
@@ -116,12 +118,15 @@ class Hawk(Machine):
         args=['qsub',batch.jobfile_name]
         if self.remote: 
            args=self.to_ssh(args)
-        job = subprocess.run(args,stdout=subprocess.PIPE,
-                             universal_newlines=True)
-        batch.job_id=int(job.stdout.split(".")[0])
+        job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,universal_newlines=True)
+        lines = job.stdout.split("\n")
+        if self.remote: 
+            lines = lines[:-1]
+        batch.job_id=int(lines[-1].split(".")[0])
         p_print("submitted job "+str(batch.job_id))
         batch.queue_status="submitted"
-        globels.sim.iterations[-1].update_step()
+        globels.update_step()
     
     def to_ssh(self,args): 
         """
@@ -131,7 +136,7 @@ class Hawk(Machine):
         string)
         """
         command = "cd "+self.dir_on_hawk+" && "+" ".join(args)
-        return ['ssh',self.hawk_username+"@hawk.hww.hlrs.de",command]
+        return "echo '"+command+"' | ssh "+self.ssh_command
 
     def wait_finished(self,table):
         """
@@ -152,12 +157,12 @@ class Hawk(Machine):
                     # new status
                     batch.queue_status=queue_status
                     table.clear_rows()
-                    table.add_row(["Status"] + [b.queue_status for b in self.active_batches])
+                    table.add_row(["Status"] + ["    "+b.queue_status+"    " for b in self.active_batches])
                     has_changes=True
                 if queue_status=='C':
                     self.check_errorfile(batch)
             if has_changes:
-                print_table(table)
+                print_table(table,add_cr=False)
             if not self.unfinished_batches:
                 return
             time.sleep(1)
@@ -167,20 +172,22 @@ class Hawk(Machine):
         """
         run 'qstat' on hawk and read output
         """
-        args=['qstat','-u',self.hawk_username]
+        args=['qstat']
         if self.remote: 
            args=self.to_ssh(args)
-        job = subprocess.run(args,stdout=subprocess.PIPE,
-                             universal_newlines=True)
+        job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,universal_newlines=True)
         lines = job.stdout.split('\n')
-        if len(lines)<4:
+        if self.remote: 
+            lines = lines[17:-1]
+        if len(lines)<3:
             return {}
         else:
             def id(line): 
                 return int(line.split(".")[0])
             def stat(line):
-                return line.split()[9]
-            return {id(line):stat(line) for line in lines[5:-1]}
+                return line.split()[-2]
+            return {id(line):stat(line) for line in lines[2:]}
 
 
     def check_errorfile(self,batch):
@@ -188,7 +195,7 @@ class Hawk(Machine):
         open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        for errfile in self.errfile_names:
+        for errfile in batch.errfile_names:
             # sometimes hawk needs a while to finish up jobs
             if not os.path.isfile(errfile):
                 time.sleep(5)
@@ -232,7 +239,7 @@ class Hawk(Machine):
 
         self.walltime_factor = 1.2
         table = pt.PrettyTable()
-        table.field_names = ["Queue","Rating (%)","# parallel runs",
+        table.field_names = ["batch", "queue","rating (%)","# parallel runs",
                              "# sequential runs", "# cores","# nodes",
                              "batch walltime"]
 
@@ -241,27 +248,41 @@ class Hawk(Machine):
             batch.work=batch.scaled_avg_walltime * batch.cores_per_sample\
                 * batch.samples.n
 
-            # make sure to fill a node
-            self.get_package_properties(batch)
+            # ======================================================================
+            # dummy routine starts here 
+            batch.queue = "single"
+            batch.max_rating = 1
+            batch.n_parallel_runs = 1
+            batch.n_sequential_runs = batch.samples.n
+            batch.n_cores = 128
+            batch.n_nodes = 1
+            batch.batch_walltime = batch.scaled_avg_walltime*batch.samples.n
 
-            # decide which queue to use 
-            get_queue(batch)
+            # ======================================================================
 
-            # core of this routine:
-            # get n_parallel_runs and n_sequential_runs
-            self.get_best_option(batch)
+            # # make sure to fill a node
+            # self.get_package_properties(batch)
 
-            # some serived quantities
-            batch.n_cores = batch.n_parallel_runs * batch.cores_per_sample
-            batch.batch_walltime = batch.n_sequential_runs \
-                * batch.scaled_avg_walltime
-            batch.n_nodes = batch.n_cores // self.cores_per_node
+            # # decide which queue to use 
+            # get_queue(batch)
+
+            # # core of this routine:
+            # # get n_parallel_runs and n_sequential_runs
+            # self.get_best_option(batch)
+
+            # # some serived quantities
+            # batch.n_cores = batch.n_parallel_runs * batch.cores_per_sample
+            # batch.batch_walltime = batch.n_sequential_runs \
+                # * batch.scaled_avg_walltime
+            # batch.n_nodes = batch.n_cores // self.cores_per_node
+            # ======================================================================
 
             self.total_work += batch.n_cores * batch.batch_walltime
             if self.total_work > self.max_total_work:
                 raise Exception("Max total core hours exceeded!")
 
-            table.add_row([batch.queue,
+            table.add_row([batch.name,
+                           batch.queue,
                            batch.max_rating,
                            batch.n_parallel_runs,
                            batch.n_sequential_runs,

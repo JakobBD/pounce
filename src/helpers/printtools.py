@@ -78,7 +78,7 @@ def print_header():
     print("="*132)
 
 
-def print_table(table): 
+def print_table(table,add_cr=True): 
     table.field_names = [yellow(s) for s in table.field_names]
     for r in table._rows: 
         for i,f in enumerate(r): 
@@ -94,11 +94,13 @@ def print_table(table):
     table.junction_char = "╬"
     table.align = "r"
     print(table)
-    print()
+    if add_cr:
+        print()
 
 
 def time_to_str2(sec):
-    list_=sec_to_list(sec)
+    i = int(sec)
+    list_ = [i//3600, (i%3600)//60, i%60]
     tmp=["%2d"%(int(i)) for i in list_]
     return "{}h {}m {}s".format(*tmp)
 

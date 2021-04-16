@@ -142,7 +142,7 @@ class Mlmc(UqMethod):
         samples.n_previous = 0
         return samples
 
-    def setup_qoi(self, subdict, level, QoiLoc):
+    def setup_qoi(self, subdict, level, QoILoc):
         """ 
         set up quantity of interest for a level and make the 
         sublevels its participants

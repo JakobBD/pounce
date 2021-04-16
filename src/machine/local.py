@@ -20,8 +20,7 @@ class Local(Machine):
 
     defaults_add = { 
         "Batch": {
-            'cores_per_sample' : 1,
-            'avg_walltime': "dummy_unused",
+            'cores_per_sample' : 1
             }
         }
 

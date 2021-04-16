@@ -26,9 +26,6 @@ class PythonDummyBatch(Solver):
         Parent class for the dummy solver's QoI(s)
         """
 
-        def get_current_work_mean(self):
-            return self.get_derived_quantity("WorkMean")
-
         def get_derived_quantity(self,quantity_name):
             """ Readin sigma_sq for MLMC.
             """

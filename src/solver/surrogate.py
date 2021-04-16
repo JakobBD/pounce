@@ -19,6 +19,4 @@ class SurrogateModel(Solver):
 
         internal = True
 
-        def get_current_work_mean(self):
-            return self.current_work_mean
 

@@ -68,12 +68,6 @@ class Cfdfv(Solver):
             else: 
                 return qty
 
-        def get_current_work_mean(self):
-            """ 
-            For Flexi, avg work is already read from HDF5 file during 
-            check_all_finished
-            """
-            return sum(p.current_avg_work for p in self.participants)
 
     def find_ind(self,lines,name,i_occurrence=[1]):
             i_found = 0

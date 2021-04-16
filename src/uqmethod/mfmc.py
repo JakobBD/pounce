@@ -225,7 +225,6 @@ class Mfmc(UqMethod):
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
-                    qoi.get_work_mean()
                     if model.is_auxiliary: 
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)

@@ -301,7 +301,6 @@ class Mlmc(UqMethod):
         for qoi in self.qois_optimize:
             if qoi.samples.n > 0:
                 qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
-                qoi.get_work_mean()
             if qoi.samples.n_previous+qoi.samples.n > 0:
                 sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
                 if self.use_ci: 

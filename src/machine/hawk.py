@@ -33,7 +33,6 @@ class Hawk(Machine):
             'cores_per_sample': "dummy_unused",
             'cores_per_sample_min': "NODEFAULT",
             'cores_per_sample_max': "NODEFAULT",
-            'avg_walltime': "dummy_unused",
             'est_work': "NODEFAULT",
             'n_elems': None
             }
@@ -252,10 +251,14 @@ class Hawk(Machine):
         table = pt.PrettyTable()
         table.field_names = ["batch", "efficiency (%)","# parallel runs",
                              "# sequential runs", "# cores / sample","# nodes",
-                             "batch walltime"]
+                             "batch walltime","# elems / core"]
 
         for batch in self.active_batches:
-            batch.scaled_est_work=self.work_safety_fac*batch.est_work
+            if batch.samples.n_previous > 0:
+                est_work = batch.sum_work[batch.samples.n_previous]/batch.samples.n_previous
+            else: 
+                est_work = batch.est_work
+            batch.scaled_est_work=self.work_safety_fac*est_work
             batch.work=batch.scaled_est_work * batch.samples.n
 
             self.get_opt_props(batch)
@@ -268,7 +271,8 @@ class Hawk(Machine):
                            batch.n_sequential_runs,
                            batch.cores_per_sample,
                            batch.n_nodes,
-                           batch.batch_walltime])
+                           batch.batch_walltime,
+                           batch.n_elems_core])
 
         print_table(table)
 
@@ -302,11 +306,6 @@ class Hawk(Machine):
             else: 
                 self.safe_double_nodes(batch)
 
-
-        # TODO: 
-        # - update est_work 
-        # input n_elems with default = 1.e9
-
     def safe_double_nodes(self,batch): 
         if batch.n_nodes < self.n_max_nodes: 
             batch.n_nodes *=2 
@@ -314,18 +313,49 @@ class Hawk(Machine):
             raise Exception("batch "+batch.name+" scheduling does not fit in max nodes / max wt")
 
     def get_props(self,batch):
-        n_cores_avail = batch.n_nodes*self.cores_per_node
-        max_n_parallel_runs = min(n_cores_avail // batch.cores_per_sample_min,batch.samples.n)
+        batch.n_cores_avail = batch.n_nodes*self.cores_per_node
+        max_n_parallel_runs = min(batch.n_cores_avail // batch.cores_per_sample_min,batch.samples.n)
         if max_n_parallel_runs == 0: 
             # hack, which leads to doubling of nodes
             batch.batch_walltime = 2.*self.max_walltime
             return
-        batch.n_sequential_runs = ((batch.samples.n-1) // max_n_parallel_runs)+1
+        if batch.n_elems: 
+            batch.max_elems_per_core = math.ceil(batch.n_elems/ batch.cores_per_sample_min)
+            batch.min_elems_per_core = math.ceil(batch.n_elems/ batch.cores_per_sample_max)
+            options = [Option(nec,batch) for nec in range(batch.min_elems_per_core,batch.max_elems_per_core+1)]
+            i_best = np.argmax(np.array([o.efficiency for o in options]))
+            options[i_best].adopt(batch)
+        else: 
+            batch.n_elems_core = None
+            batch.n_sequential_runs = ((batch.samples.n-1) // max_n_parallel_runs)+1
+            # reduce parallel runs if it does not increase sequential runs
+            batch.n_parallel_runs = (batch.samples.n - 1)//batch.n_sequential_runs + 1 
+            batch.cores_per_sample = min(batch.n_cores_avail // batch.n_parallel_runs, batch.cores_per_sample_max)
+            batch.n_cores = batch.cores_per_sample*batch.n_parallel_runs
+            batch.batch_walltime = batch.n_sequential_runs*batch.scaled_est_work/batch.cores_per_sample
+            batch.efficiency = batch.work / (batch.batch_walltime*batch.n_nodes*self.cores_per_node)
+
+
+class Option(): 
+    def __init__(self,n_elems_core,batch): 
+        self.n_elems_core = n_elems_core
+        min_cores_per_sample = math.ceil(batch.n_elems/n_elems_core)
+        max_n_parallel_runs = min(batch.n_cores_avail // min_cores_per_sample,batch.samples.n)
+        self.n_sequential_runs = math.ceil(batch.samples.n / max_n_parallel_runs)
         # reduce parallel runs if it does not increase sequential runs
-        batch.n_parallel_runs = (batch.samples.n - 1)//batch.n_sequential_runs + 1 
-        batch.cores_per_sample = min(n_cores_avail // batch.n_parallel_runs, batch.cores_per_sample_max)
-        batch.n_cores = batch.cores_per_sample*batch.n_parallel_runs
-        batch.batch_walltime = batch.n_sequential_runs*batch.scaled_est_work/batch.cores_per_sample
-        batch.efficiency = batch.work / (batch.batch_walltime*batch.n_nodes*self.cores_per_node)
-        
+        self.n_parallel_runs = math.ceil(batch.samples.n/self.n_sequential_runs)
+        self.cores_per_sample = min(batch.n_cores_avail // self.n_parallel_runs, batch.cores_per_sample_max)
+        self.elem_efficiency = batch.n_elems/(n_elems_core*self.cores_per_sample)
+        self.n_cores = self.cores_per_sample*self.n_parallel_runs
+        self.batch_walltime = self.n_sequential_runs*batch.scaled_est_work/(self.cores_per_sample*self.elem_efficiency)
+        self.efficiency = batch.work / (self.batch_walltime*batch.n_cores_avail)
+
+    def adopt(self,batch): 
+        batch.n_elems_core = self.n_elems_core
+        batch.n_sequential_runs = self.n_sequential_runs
+        batch.n_parallel_runs = self.n_parallel_runs
+        batch.cores_per_sample = self.cores_per_sample
+        batch.n_cores = self.n_cores
+        batch.batch_walltime = self.batch_walltime
+        batch.efficiency = self.efficiency
 

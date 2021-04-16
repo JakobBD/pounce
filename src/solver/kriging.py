@@ -27,7 +27,7 @@ class KrigingStandard(Kriging.QoI):
         start_time = time.time()
         # u = predict(own_model.samples.nodes,self.k)
         u = np.array([self.k.predict(x) for x in own_model.samples.nodes])
-        self.current_work_mean = (time.time() - start_time)/own_model.samples.n
+        self.participants[0].current_avg_work = (time.time() - start_time)/own_model.samples.n
         return [u]
 
 # @jit()

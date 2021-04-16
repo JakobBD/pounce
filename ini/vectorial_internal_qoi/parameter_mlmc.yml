@@ -10,7 +10,7 @@ uq_method:
   total_work: 100.
   use_ci: True
   ci_conf_tot: 0.95
-  n_max_iter: 2
+  n_max_iter: 4
 
 sampling:
   reset_seed: false

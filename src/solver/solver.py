@@ -20,9 +20,12 @@ class Batch(BaseClass):
 
     defaults_ = {
         'cores_per_sample' : 1,
-        'avg_walltime' : 300.,
         "exe_path": "NODEFAULT"
         }
+
+    def __init__(self,*args): 
+        super().__init__(*args)
+        self.sum_work = { 0 : 0. }
 
     def check_finished(self):
         """
@@ -73,7 +76,6 @@ class Batch(BaseClass):
             return "_run"+str(i)
 
 
-
     @classmethod
     def create_by_stage(cls,prms,stage_name,*args): 
         typename = prms["_type"]
@@ -89,6 +91,20 @@ class Batch(BaseClass):
             "no {} subclass for stage {}".format(TypeSub,stage_name))
 
 
+    @property
+    def avg_work(self):
+        """
+        Wrapper: get mean work of current simulation, then update 
+        total mean work
+        """
+        n_samples_tot = self.samples.n+self.samples.n_previous
+        if not n_samples_tot in self.sum_work: 
+            self.sum_work[n_samples_tot] = self.samples.n*self.current_avg_work \
+                                         + self.sum_work[self.samples.n_previous]
+        return self.sum_work[n_samples_tot] / n_samples_tot
+
+
+
 
 class Solver(Batch):
     """
@@ -102,7 +118,6 @@ class Solver(Batch):
 
     defaults_ = {
         'cores_per_sample' : "NODEFAULT",
-        'avg_walltime' : "NODEFAULT",
         "solver_prms" :  "NODEFAULT"#,
         # "stages" :  [{}]
         }
@@ -128,19 +143,6 @@ class QoI(Batch):
     multi_sample=False
     internal=False
 
-    def get_work_mean(self):
-        """
-        Wrapper: get mean work of current simulation, then update 
-        total mean work
-        """
-        work_mean = self.get_current_work_mean()
-        if self.samples.n_previous > 0:
-            self.work_mean = ((self.samples.n_previous*self.work_mean
-                               + self.samples.n*work_mean)
-                               / (self.samples.n+self.samples.n_previous))
-        else:
-            self.work_mean = work_mean
-
     def write_to_file(self): 
         """ 
         optional for internal QoIs: Write result to file
@@ -153,6 +155,11 @@ class QoI(Batch):
         Scalar QoIs need not be integrated, hence scalar value is simplyy returned.
         """
         return qty
+
+    @property
+    def work_mean(self):
+        return sum(p.avg_work for p in self.participants)
+
 
 
 from . import *

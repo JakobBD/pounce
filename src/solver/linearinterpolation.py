@@ -24,6 +24,6 @@ class LinearInterpolationStandard(LinearInterpolation.QoI):
         start_time = time.time()
         x_eval = own_model.samples.nodes[:,0]
         u = np.interp(x_eval, self.x_in, self.y_in)
-        self.current_work_mean = (time.time() - start_time)/own_model.samples.n
+        self.participants[0].current_avg_work = (time.time() - start_time)/own_model.samples.n
         return [u]
 

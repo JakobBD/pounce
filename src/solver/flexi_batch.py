@@ -51,13 +51,6 @@ class FlexiBatch(Solver):
                 quantity = h5f.attrs[quantity_name]
             return quantity
 
-        def get_current_work_mean(self):
-            """ 
-            For FlexiBatch, avg work is already read from HDF5 file during 
-            check_all_finished
-            """
-            return sum(p.current_avg_work for p in self.participants)
-
 
     def prepare(self):
         """ 

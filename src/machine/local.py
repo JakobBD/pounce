@@ -31,7 +31,9 @@ class Local(Machine):
         """
         Runs a job by calling a subprocess.
         """
-        # TODO: enable parallel runs of jobs
+        # TODO: do not change run_commands but create new variable instead
+        # & pipe in different logfiles
+        # OR: adapt check_finished to find errors even for several runs
         for batch in self.active_batches:
             if self.multi_sample and self.parallelization == "mpi": 
                 self.to_mpi(batch)
@@ -40,6 +42,7 @@ class Local(Machine):
             
             for i,cmd in enumerate(batch.run_commands):
                 p_print("run command "+yellow(cmd))
+                p_print("    logfile "+yellow(batch.logfile_names[i]))
                 with open(batch.logfile_names[i],'w+') as f:
                     subprocess.run(cmd,stdout=f,shell=True)
         self.check_all_finished()
@@ -89,7 +92,7 @@ class Local(Machine):
                 out_list.append(args[0])
             else: 
                 out_list.append(" ".join(args))
-        return "parallel --link " + " ::: ".join(out_list)
+        return "parallel --link -k " + " ::: ".join(out_list)
             
 
 

@@ -168,45 +168,71 @@ class Ice(Solver):
 
         
 
+class IceMeshRef(Ice):
+
+    cname = "ice_meshref"
+    stages = {"meshref"}
+
+    defaults_ = {
+        "prmfile" : "dummy_unused",
+        }
+
+    def prepare(self):
+        self.run_commands = ["python3 "+self.exe_path+" NONE "
+                             +self.mesh_dir+"/"+self.project_name
+                             +" 0_0_0_0_0_0_0"]
+
+    def check_finished(self):
+        try: 
+            return self.check_stdout(self.logfile_names[0],3,"msh file:")
+        except:
+            return False
+
+
 class IceMesh(Ice):
 
     cname = "ice_mesh"
     stages = {"mesh"}
 
     defaults_ = {
-        "pythonfile" : "NODEFAULT",
         "hopr_path" : "NODEFAULT",
-        "sortsides_path" : "NODEFAULT",
-        "exe_path" : "dummy_unused",
         "prmfile" : "dummy_unused"
         }
 
     def prepare(self):
-        self.run_commands = ["python3 "+self.pythonfile+" NONE "
-                             +self.mesh_dir+"/"+self.project_name
-                             +" 0 0 0 0 0 0 0"]
+        self.run_commands = []
+        command_base = "python3 {} {}".format(self.exe_path,self.hopr_path)
         for i_run, node in enumerate(self.samples.nodes): 
             namestr = self.mesh_dir+"/"+self.project_name+"_"+str(i_run+1)
-            args = ["python3", self.pythonfile, "'"+self.hopr_path+"'", "'"+namestr+"'"]
-            for n in node: 
-                args.append(str(n))
-            for i in range(7-len(node)): # fill with zeros
-                args.append("0")
-            self.run_commands.append(" ".join(args))
-            if i_run == 0:
-                sortsides_cmd = self.sortsides_path + " " +  namestr+"_mesh.h5"
-        self.run_commands.append(sortsides_cmd)
+            arg_vec = "_".join([str(n) for n in node] + ["0" for i in range(len(node),7)])
+            self.run_commands.append(" ".join([command_base,namestr,arg_vec]))
 
     def check_finished(self):
         try: 
-            if not self.check_stdout(self.logfile_names[0],3,"msh file:"): 
-                return False
-            for logfile in self.logfile_names[1:-1]: 
+            for logfile in self.logfile_names: 
                 if not self.check_stdout(logfile,2," HOPR successfully finished"): 
                     return False
-            if not self.check_stdout(self.logfile_names[-1],2," SORT ICING SIDES TOOL FINISHED!"):
-                return False
             return True
+        except:
+            return False
+
+
+class IceSortSides(Ice):
+
+    cname = "ice_sortsides"
+    stages = {"sortsides"}
+
+    defaults_ = {
+        "prmfile" : "dummy_unused"
+        }
+
+    def prepare(self):
+        namestr = self.mesh_dir+"/"+self.project_name+"_1"
+        self.run_commands = [self.exe_path + " " +namestr+"_mesh.h5"]
+
+    def check_finished(self):
+        try: 
+            return self.check_stdout(self.logfile_names[0],2," SORT ICING SIDES TOOL FINISHED!")
         except:
             return False
 

@@ -242,7 +242,7 @@ class Mfmc(UqMethod):
             self.qois_optimize = [m.qoi_opt for m in self.models_opt]
             q1, q2 = self.qois_optimize[0:2]
             for q, qn in zip( self.qois_optimize[:-1], self.qois_optimize[1:] ):
-                q.r = np.sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
+                q.r = safe_sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
             # remove dummy at the end
             self.models_opt.pop(-1) 
             self.qois_optimize.pop(-1) 
@@ -267,7 +267,7 @@ class Mfmc(UqMethod):
             for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
                 for model in self.models_opt: 
                     qoi = model.internal_qois[i]
-                    qoi.alpha = np.sqrt(qoi.rho_sq * qoi_hfm.sigma_sq / qoi.sigma_sq)
+                    qoi.alpha = safe_sqrt(qoi.rho_sq * qoi_hfm.sigma_sq / qoi.sigma_sq)
 
             p_print("\nSelected Models and optimal number of samples:")
             table = PrettyTable()
@@ -283,7 +283,7 @@ class Mfmc(UqMethod):
             self.total_cost = np.dot(wv, [q.mlopt for q in self.qois_optimize])
             print()
             p_print("Estimated actual required total work: {}".format(self.total_cost))
-            p_print("Estimated achieved RMSE: {}".format(np.sqrt(self.v_opt))) #TODO
+            p_print("Estimated achieved RMSE: {}".format(safe_sqrt(self.v_opt))) #TODO
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
@@ -304,7 +304,7 @@ class Mfmc(UqMethod):
                             continue
                         q = m.internal_qois[i]
                         self.get_rho(n_hfm,q,qoi_hfm)
-                        q.alpha = np.sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
+                        q.alpha = safe_sqrt(q.rho_sq * qoi_hfm.sigma_sq / q.sigma_sq)
                 u = qoi_hfm.u[:n_hfm+1]#.astype(np.float64)
                 qoi_hfm.mean = np.mean(u,axis = 0)
                 qoi_hfm.var = np.var(u,axis=0,ddof=1)
@@ -316,14 +316,14 @@ class Mfmc(UqMethod):
                     up  = q.u[:np_+1]#.astype(np.float64)
                     qoi_hfm.mean += q.alpha * (np.mean(u,axis = 0) - np.mean(up,axis=0))
                     qoi_hfm.var  += q.alpha * (np.var(u,axis=0,ddof=1) - np.var(up,axis=0,ddof=1))
-                qoi_hfm.stddev = np.sqrt(qoi_hfm.var)
+                qoi_hfm.stddev = safe_sqrt(qoi_hfm.var)
                 qoi_hfm.write_to_file()
                 if isinstance(qoi_hfm.mean,(float,np.float)):
                     table.add_row([qoi_hfm.cname,qoi_hfm.mean,qoi_hfm.stddev])
                 else:
                     table.add_row([qoi_hfm.cname + " (Int.)",
                                    qoi_hfm.integrate(qoi_hfm.mean),
-                                   np.sqrt(qoi_hfm.integrate(qoi_hfm.var))])
+                                   safe_sqrt(qoi_hfm.integrate(qoi_hfm.var))])
             self.mean   = self.hfm.qoi_opt.mean
             self.stddev = self.hfm.qoi_opt.stddev
             print_table(table)
@@ -358,7 +358,7 @@ class Mfmc(UqMethod):
         v = 0.
         for m, mn in zip(set_[:-1], set_[1:]):
             q, qn = m.qoi_opt, mn.qoi_opt
-            v += np.sqrt(q.work_mean * (q.rho_sq - qn.rho_sq))
+            v += safe_sqrt(q.work_mean * (q.rho_sq - qn.rho_sq))
         return v**2 * set_[0].qoi_opt.sigma_sq / self.total_work
 
 

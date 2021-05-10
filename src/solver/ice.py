@@ -150,6 +150,7 @@ class Ice(Solver):
         """
         try:
             for logfile in self.logfile_names: 
+                # TODO: use check_stdout function
                 args=['tail','-n','4',logfile]
                 output=subprocess.run(args,stdout=subprocess.PIPE)
                 output=output.stdout.decode("utf-8").splitlines()
@@ -158,6 +159,13 @@ class Ice(Solver):
             return True
         except:
             return False
+
+    def check_stdout(self,fn,nlines,stringcmp):
+        args=['tail','-n',str(nlines),fn]
+        output=subprocess.run(args,stdout=subprocess.PIPE)
+        output=output.stdout.decode("utf-8")
+        return output.startswith(stringcmp)
+
         
 
 class IceMesh(Ice):
@@ -189,12 +197,6 @@ class IceMesh(Ice):
                 sortsides_cmd = self.sortsides_path + " " +  namestr+"_mesh.h5"
         self.run_commands.append(sortsides_cmd)
 
-    def check_stdout(self,fn,nlines,stringcmp):
-        args=['tail','-n',str(nlines),fn]
-        output=subprocess.run(args,stdout=subprocess.PIPE)
-        output=output.stdout.decode("utf-8")
-        return output.startswith(stringcmp)
-
     def check_finished(self):
         try: 
             if not self.check_stdout(self.logfile_names[0],3,"msh file:"): 
@@ -209,26 +211,59 @@ class IceMesh(Ice):
             return False
 
 
+class IceMerge(Ice):
+
+    cname = "ice_merge"
+    stages = {"merge"}
+    defaults_ = {
+        "prmfile"   : "dummy_unused",
+        "start_time" : "NODEFAULT",
+        "end_time"   : "NODEFAULT"
+            }
+
+    def prepare(self):
+        # self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
+        self.avgfilenames=sorted(glob.glob(self.project_name+"_TimeAvg_0*.h5"))
+        start_end_str = " --start={} --end={} ".format(self.start_time,self.end_time)
+        self.run_commands = [self.exe_path + start_end_str + " ".join(self.avgfilenames)]
+
+    def check_finished(self):
+        return self.check_stdout(self.logfile_names[0],2,"Merging DONE:") 
+
+
 class IceSwim(Ice):
 
     cname = "ice_swim"
     stages = {"swim"}
     defaults_ = {
         "prmfile" : "dummy_unused",
-        "refstate" : "NODEFAULT"
+        "refstate" : "NODEFAULT",
+        "common_x" : True,
+        "x_min" : -0.1,
+        "x_max" : 1.0,
+        "n_pts" : 100
             }
 
     def prepare(self):
-        self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
-        self.run_commands = [self.exe_path + " " + self.statefilename]
+        # self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
+        # avgfilename is _Merged_ is that exists and last TimeAvg file else
+        self.avgfilename=sorted(glob.glob(self.project_name+"_TimeAvg_*.h5"))[-1]
+        if self.common_x: 
+            arg_str = " --InterpolateX {} {} {} ".format(self.x_min,self.x_max,self.n_pts)
+            self.index_out = 0
+        else: 
+            arg_str = " "
+            self.index_out = 2
+        self.run_commands = [self.exe_path + arg_str + self.avgfilename]
 
     def check_finished(self):
         # try: 
-            with h5py.File(self.statefilename, 'r') as h5f:
-                    dset = h5f['SwimCP'][()]
-            pres =np.array(dset)
+            with h5py.File(self.avgfilename, 'r') as h5f:
+                    dset = h5f['SwimData'][()]
+            pres =np.array(dset[:,:,self.index_out])
             u_inf = np.array(self.refstate)
-            self.cp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
+            cp_temp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
+            self.cp = np.where(pres >= 0.,cp_temp,0.)
             return True
         # except:
             # return False

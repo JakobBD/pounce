@@ -209,10 +209,22 @@ class IceMesh(Ice):
 
     def check_finished(self):
         try: 
+            all_ok = True
             for logfile in self.logfile_names: 
                 if not self.check_stdout(logfile,2," HOPR successfully finished"): 
-                    return False
-            return True
+                    print("HOPR not finished properly in logfile" + logfile)
+                    all_ok = False
+                args=['grep','-nri','-a4',"negative jacobian",logfile]
+                output=subprocess.run(args,stdout=subprocess.PIPE)
+                output=output.stdout.decode("utf-8").split("\n--\n")
+                for case in output:
+                    if not len(case): 
+                        continue
+                    i_run = case.split(self.project_name+"_")[1].split("_Spline")[0]
+                    line = case.split("-")[0]
+                    print("Negative Jacobian in run {}, logfile {}, line {}".format(i_run,logfile,line))
+                    all_ok = False
+            return all_ok
         except:
             return False
 

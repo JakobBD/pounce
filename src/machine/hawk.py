@@ -33,7 +33,7 @@ class Hawk(Machine):
             'cores_per_sample': "dummy_unused",
             'cores_per_sample_min': "NODEFAULT",
             'cores_per_sample_max': "NODEFAULT",
-            'est_work': "NODEFAULT",
+            'est_work': "NODEFAULT", # in Core-s
             'n_elems': None
             }
         }

@@ -22,7 +22,7 @@ class Hawk(Machine):
     cname = "hawk"
 
     defaults_={
-        "walltime_factor" : 1.2,
+        "work_safety_fac" : 1.2,
         "n_max_nodes" : 1024,
         "max_walltime" : 86400, # 24h
         "max_total_work" : 36e5 # 1.000 CoreH
@@ -125,7 +125,8 @@ class Hawk(Machine):
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
         # submit job
-        args=['qsub',batch.jobfile_name]
+        # args=['qsub',batch.jobfile_name]
+        args=['qsub','-q','test',batch.jobfile_name]
         if self.remote: 
            args=self.to_ssh(args)
         job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
@@ -189,7 +190,10 @@ class Hawk(Machine):
                              stderr=subprocess.PIPE,universal_newlines=True)
         lines = job.stdout.split('\n')
         if self.remote: 
-            lines = lines[17:-1]
+            for i_line,line in enumerate(lines): 
+                if line.startswith("Job id"):
+                    break
+            lines = lines[i_line+2:-1]
         if len(lines)<3:
             return {}
         else:
@@ -247,14 +251,13 @@ class Hawk(Machine):
                 batch.batch_walltime=batch.avg_walltime
             return
 
-        self.work_safety_fac = 1.5
         table = pt.PrettyTable()
         table.field_names = ["batch", "efficiency (%)","# parallel runs",
                              "# sequential runs", "# cores / sample","# nodes",
                              "batch walltime","# elems / core"]
 
         for batch in self.active_batches:
-            if batch.samples.n_previous > 0:
+            if globels.sim.current_iter.n > 1:
                 est_work = batch.sum_work[batch.samples.n_previous]/batch.samples.n_previous
             else: 
                 est_work = batch.est_work
@@ -332,6 +335,8 @@ class Hawk(Machine):
             batch.n_parallel_runs = (batch.samples.n - 1)//batch.n_sequential_runs + 1 
             batch.cores_per_sample = min(batch.n_cores_avail // batch.n_parallel_runs, batch.cores_per_sample_max)
             batch.n_cores = batch.cores_per_sample*batch.n_parallel_runs
+            if batch.n_nodes < 64: 
+                batch.n_nodes = math.ceil(batch.n_cores/ self.cores_per_node)
             batch.batch_walltime = batch.n_sequential_runs*batch.scaled_est_work/batch.cores_per_sample
             batch.efficiency = batch.work / (batch.batch_walltime*batch.n_nodes*self.cores_per_node)
 

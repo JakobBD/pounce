@@ -8,7 +8,7 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 from sampling.sampling import MonteCarlo
-from solver.solver import Solver
+from solver.solver import Solver,register_batch_series
 from machine.machine import Machine
 from stochvar.stochvar import StochVar
 from helpers import config
@@ -88,6 +88,7 @@ class Mlmc(UqMethod):
                 stage.batches.extend(level.sublevels)
 
         self.levels = self.stages[-1].levels 
+        register_batch_series(self.stages) 
 
         iter_postproc = config.config_pp_mach(prms,self,"iteration_postproc")
         self.stages.append(iter_postproc)
@@ -198,15 +199,15 @@ class Mlmc(UqMethod):
                 qoi.SigmaSq = ( qoi.du_sq_sum - (qoi.u_fine_sum-qoi.u_coarse_sum)**2 / n) / (n-1)
                 qoi.SigmaSq = qoi.integrate(qoi.SigmaSq)
                 if self.use_ci: 
-                    # TODO: hack for convtest
-                    if qoi.samples.n_previous == 0: 
-                        if self.dof_adj: 
-                            qoi.du_e3_sum = 0.
-                            qoi.du_e4_sum = 0.
-                        qoi.w_sum = 0.
-                        qoi.w_sq_sum = 0.
-                        self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
-                    # end hack
+                    # # TODO: hack for convtest
+                    # if qoi.samples.n_previous == 0: 
+                        # if self.dof_adj: 
+                            # qoi.du_e3_sum = 0.
+                            # qoi.du_e4_sum = 0.
+                        # qoi.w_sum = 0.
+                        # qoi.w_sq_sum = 0.
+                        # self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
+                    # # end hack
                     if self.dof_adj: 
                         qoi.du_e3_sum   += sum([(f-c)**3 for f,c in zip(u_fine,u_coarse)])
                         qoi.du_e4_sum   += sum([(f-c)**4 for f,c in zip(u_fine,u_coarse)])

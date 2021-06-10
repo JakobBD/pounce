@@ -5,7 +5,7 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 from sampling.sampling import Collocation
-from solver.solver import Solver
+from solver.solver import Solver,register_batch_series
 from machine.machine import Machine
 from stochvar.stochvar import StochVar
 from helpers import config
@@ -45,6 +45,8 @@ class Sc(UqMethod):
             solver.name = "sc"
             solver.samples = self.samples
             stage.batches = [solver]
+
+        register_batch_series(self.stages) 
 
         postproc = config.config_pp_mach(prms,self,"postproc")
         self.stages.append(postproc)

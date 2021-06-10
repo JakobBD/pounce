@@ -8,21 +8,19 @@ from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
 from sampling.sampling import MonteCarlo
-from solver.solver import Solver
+from solver.solver import Solver,register_batch_series
 from machine.machine import Machine
 from stochvar.stochvar import StochVar
 from helpers import config
 
 
 # TODO: 
-# - do not re-use pilot models in second iteration
 # - get work for model, not for qoi 
 # - fix qoi_optimize vs. all qois 
-# - slightly nicer stdout 
 # - rename check_all_finished
 # - default yml
-# - update estimates for rho, alpha and estimated MSE
-# - get surrogate rho_sq estimate from subsets of hfm
+
+# - get reset_seed as input prm in "sampling" category
 
 
 
@@ -108,6 +106,7 @@ class Mfmc(UqMethod):
                 model.samples = sampler 
                 model.internal_qois = []
 
+        register_batch_series(self.stages) 
 
         all_models = self.stages[-1].all_models # last stage is input to QoI
 

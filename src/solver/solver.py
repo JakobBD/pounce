@@ -26,6 +26,7 @@ class Batch(BaseClass):
     def __init__(self,*args): 
         super().__init__(*args)
         self.sum_work = { 0 : 0. }
+        self.current_avg_work = 0.
 
     def check_finished(self):
         """
@@ -104,6 +105,15 @@ class Batch(BaseClass):
         return self.sum_work[n_samples_tot] / n_samples_tot
 
 
+def register_batch_series(stages): 
+    """
+    to be called before postproc is appended
+    """
+    l = [s.batches for s in stages]
+    l = [list(i) for i in zip(*l)]
+    for i_stage, stage in enumerate(stages): 
+        for bl,b in zip(l,stage.batches):
+            b.other_stages = bl
 
 
 class Solver(Batch):
@@ -158,7 +168,10 @@ class QoI(Batch):
 
     @property
     def work_mean(self):
-        return sum(p.avg_work for p in self.participants)
+        w = 0.
+        for p in self.participants: 
+            w += sum(s.avg_work for s in p.other_stages) 
+        return w
 
 
 

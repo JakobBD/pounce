@@ -44,14 +44,6 @@ class Ice(Solver):
                 quantity = h5f.attrs[quantity_name]
             return quantity
 
-        def get_current_work_mean(self):
-            """ 
-            For Ice, avg work is already read from HDF5 file during 
-            check_all_finished
-            """
-            return sum(p.current_avg_work for p in self.participants)
-
-
     def prepare(self):
         """ 
         Prepares the simulation by generating the run_command
@@ -178,9 +170,9 @@ class IceMeshRef(Ice):
         }
 
     def prepare(self):
-        self.run_commands = ["python3 "+self.exe_path+" NONE "
+        self.run_commands = ["python3 "+self.exe_path+" NONE NONE "
                              +self.mesh_dir+"/"+self.project_name
-                             +" 0_0_0_0_0_0_0"]
+                             +" 0_0_0_0_0_0_0 5"]
 
     def check_finished(self):
         try: 
@@ -195,13 +187,12 @@ class IceMesh(Ice):
     stages = {"mesh"}
 
     defaults_ = {
-        "hopr_path" : "NODEFAULT",
-        "prmfile" : "dummy_unused"
+        "hopr_path" : "NODEFAULT"
         }
 
     def prepare(self):
         self.run_commands = []
-        command_base = "python3 {} {}".format(self.exe_path,self.hopr_path)
+        command_base = "python3 {} {} {}".format(self.exe_path,self.hopr_path,self.prmfile)
         for i_run, node in enumerate(self.samples.nodes): 
             namestr = self.mesh_dir+"/"+self.project_name+"_"+str(i_run+1)
             arg_vec = "_".join([str(n) for n in node] + ["0" for i in range(len(node),7)])
@@ -218,6 +209,7 @@ class IceMesh(Ice):
                 output=output.stdout.decode("utf-8")
                 if len(output)>0: 
                     all_ok = False
+                self.current_avg_work = 180. # TODO: actually measure time!
                 # OLD VERSION; NO WRAPPER
                 # --------------------------------------------------
                 # if not self.check_stdout(logfile,2," HOPR successfully finished"): 

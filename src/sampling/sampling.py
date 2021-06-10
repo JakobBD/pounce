@@ -29,6 +29,8 @@ class MonteCarlo(Sampling):
     Vanilla Monte Carlo sampling
     """
 
+    # TODO: get reset_seed as input prm in "sampling" category
+
     def get(self):
         self.nodes=[]
         for var in self.stoch_vars:

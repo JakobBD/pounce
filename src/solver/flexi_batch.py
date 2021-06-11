@@ -60,8 +60,8 @@ class FlexiBatch(Solver):
         """
 
         p_print("Write HDF5 parameter file for simulation "+self.name)
-        self.prm_file_name = 'input_'+self.project_name+'.h5'
-        self.solver_prms.update({"ProjectName":self.project_name})
+        self.prm_file_name = self.full_name+'_StochInput.h5'
+        self.solver_prms.update({"ProjectName":self.full_name})
 
         # both:
         stv=self.samples.stoch_vars
@@ -132,7 +132,7 @@ class FlexiBatch(Solver):
         dirty: gets info not from stdout, but from h5 file
         TODO: rename 
         """
-        filename=sorted(glob.glob(self.project_name+"_BodyForces_*.h5"))[-1]
+        filename=sorted(glob.glob(self.full_name+"_BodyForces_*.h5"))[-1]
         with h5py.File(filename, 'r') as h5f:
                 dset = h5f['BodyForces_BC_wall'][()]
         vals=np.array(dset)
@@ -192,7 +192,7 @@ class FlexiBatchCp(Internal.QoI,FlexiBatch.QoI):
     def get_response(self,s=None): 
         u_out = []
         for p in self.participants:
-            statefilename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
+            statefilename=sorted(glob.glob(p.full_name+"_State_*.h5"))[-1]
             run_command = self.exe_path + " " + statefilename
             # TODO: very dirty still...
             with open("dummy_log_file",'w+') as f:
@@ -241,10 +241,9 @@ class FlexiBatchFieldSolutionIterPostProc(FlexiBatchFieldSolution):
         run_command = self.exe_path \
                       + " " + self.prmfile \
                       + " " + self.prm_file_name
-        self.project_name  = self.participants[0].project_name
-        self.output_filename = 'postproc_'+self.project_name+'_state.h5'
+        self.output_filename = self.full_name+'_Out.h5'
         for p in self.participants:
-            filename=sorted(glob.glob(p.project_name+"_State_*.h5"))[-1]
+            filename=sorted(glob.glob(p.full_name+"_State_*.h5"))[-1]
             run_command += " " + filename
         self.run_commands = [run_command]
 
@@ -256,7 +255,7 @@ class FlexiBatchFieldSolutionSimuPostProc(FlexiBatchFieldSolution):
         self.args=[p.output_filename for p in self.participants]
         self.run_commands = [self.exe_path \
                             + " " + " ".join(self.args)]
-        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
+        self.output_filename = self.full_name+'_SOLUTION.h5'
 
 
 class FlexiBatchRecordPoints(FlexiBatch.QoI):
@@ -283,15 +282,14 @@ class FlexiBatchRecordPointsIterPostProc(FlexiBatchRecordPoints):
     def prepare(self):
         # participants[0] is a rather dirty hack
         self.prm_file_name = self.participants[0].prm_file_name
-        n_files = len(glob.glob(participants[0].project_name+"_RP_*.h5"))
+        n_files = len(glob.glob(participants[0].full_name+"_RP_*.h5"))
         run_command = self.exe_path \
                       + " " + self.prmfile \
                       + " " + self.prm_file_name \
                       + " " + str(n_files)
-        self.project_name = self.participants[0].project_name
-        self.output_filename = 'postproc_'+self.project_name+'_recordpoints.h5'
+        self.output_filename = self.full_name+'_Out.h5'
         for p in self.participants:
-            filenames=sorted(glob.glob(p.project_name+"_RP_*.h5"))
+            filenames=sorted(glob.glob(p.full_name+"_RP_*.h5"))
             fn_add=[]
             for fn in filenames:
                 time=float(fn.split("_")[-1][:-3])
@@ -308,4 +306,4 @@ class FlexiBatchRecordPointsSimuPostProc(FlexiBatchRecordPoints):
         self.args=[p.output_filename for p in self.participants]
         self.run_commands = [self.exe_path \
                             + " " + " ".join(self.args)]
-        self.output_filename = 'SOLUTION_'+self.project_name+'_state.h5'
+        self.output_filename = self.full_name+'_SOLUTION.h5'

@@ -52,8 +52,8 @@ class Ice(Solver):
         """
 
         p_print("Write HDF5 parameter file for simulation "+self.name)
-        self.prm_file_name = 'input_'+self.project_name+'.h5'
-        self.solver_prms.update({"ProjectName":self.project_name})
+        self.prm_file_name = self.full_name+'_StochInput.h5'
+        self.solver_prms.update({"ProjectName":self.full_name})
 
         # both:
         stv=self.samples.stoch_vars
@@ -98,7 +98,7 @@ class Ice(Solver):
 
 
     def to_meshfile(self,i):
-        return (self.mesh_dir+"/"+self.project_name+"_"+str(i+1)+'_mesh.h5').encode("latin-1").ljust(255)
+        return (self.mesh_dir+"/"+self.full_name+"_"+str(i+1)+'_mesh.h5').encode("latin-1").ljust(255)
 
 
     def h5write(self,h5f,name,prm):
@@ -128,7 +128,7 @@ class Ice(Solver):
         dirty: gets info not from stdout, but from h5 file
         TODO: rename 
         """
-        filename=sorted(glob.glob(self.project_name+"_BodyForces_*.h5"))[-1]
+        filename=sorted(glob.glob(self.full_name+"_BodyForces_*.h5"))[-1]
         with h5py.File(filename, 'r') as h5f:
                 dset = h5f['BodyForces_BC_wall'][()]
         vals=np.array(dset)
@@ -171,7 +171,7 @@ class IceMeshRef(Ice):
 
     def prepare(self):
         self.run_commands = ["python3 "+self.exe_path+" NONE NONE "
-                             +self.mesh_dir+"/"+self.project_name
+                             +self.mesh_dir+"/"+self.full_name
                              +" 0_0_0_0_0_0_0 5"]
 
     def check_finished(self):
@@ -194,7 +194,7 @@ class IceMesh(Ice):
         self.run_commands = []
         command_base = "python3 {} {} {}".format(self.exe_path,self.hopr_path,self.prmfile)
         for i_run, node in enumerate(self.samples.nodes): 
-            namestr = self.mesh_dir+"/"+self.project_name+"_"+str(i_run+1)
+            namestr = self.mesh_dir+"/"+self.full_name+"_"+str(i_run+1)
             arg_vec = "_".join([str(n) for n in node] + ["0" for i in range(len(node),7)])
             self.run_commands.append(" ".join([command_base,namestr,arg_vec]))
 
@@ -221,7 +221,7 @@ class IceMesh(Ice):
                 # for case in output:
                     # if not len(case): 
                         # continue
-                    # i_run = case.split(self.project_name+"_")[1].split("_Spline")[0]
+                    # i_run = case.split(self.full_name+"_")[1].split("_Spline")[0]
                     # line = case.split("-")[0]
                     # print("Negative Jacobian in run {}, logfile {}, line {}".format(i_run,logfile,line))
                     # all_ok = False
@@ -241,7 +241,7 @@ class IceSortSides(Ice):
         }
 
     def prepare(self):
-        namestr = self.mesh_dir+"/"+self.project_name+"_1"
+        namestr = self.mesh_dir+"/"+self.full_name+"_1"
         self.run_commands = [self.exe_path + " " +namestr+"_mesh.h5"]
 
     def check_finished(self):
@@ -262,8 +262,8 @@ class IceMerge(Ice):
             }
 
     def prepare(self):
-        # self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
-        self.avgfilenames=sorted(glob.glob(self.project_name+"_TimeAvg_0*.h5"))
+        # self.statefilename=sorted(glob.glob(self.full_name+"_State_*.h5"))[-1]
+        self.avgfilenames=sorted(glob.glob(self.full_name+"_TimeAvg_0*.h5"))
         start_end_str = " --start={} --end={} ".format(self.start_time,self.end_time)
         self.run_commands = [self.exe_path + start_end_str + " ".join(self.avgfilenames)]
 
@@ -285,9 +285,9 @@ class IceSwim(Ice):
             }
 
     def prepare(self):
-        # self.statefilename=sorted(glob.glob(self.project_name+"_State_*.h5"))[-1]
+        # self.statefilename=sorted(glob.glob(self.full_name+"_State_*.h5"))[-1]
         # avgfilename is _Merged_ is that exists and last TimeAvg file else
-        self.avgfilename=sorted(glob.glob(self.project_name+"_TimeAvg_*.h5"))[-1]
+        self.avgfilename=sorted(glob.glob(self.full_name+"_TimeAvg_*.h5"))[-1]
         if self.common_x: 
             arg_str = " --InterpolateX {} {} {} ".format(self.x_min,self.x_max,self.n_pts)
             self.index_out = 0

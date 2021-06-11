@@ -42,23 +42,19 @@ class Batch(BaseClass):
         raise Exception("not yet implemented")
 
     @property
-    def project_name(self): 
-        return globels.project_name+'_'+self.name
-
-    @property
-    def name_with_stage(self): 
+    def full_name(self): 
+        l = [globels.project_name, self.name, globels.sim.current_iter.n]
         if hasattr(self,"stage_name"):
-            return self.name + "_" + self.stage_name 
-        else: 
-            return self.name
+            l += self.stage_name 
+        return "_".join(l)
 
     @property
     def logfile_names(self): 
-        return ["log_"+self.name_with_stage+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
+        return [self.full_name+self.run_id(i+1)+"_LOG.dat" for i in range(self.n_runs)]
 
     @property
     def errfile_names(self): 
-        return ["err_"+self.name_with_stage+self.run_id(i+1)+".dat" for i in range(self.n_runs)]
+        return [self.full_name+self.run_id(i+1)+"_ERR.dat" for i in range(self.n_runs)]
 
     @property
     def n_runs(self):

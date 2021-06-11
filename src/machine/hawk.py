@@ -22,6 +22,7 @@ class Hawk(Machine):
     cname = "hawk"
 
     defaults_={
+        "parallelization" : "mpi", # change default (options: "none", "mpi", "gnu")
         "work_safety_fac" : 1.2,
         "n_max_nodes" : 1024,
         "max_walltime" : 86400, # 24h
@@ -37,6 +38,10 @@ class Hawk(Machine):
             'n_elems': None
             }
         }
+
+    # TODO: coherent errfiles in local/hawk; 
+    #       piped or not? where does walltime exceeded go? 
+    #       test check_errorfile on hawk (probably not functional)
 
     def __init__(self,class_dict):
         """
@@ -109,17 +114,17 @@ class Hawk(Machine):
         """
         jobfile_string = (
               '#!/bin/bash\n'
-            + '#PBS -N {}\n'.format(getattr(batch,"project_name",
-                                            globels.project_name))
+            + '#PBS -N {}\n'.format(batch.full_name)
             + '#PBS -l select={}:node_type=rome:mpiprocs=128\n'.format(batch.n_nodes)
             + '#PBS -l walltime='+time_to_str(batch.batch_walltime)+"\n\n"
             + 'module load aocl/2.1.0\n'
             # + 'module load hfd5/1.10.5\n\n'
             + 'cd $PBS_O_WORKDIR\n\n')
 
+        self.prepare_run_commands(batch)
+
         for i,run in enumerate(batch.run_commands): 
-            jobfile_string += 'mpirun -np {} {} 1> {} 2> {}\n'.format(
-                batch.n_cores, run,
+            jobfile_string += '{} 1> {} 2> {}\n'.format( run,
                 batch.logfile_names[i], batch.errfile_names[i] )
         batch.jobfile_name = 'jobfile_{}'.format(batch.name)
         with open(batch.jobfile_name,'w+') as jf:

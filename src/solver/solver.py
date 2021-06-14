@@ -43,34 +43,32 @@ class Batch(BaseClass):
 
     @property
     def full_name(self): 
-        l = [globels.project_name, self.name, globels.sim.current_iter.n]
-        if hasattr(self,"stage_name"):
-            l += self.stage_name 
+        l = [globels.project_name, "B"+self.name, "I"+str(globels.sim.current_iter.n)]
         return "_".join(l)
 
     @property
     def logfile_names(self): 
-        return [self.full_name+self.run_id(i+1)+"_LOG.dat" for i in range(self.n_runs)]
+        return [self.run_name(i)+"_LOG.dat" for i in range(self.n_runs)]
 
     @property
     def errfile_names(self): 
-        return [self.full_name+self.run_id(i+1)+"_ERR.dat" for i in range(self.n_runs)]
+        return [self.run_name(i)+"_ERR.dat" for i in range(self.n_runs)]
 
     @property
     def n_runs(self):
         return len(self.run_commands)
 
-    def run_id(self,i):
+    def run_name(self,i):
         """
         needed to distinguish input and output files 
         in the case of several runs per batch (i.e. if one solver is
         run several times instead of a loop over all samples as part 
         of the external solver)
         """
-        if self.n_runs == 1:
-            return ""
-        else:
-            return "_run"+str(i)
+        out = self.full_name
+        if hasattr(self,"stage_name"):
+            out += "_S"+self.stage_name 
+        return out+"_R"+str(i+1)
 
 
     @classmethod

@@ -91,14 +91,14 @@ class Ice(Solver):
             self.h5write(h5f,'LevelVarNames'+suffix,names)
             self.h5write(h5f,'LevelVars'    +suffix,values)
 
-        meshfiles = [self.to_meshfile(i) for i in range(self.samples.n)]
+        meshfiles = [self.to_meshfile(i).encode("latin-1").ljust(255) for i in range(self.samples.n)]
         h5f.create_dataset("MeshFiles", data=meshfiles, shape = (self.samples.n,), dtype='S255')
 
         h5f.close()
 
 
     def to_meshfile(self,i):
-        return (self.mesh_dir+"/"+self.full_name+"_"+str(i+1)+'_mesh.h5').encode("latin-1").ljust(255)
+        return self.mesh_dir+"/"+self.full_name+"_Smesh_R"+str(i+1)+"_mesh.h5"
 
 
     def h5write(self,h5f,name,prm):
@@ -170,11 +170,16 @@ class IceMeshRef(Ice):
         }
 
     def prepare(self):
+        if globels.sim.current_iter.n >1: 
+            self.run_commands = []
+            return
         self.run_commands = ["python3 "+self.exe_path+" NONE NONE "
-                             +self.mesh_dir+"/"+self.full_name
+                             +self.mesh_dir+"/"+self.run_name(0)
                              +" 0_0_0_0_0_0_0 5"]
 
     def check_finished(self):
+        if globels.sim.current_iter.n >1: 
+            return True
         try: 
             return self.check_stdout(self.logfile_names[0],3,"msh file:")
         except:
@@ -194,7 +199,7 @@ class IceMesh(Ice):
         self.run_commands = []
         command_base = "python3 {} {} {}".format(self.exe_path,self.hopr_path,self.prmfile)
         for i_run, node in enumerate(self.samples.nodes): 
-            namestr = self.mesh_dir+"/"+self.full_name+"_"+str(i_run+1)
+            namestr = self.mesh_dir+"/"+self.run_name(i_run)
             arg_vec = "_".join([str(n) for n in node] + ["0" for i in range(len(node),7)])
             self.run_commands.append(" ".join([command_base,namestr,arg_vec]))
 
@@ -202,30 +207,12 @@ class IceMesh(Ice):
         try: 
             all_ok = True
             for logfile in self.logfile_names: 
-                # NEW VERSION WITH WRAPPER
-                # --------------------------------------------------
                 args=['grep','-nri','-a4',"ERROR",logfile]
                 output=subprocess.run(args,stdout=subprocess.PIPE)
                 output=output.stdout.decode("utf-8")
                 if len(output)>0: 
                     all_ok = False
                 self.current_avg_work = 180. # TODO: actually measure time!
-                # OLD VERSION; NO WRAPPER
-                # --------------------------------------------------
-                # if not self.check_stdout(logfile,2," HOPR successfully finished"): 
-                    # print("HOPR not finished properly in logfile" + logfile)
-                    # all_ok = False
-                # args=['grep','-nri','-a4',"negative jacobian",logfile]
-                # output=subprocess.run(args,stdout=subprocess.PIPE)
-                # output=output.stdout.decode("utf-8").split("\n--\n")
-                # for case in output:
-                    # if not len(case): 
-                        # continue
-                    # i_run = case.split(self.full_name+"_")[1].split("_Spline")[0]
-                    # line = case.split("-")[0]
-                    # print("Negative Jacobian in run {}, logfile {}, line {}".format(i_run,logfile,line))
-                    # all_ok = False
-                # --------------------------------------------------
             return all_ok
         except:
             return False
@@ -241,10 +228,14 @@ class IceSortSides(Ice):
         }
 
     def prepare(self):
-        namestr = self.mesh_dir+"/"+self.full_name+"_1"
-        self.run_commands = [self.exe_path + " " +namestr+"_mesh.h5"]
+        if globels.sim.current_iter.n >1: 
+            self.run_commands = []
+            return
+        self.run_commands = [self.exe_path + " " + self.to_meshfile(0)]
 
     def check_finished(self):
+        if globels.sim.current_iter.n >1: 
+            return True
         try: 
             return self.check_stdout(self.logfile_names[0],2," SORT ICING SIDES TOOL FINISHED!")
         except:

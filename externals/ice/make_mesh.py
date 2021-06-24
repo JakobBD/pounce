@@ -956,5 +956,6 @@ if __name__ == "__main__":
    random_vars = sys.argv[4].split("_") # random distribution; normal(0.,1.,1) is correct, others improve stability
    n_avg = int(sys.argv[5])
 
-   stdout_str = make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg)
-   print(stdout_str)
+   hopr_stdout_str = make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg)
+   if hopr_stdout_str: 
+       print(hopr_stdout_str)

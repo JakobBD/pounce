@@ -130,8 +130,8 @@ class Hawk(Machine):
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
         # submit job
-        # args=['qsub',batch.jobfile_name]
-        args=['qsub','-q','test',batch.jobfile_name]
+        args=['qsub',batch.jobfile_name]
+        # args=['qsub','-q','test',batch.jobfile_name]
         if self.remote: 
            args=self.to_ssh(args)
         job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
@@ -198,7 +198,12 @@ class Hawk(Machine):
             for i_line,line in enumerate(lines): 
                 if line.startswith("Job id"):
                     break
-            lines = lines[i_line+2:-1]
+            lines = lines[i_line:-1]
+            # find last line with status 
+            for i_line, line in enumerate(lines[2:]): 
+                if line.find(".") != 7: 
+                    lines = lines[:i_line+2]
+                    break
         if len(lines)<3:
             return {}
         else:
@@ -214,29 +219,31 @@ class Hawk(Machine):
         open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        for errfile in batch.errfile_names:
-            # sometimes hawk needs a while to finish up jobs
-            if not os.path.isfile(errfile):
-                time.sleep(5)
-            with open(errfile) as f:
-                lines = f.read().splitlines()
-            # empty error file: all good
-            if len(lines)==0:
-                continue
-            # check if walltime excced in error file (also means that 
-            # solver did not otherwise crash)
-            longlines=[line.split() for line in lines if len(line.split())>=7]
-            for words in longlines:
-                if words[4]=='walltime' and words[6]=='exceeded':
-                    p_print("Job {} exceeded walltime ({}). ".format(
-                                batch.name,time_to_str(batch.batch_walltime))
-                            +"Re-submit with double walltime.")
-                    batch.batch_walltime *= 2
-                    self.submit_job(batch)
-                    return
-            # non-empty error file and not walltime excceded: other error
-            raise Exception('Error in jobfile execution! '
-                            + 'See file {} for details.'.format(errfile))
+        #TODO 
+        print("DUMMY DO NOT CHECK ERROFILE")
+        # for errfile in batch.errfile_names:
+            # # sometimes hawk needs a while to finish up jobs
+            # if not os.path.isfile(errfile):
+                # time.sleep(5)
+            # with open(errfile) as f:
+                # lines = f.read().splitlines()
+            # # empty error file: all good
+            # if len(lines)==0:
+                # continue
+            # # check if walltime excced in error file (also means that 
+            # # solver did not otherwise crash)
+            # longlines=[line.split() for line in lines if len(line.split())>=7]
+            # for words in longlines:
+                # if words[4]=='walltime' and words[6]=='exceeded':
+                    # p_print("Job {} exceeded walltime ({}). ".format(
+                                # batch.name,time_to_str(batch.batch_walltime))
+                            # +"Re-submit with double walltime.")
+                    # batch.batch_walltime *= 2
+                    # self.submit_job(batch)
+                    # return
+            # # non-empty error file and not walltime excceded: other error
+            # raise Exception('Error in jobfile execution! '
+                            # + 'See file {} for details.'.format(errfile))
         # nor return means all runs finished normally
         batch.finished=True
 

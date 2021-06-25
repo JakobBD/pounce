@@ -26,7 +26,8 @@ class Hawk(Machine):
         "work_safety_fac" : 1.2,
         "n_max_nodes" : 1024,
         "max_walltime" : 86400, # 24h
-        "max_total_work" : 36e5 # 1.000 CoreH
+        "max_total_work" : 36e5, # 1.000 CoreH
+        "remote" : False
         }
 
     defaults_add = { 
@@ -52,7 +53,7 @@ class Hawk(Machine):
         super().__init__(class_dict)
         self.cores_per_node = 128
         self.total_work = 0.
-        self.remote = not socket.gethostname().startswith('hawk-login')
+        # self.remote = not socket.gethostname().startswith('hawk-login')
         if self.remote: 
             args = "df -P .".split()
             job = subprocess.run(args,stdout=subprocess.PIPE,
@@ -63,11 +64,6 @@ class Hawk(Machine):
             mount_dir_local = line.split()[-1]
             cwd = os.getcwd()
             self.dir_on_hawk=mount_dir_on_hawk+cwd.replace(mount_dir_local,"")
-        else: 
-            # self.hawk_username = getpass.getuser()
-            if self.local_postproc: 
-                raise Exception("Local postproc is only possible if POUNCE is "
-                                "run on remote machine.")
 
 
     def run_batches(self):
@@ -138,8 +134,8 @@ class Hawk(Machine):
         job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,universal_newlines=True)
         lines = job.stdout.split("\n")
-        if self.remote: 
-            lines = lines[:-1]
+        # if self.remote: 
+        lines = lines[:-1]
         batch.job_id=int(lines[-1].split(".")[0])
         p_print("submitted job "+str(batch.job_id)+" for batch "+batch.name)
         batch.queue_status="submitted"
@@ -195,16 +191,15 @@ class Hawk(Machine):
         job = subprocess.run(args,shell=self.remote,stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,universal_newlines=True)
         lines = job.stdout.split('\n')
-        if self.remote: 
-            for i_line,line in enumerate(lines): 
-                if line.startswith("Job id"):
-                    break
-            lines = lines[i_line:-1]
-            # find last line with status 
-            for i_line, line in enumerate(lines[2:]): 
-                if line.find(".") != 7: 
-                    lines = lines[:i_line+2]
-                    break
+        for i_line,line in enumerate(lines): 
+            if line.startswith("Job id"):
+                break
+        lines = lines[i_line:-1]
+        # find last line with status 
+        for i_line, line in enumerate(lines[2:]): 
+            if line.find(".") != 7: 
+                lines = lines[:i_line+2]
+                break
         if len(lines)<3:
             return {}
         else:

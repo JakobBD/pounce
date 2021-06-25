@@ -108,7 +108,7 @@ class Hawk(Machine):
             batch.queue_status=None
 
 
-    def submit_job(self,batch):
+    def submit_job(self,batch,resub=False):
         """
         Generates the necessary jobfile and submits job for a batch
         """
@@ -121,12 +121,13 @@ class Hawk(Machine):
             # + 'module load hfd5/1.10.5\n\n'
             + 'cd $PBS_O_WORKDIR\n\n')
 
-        self.prepare_run_commands(batch)
+        if not resub: 
+            self.prepare_run_commands(batch)
 
         for i,run in enumerate(batch.run_commands): 
             jobfile_string += '{} 1> {} 2> {}\n'.format( run,
-                batch.logfile_names[i], batch.errfile_names[i] )
-        batch.jobfile_name = 'jobfile_{}'.format(batch.name)
+                batch.logfile_names[i], batch.logfile_names[i] )
+        batch.jobfile_name = batch.full_name + "_jobfile"
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
         # submit job
@@ -140,7 +141,7 @@ class Hawk(Machine):
         if self.remote: 
             lines = lines[:-1]
         batch.job_id=int(lines[-1].split(".")[0])
-        p_print("submitted job "+str(batch.job_id))
+        p_print("submitted job "+str(batch.job_id)+" for batch "+batch.name)
         batch.queue_status="submitted"
         globels.update_step()
     
@@ -219,32 +220,26 @@ class Hawk(Machine):
         open error file and parse errrors. 
         Well, parse is a strong word here.
         """
-        #TODO 
-        print("DUMMY DO NOT CHECK ERROFILE")
-        # for errfile in batch.errfile_names:
-            # # sometimes hawk needs a while to finish up jobs
-            # if not os.path.isfile(errfile):
-                # time.sleep(5)
-            # with open(errfile) as f:
-                # lines = f.read().splitlines()
-            # # empty error file: all good
-            # if len(lines)==0:
-                # continue
-            # # check if walltime excced in error file (also means that 
-            # # solver did not otherwise crash)
-            # longlines=[line.split() for line in lines if len(line.split())>=7]
-            # for words in longlines:
-                # if words[4]=='walltime' and words[6]=='exceeded':
-                    # p_print("Job {} exceeded walltime ({}). ".format(
-                                # batch.name,time_to_str(batch.batch_walltime))
-                            # +"Re-submit with double walltime.")
-                    # batch.batch_walltime *= 2
-                    # self.submit_job(batch)
-                    # return
-            # # non-empty error file and not walltime excceded: other error
-            # raise Exception('Error in jobfile execution! '
-                            # + 'See file {} for details.'.format(errfile))
-        # nor return means all runs finished normally
+        batch.errfile_name = batch.full_name + ".e" + str(batch.job_id)
+        # sometimes hawk needs a while to finish up jobs
+        if not os.path.isfile(batch.errfile_name):
+            time.sleep(5)
+        with open(batch.errfile_name) as f:
+            lines = f.read().splitlines()
+        # empty error file: all good
+        for line in lines: 
+            if line.find("PBS: job killed: walltime") > -1 and line.find("exceeded limit") > -1: 
+                p_print("Batch {} job exceeded walltime ({}). ".format(
+                            batch.name,time_to_str(batch.batch_walltime))
+                        +"Re-submit with double walltime.")
+                batch.batch_walltime *= 2
+                self.submit_job(batch,resub=True)
+                return
+        # other error (disabled, since output is piped and module list output goes to stderr)
+        # raise Exception('Error in jobfile execution! '
+                        # + 'See file {} for details.'.format(batch.errfile_name))
+
+        # no return means all runs finished normally
         batch.finished=True
 
 
@@ -297,8 +292,8 @@ class Hawk(Machine):
 
     def get_opt_props(self,batch):
         # optimal queue: 
-        wt_func =    np.array([1.,  5.*60,   3600.,   3600.,     24.*3600,     24.*3600])
-        nodes_func = np.array([1,   1,           8,      64,          512,     1024    ])
+        wt_func =    np.array([1.E-6, 1.,  5.*60,   3600.,   3600.,     24.*3600,     24.*3600])
+        nodes_func = np.array([1,     1,   1,           8,      64,          512,     1024    ])
         work_func = wt_func*nodes_func*self.cores_per_node
 
         assert (work_func[0] < batch.work) and (work_func[-1] > batch.work)

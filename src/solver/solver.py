@@ -51,10 +51,6 @@ class Batch(BaseClass):
         return [self.run_name(i)+"_LOG.dat" for i in range(self.n_runs)]
 
     @property
-    def errfile_names(self): 
-        return [self.run_name(i)+"_ERR.dat" for i in range(self.n_runs)]
-
-    @property
     def n_runs(self):
         return len(self.run_commands)
 

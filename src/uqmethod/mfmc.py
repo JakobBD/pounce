@@ -3,6 +3,7 @@ import os
 import copy
 from prettytable import PrettyTable
 import collections
+import warnings
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -190,8 +191,12 @@ class Mfmc(UqMethod):
         qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n],axis=0)
 
         qoi.sigma_sq = (qoi.u_sq_sum - (qoi.u_sum**2 / n)) / (n-1)
-        tmp = qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n
-        qoi.rho_sq = tmp**2 / (qoi.sigma_sq * qoi_hfm.sigma_sq * (n-1)**2)
+        enum  = (qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n)**2
+        denom = (qoi.sigma_sq * qoi_hfm.sigma_sq * (n-1)**2)
+        # this is a fallbck for sigma = 0 or very small
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        qoi.rho_sq = np.where(denom > enum,enum/denom,1.)
+        warnings.filterwarnings("default", category=RuntimeWarning)
 
         qoi.sigma_sq = qoi.integrate(qoi.sigma_sq)
         qoi.rho_sq   = qoi.integrate(qoi.rho_sq)

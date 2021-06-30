@@ -75,11 +75,23 @@ def restart(prmfile=None):
 
     globels.sim = sim
     sim.cfg.copy_to_globels()
+    apply_changes()
 
     if sim.cfg.stdout_log_file: 
         sys.stdout = Logger(sim.cfg.stdout_log_file)
 
     return sim
+
+def apply_changes(): 
+   """
+   This is a custom function which can be used to apply changes to the restart file 
+   """
+   pass
+   # example: 
+   # globels.sim.stages[4].batches[0].start_time=8.5
+   # globels.sim.stages[4].batches[1].start_time=8.5
+   # globels.sim.stages[4].batches[2].start_time=8.5
+   # return
 
 
 def config_list(name,prms,class_init,*args,sub_list_name=None):
@@ -99,23 +111,69 @@ def config_list(name,prms,class_init,*args,sub_list_name=None):
     return classes
 
 
+# def expand_prms_by_sublist(prms,sub_list_name): 
+    # if isinstance(prms,list):
+        # return prms
+    # try:
+        # prms_list=prms[sub_list_name]
+        # same_for_all = copy.deepcopy(prms)
+        # del same_for_all[sub_list_name]
+        # for entry in prms_list: 
+            # entry.update(same_for_all)
+    # except KeyError: 
+        # print(prms)
+        # raise Exception("Revise input prm structure! key '"
+                        # +sub_list_name
+                        # +"' missing in subdict and subdict not defined as list!")
+
+    # return prms_list
+
 def expand_prms_by_sublist(prms,sub_list_name): 
     if isinstance(prms,list):
         return prms
-    try:
-        prms_loc=prms[sub_list_name]
-        for_all = copy.deepcopy(prms)
-        del for_all[sub_list_name]
-        for entry in prms_loc: 
-            entry.update(for_all)
-    except KeyError: 
-        print(prms)
-        raise Exception("Revise input prm structure! key '"
-                        +sub_list_name
-                        +"' missing in subdict and subdict not defined as list!")
+    counter, length = count_recursive(prms,sub_list_name,0)
+    if counter == 0: 
+        print("WARNING: Key "+sub_list_name+" missing in prm file!!!")
+    list_out = [copy.deepcopy(prms) for i in range(length)]
+    for i_sublist, sub_list in enumerate(list_out): 
+        delete_recursive(sub_list,sub_list_name,i_sublist)
+    return list_out
 
-    return prms_loc
+
+def delete_recursive(prms,sub_list_name,i_sublist): 
+    names = [k for k in prms.keys()]
+    for name in names: 
+        entry = prms[name]
+        if name == sub_list_name: 
+            prms.update(entry[i_sublist])
+            del prms[name]
+        elif isinstance(entry,dict): 
+            delete_recursive(entry,sub_list_name,i_sublist)
+        elif isinstance(entry,list): 
+            if isinstance(entry[0],dict): 
+                for lentry in entry: 
+                    delete_recursive(lentry,sub_list_name,i_sublist)
+
+
+def count_recursive(prms,sub_list_name,counter,length=None):
+    for name, entry in prms.items(): 
+        if name == sub_list_name: 
+            if not isinstance(entry,list): 
+                raise Exception(sub_list_name + " always has to be a list!")
+            counter +=1 
+            if length: 
+                if length != len(entry): 
+                    raise Exception(sub_list_name + " always has to have same length!")
+            length = len(entry)
+        elif isinstance(entry,dict): 
+            counter, length = count_recursive(entry,sub_list_name,counter,length)
+        elif isinstance(entry,list): 
+            if isinstance(entry[0],dict): 
+                for lentry in entry: 
+                    counter, length = count_recursive(lentry,sub_list_name,counter,length)
+    return counter, length
         
+
 def config_pp_mach(prms,sim,stage_name):
     if "machine_postproc" in prms: 
         MachineLoc = Machine.subclass("local")
@@ -126,6 +184,7 @@ def config_pp_mach(prms,sim,stage_name):
     pp_out = copy.deepcopy(pp_mach)
     pp_out.fill(stage_name, False)
     return pp_out
+
 
 class GeneralConfig(BaseClass):
     """

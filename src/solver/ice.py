@@ -130,7 +130,7 @@ class Ice(Solver):
         """
         filename=sorted(glob.glob(self.full_name+"_BodyForces_*.h5"))[-1]
         with h5py.File(filename, 'r') as h5f:
-                dset = h5f['BodyForces_BC_wall'][()]
+                dset = h5f['BodyForces_Wall_BC'][()]
         vals=np.array(dset)
         return vals[:,name]
 
@@ -294,6 +294,10 @@ class IceSwim(Ice):
             pres =np.array(dset[:,:,self.index_out])
             u_inf = np.array(self.refstate)
             cp_temp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
+            x_tmp = np.linspace(self.x_min,self.x_max,self.n_pts)
+            self.x = np.concatenate((x_tmp[::-1],x_tmp))
+            # self.valid = pres > 0.
+            # self.n_valid = np.sum(self.valid)
             self.cp = np.where(pres >= 0.,cp_temp,0.)
             return True
         # except:
@@ -337,10 +341,11 @@ class FlexiBatchCp(Internal.QoI,Ice.QoI):
     def write_to_file(self): 
         if self.do_write: 
             self.outfilename = "output_" + self.cname + ".csv"
+            xv = self.participants[0].x
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")
-                for x, y in zip(self.mean,self.stddev): 
-                    f.write("\n"+str(x)+" "+str(y))
+                for x, m, s in zip(xv,self.mean,self.stddev): 
+                    f.write("\n"+str(x)+" "+str(m)+" "+str(s))
 
     def integrate(self,qty): 
         return np.mean(qty)

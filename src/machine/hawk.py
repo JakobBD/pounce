@@ -348,6 +348,9 @@ class Option():
         self.n_elems_core = n_elems_core
         min_cores_per_sample = math.ceil(batch.n_elems/n_elems_core)
         max_n_parallel_runs = min(batch.n_cores_avail // min_cores_per_sample,batch.samples.n)
+        if max_n_parallel_runs < 1: 
+            self.efficiency = -1 
+            return
         self.n_sequential_runs = math.ceil(batch.samples.n / max_n_parallel_runs)
         # reduce parallel runs if it does not increase sequential runs
         self.n_parallel_runs = math.ceil(batch.samples.n/self.n_sequential_runs)
@@ -358,6 +361,8 @@ class Option():
         self.efficiency = batch.work / (self.batch_walltime*batch.n_cores_avail)
 
     def adopt(self,batch): 
+        if self.efficiency < 0: 
+            raise Exception("only invalid options!")
         batch.n_elems_core = self.n_elems_core
         batch.n_sequential_runs = self.n_sequential_runs
         batch.n_parallel_runs = self.n_parallel_runs

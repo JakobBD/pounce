@@ -16,8 +16,11 @@ def update_step(string=None):
     if string:
         sim.current_iter.finished_steps.append(string)
     if do_pickle: 
-        with open(sim.filename, 'wb') as f:
-            pickle.dump(sim, f, 2)
+        fn_step = "pickle/I{}_S{}.pickle".format(sim.current_iter.n,
+                                                 len(sim.current_iter.finished_steps))
+        for fn in [sim.filename, fn_step]: 
+            with open(fn, 'wb') as f:
+                pickle.dump(sim, f, 2)
 
 
 def run_step(description, func, *args, **kwargs):

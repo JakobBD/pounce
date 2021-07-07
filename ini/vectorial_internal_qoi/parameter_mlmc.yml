@@ -34,7 +34,7 @@ stoch_vars:
 
 machine:
   _type: local
-  mpi: false
+  parallelization: none
 
 qois:
 - _type: standard

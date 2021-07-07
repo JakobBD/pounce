@@ -16,6 +16,8 @@ def update_step(string=None):
     if string:
         sim.current_iter.finished_steps.append(string)
     if do_pickle: 
+        if not os.path.isdir('pickle'): 
+            os.mkdir('pickle')
         fn_step = "pickle/I{}_S{}.pickle".format(sim.current_iter.n,
                                                  len(sim.current_iter.finished_steps))
         for fn in [sim.filename, fn_step]: 

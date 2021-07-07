@@ -21,8 +21,6 @@ from helpers import config
 # - rename check_all_finished
 # - default yml
 
-# - get reset_seed as input prm in "sampling" category
-
 
 
 class Mfmc(UqMethod):
@@ -40,8 +38,7 @@ class Mfmc(UqMethod):
         "total_work" : "NODEFAULT",
         "n_warmup_samples": "NODEFAULT",
         "reuse_warmup_samples": False,
-        "update_alpha": False,
-        "reset_seed" : False
+        "update_alpha": False
         }
 
     defaults_add = { 
@@ -55,14 +52,9 @@ class Mfmc(UqMethod):
             }
         }
 
-    SamplingMethod = MonteCarlo
-
     def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
         self.has_simulation_postproc = True
-        if self.reset_seed:
-            p_print("Reset RNG seed to 0")
-            np.random.seed(0)
         self.n_max_iter = 2
         self.has_simulation_postproc = False
         if self.update_alpha and not self.reuse_warmup_samples: 
@@ -87,10 +79,11 @@ class Mfmc(UqMethod):
 
         # samplers 
         self.samplers = []
+        sampling_prms = prms["sampling"] if "sampling" in prms else {}
         for subdict in prms_models: 
             if subdict.get("is_auxiliary"):
                 # TODO: allow different kinds of sampling
-                sampler = MonteCarlo({})
+                sampler = MonteCarlo(sampling_prms)
             else: 
                 sampler = Empty()
                 sampler.n = self.n_warmup_samples
@@ -112,7 +105,8 @@ class Mfmc(UqMethod):
         all_models = self.stages[-1].all_models # last stage is input to QoI
 
         self.hfm = all_models[0]
-        self.sampling = MonteCarlo({})
+        self.sampling = MonteCarlo(sampling_prms)
+        self.sampling.seed_id = 0
         self.sampling.nodes_all = np.empty((0,len(self.stoch_vars)))
         self.sampling.stoch_vars = self.stoch_vars
 
@@ -173,6 +167,7 @@ class Mfmc(UqMethod):
         """
         self.sampling.n = np.max([m.samples.n for m in self.models])
         if self.sampling.n > 0: 
+            self.sampling.n_previous = self.sampling.nodes_all.shape[0]
             self.sampling.get()
         self.sampling.nodes_all = np.concatenate((self.sampling.nodes_all, self.sampling.nodes))
         for m in self.all_models:

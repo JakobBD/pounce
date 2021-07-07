@@ -30,8 +30,7 @@ class Mlmc(UqMethod):
         "total_work" : None,
         "use_ci" : False,
         "ci_conf_tot" : 0.95,
-        "dof_adj" : False,
-        "reset_seed" : False
+        "dof_adj" : False
         }
 
     defaults_add = { 
@@ -39,20 +38,15 @@ class Mlmc(UqMethod):
             "n_warmup_samples": "NODEFAULT"
             },
         "QoI": {
-            "optimize": False,
+            "optimize": False
             }
         }
-
-    SamplingMethod = MonteCarlo
 
     def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
         if bool(self.eps) == bool(self.total_work): 
             raise Exception("MLMC: Prescribe either eps or total_work")
         self.has_simulation_postproc = True
-        if self.reset_seed:
-            p_print("Reset RNG seed to 0")
-            np.random.seed(0)
 
     def setup(self, prms):
         """
@@ -70,6 +64,8 @@ class Mlmc(UqMethod):
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
                                              SolverLoc)
 
+        sampling_prms = prms["sampling"] if "sampling" in prms else {}
+        
         for i_stage, stage in enumerate(self.stages): 
             # initialize sublevels
             subs_fine = config.config_list("solver", prms, Solver.create_by_stage_from_list, i_stage, 
@@ -77,7 +73,7 @@ class Mlmc(UqMethod):
             subs_coarse=[Empty()]
             subs_coarse.extend(copy.deepcopy(subs_fine[:-1]))
             if i_stage == 0: 
-                samplers = [self.setup_samples(s.n_warmup_samples) for s in subs_fine]
+                samplers = [self.setup_samples(sampling_prms,s.n_warmup_samples) for s in subs_fine]
             # initialize levels and connect to sublevels
             iterator=zip(range(1,len(subs_fine)+1),subs_fine,subs_coarse,samplers)
             stage.levels = [self.setup_level(*args) for args in iterator]
@@ -126,6 +122,7 @@ class Mlmc(UqMethod):
         level=Empty()
         level.name = str(i)
         level.samples = sampler
+        level.samples.seed_id = i
         sublevels = [sub_fine, sub_coarse]
         for sub, sub_name in zip(sublevels,['f', 'c']):
             sub.samples = level.samples
@@ -136,8 +133,8 @@ class Mlmc(UqMethod):
         level.internal_qois = []
         return level
 
-    def setup_samples(self,n_warmup): 
-        samples = MonteCarlo({})
+    def setup_samples(self,prms,n_warmup): 
+        samples = MonteCarlo(prms)
         samples.stoch_vars = self.stoch_vars
         samples.n = n_warmup
         samples.n_previous = 0

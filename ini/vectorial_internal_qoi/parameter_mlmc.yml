@@ -13,7 +13,7 @@ uq_method:
   n_max_iter: 4
 
 sampling:
-  reset_seed: false
+  fixed_seed: true
 
 solver:
   _type: internal

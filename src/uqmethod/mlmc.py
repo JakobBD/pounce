@@ -70,13 +70,14 @@ class Mlmc(UqMethod):
             # initialize sublevels
             subs_fine = config.config_list("solver", prms, Solver.create_by_stage_from_list, i_stage, 
                                            stage.name, self, stage.__class__, sub_list_name="levels")
+            n_levels = len(subs_fine)
             subs_coarse=[Empty()]
             subs_coarse.extend(copy.deepcopy(subs_fine[:-1]))
             if i_stage == 0: 
                 samplers = [self.setup_samples(sampling_prms,s.n_warmup_samples) for s in subs_fine]
             # initialize levels and connect to sublevels
             iterator=zip(range(1,len(subs_fine)+1),subs_fine,subs_coarse,samplers)
-            stage.levels = [self.setup_level(*args) for args in iterator]
+            stage.levels = [self.setup_level(*args,n_levels) for args in iterator]
 
             #setup stages 
             stage.batches = []
@@ -114,7 +115,7 @@ class Mlmc(UqMethod):
         if self.use_ci: 
             self.ci_conf_loc = 1.- (1.-self.ci_conf_tot) / (3.*len(self.levels))
 
-    def setup_level(self, i, sub_fine, sub_coarse, sampler):
+    def setup_level(self, i, sub_fine, sub_coarse, sampler, n_levels):
         """
         set up a level, connect to its sublevels, and 
         add the samples container
@@ -122,7 +123,7 @@ class Mlmc(UqMethod):
         level=Empty()
         level.name = str(i)
         level.samples = sampler
-        level.samples.seed_id = i
+        level.samples.seed_id = n_levels - i # = 0 for finest level
         sublevels = [sub_fine, sub_coarse]
         for sub, sub_name in zip(sublevels,['f', 'c']):
             sub.samples = level.samples

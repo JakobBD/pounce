@@ -71,10 +71,10 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
    stretch_fac = 1.05
 
    # re-sample
-   post_drad0 = 0.00035
+   post_drad0 = 0.00025
    post_dradmax = 0.004
    post_stretch = 1.07
-   post_n_elems_rad = 16
+   post_n_elems_rad = 18
    post_nrad = post_n_elems_rad * n_geo + 1
 
    # prms and constraints for movement
@@ -96,7 +96,7 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
    r_circ = 10.
    circ_ctr = [1.0, 0., 0.]
    al_wake = 3.*np.pi/180.           # AoA 
-   phi_wake = 12.*np.pi/180.          # half widening angle: min/max = alpha +- phi
+   phi_wake =12.*np.pi/180.          # half widening angle: min/max = alpha +- phi
    n_circ = 52                       # number of ELEMENTS on circle
    stretch_fac_wake = 1.035 
 

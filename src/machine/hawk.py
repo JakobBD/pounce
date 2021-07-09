@@ -23,7 +23,7 @@ class Hawk(Machine):
 
     defaults_={
         "parallelization" : "mpi", # change default (options: "none", "mpi", "gnu")
-        "work_safety_fac" : 1.2,
+        "work_safety_fac" : 1.5,
         "n_max_nodes" : 1024,
         "max_walltime" : 86400, # 24h
         "max_total_work" : 36e5, # 1.000 CoreH
@@ -121,8 +121,7 @@ class Hawk(Machine):
             self.prepare_run_commands(batch)
 
         for i,run in enumerate(batch.run_commands): 
-            jobfile_string += '{} 1> {} 2> {}\n'.format( run,
-                batch.logfile_names[i], batch.logfile_names[i] )
+            jobfile_string += '{} 1> {} 2>&1\n'.format(run, batch.logfile_names[i])
         batch.jobfile_name = batch.full_name + "_jobfile"
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
@@ -288,7 +287,7 @@ class Hawk(Machine):
     def get_opt_props(self,batch):
         # optimal queue: 
         wt_func =    np.array([1.E-6, 1.,  5.*60,   3600.,   3600.,     24.*3600,     24.*3600])
-        nodes_func = np.array([1,     1,   1,           8,      64,          512,     1024    ])
+        nodes_func = np.array([1,     1,   1,           8,      64,           64,     1024    ])
         work_func = wt_func*nodes_func*self.cores_per_node
 
         assert (work_func[0] < batch.work) and (work_func[-1] > batch.work)

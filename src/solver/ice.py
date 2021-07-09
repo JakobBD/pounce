@@ -228,14 +228,14 @@ class IceSortSides(Ice):
         }
 
     def prepare(self):
-        if globels.sim.current_iter.n >1: 
-            self.run_commands = []
-            return
+        # if globels.sim.current_iter.n >1: 
+            # self.run_commands = []
+            # return
         self.run_commands = [self.exe_path + " " + self.to_meshfile(0)]
 
     def check_finished(self):
-        if globels.sim.current_iter.n >1: 
-            return True
+        # if globels.sim.current_iter.n >1: 
+            # return True
         try: 
             return self.check_stdout(self.logfile_names[0],2," SORT ICING SIDES TOOL FINISHED!")
         except:

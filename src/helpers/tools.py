@@ -15,8 +15,8 @@ def safe_sqrt(arg,silent=False):
         return np.sqrt(arg)
     elif np.any(abs(arg)>1.E-13):
         info=inspect.getouterframes( inspect.currentframe() )[1]
-        p_print(red("Warning: ")+"Sqrt received invalid value "
-                +str(arg)+". Is set to 0.")
+        p_print(red("Warning: ")+"Sqrt received invalid value(s) "
+                +str(arg)+". Invalid values are set to 0.")
         indent_in()
         p_print("line:     "+str(info.code_context[0])[:-1])
         p_print("function: "+str(info.function))

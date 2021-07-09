@@ -91,6 +91,7 @@ def apply_changes():
    # globels.sim.stages[4].batches[0].start_time=8.5
    # globels.sim.stages[4].batches[1].start_time=8.5
    # globels.sim.stages[4].batches[2].start_time=8.5
+   # globels.project_name = "freestream"
    # return
 
 

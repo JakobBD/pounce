@@ -321,6 +321,23 @@ class FlexiBatchClBatch(Cfdfv.QoI,Ice.QoI):
     string_in_stdout = 1 
 
 
+class FlexiBatchCdBatch(Cfdfv.QoI,Ice.QoI):
+    """ 
+    first parent is dominant, second adds it to their subclasses dict
+    """
+
+    cname = "cd_batch"
+
+    stages = {"all"}
+
+    defaults_ = {
+        "prmfile": "dummy_unused"
+        }
+
+    # this is dirty: index of BodyForce
+    string_in_stdout = 0 
+
+
 class FlexiBatchCp(Internal.QoI,Ice.QoI):
     """ 
     first parent is dominant, second adds it to their subclasses dict

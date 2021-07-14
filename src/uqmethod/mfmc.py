@@ -4,6 +4,7 @@ import copy
 from prettytable import PrettyTable
 import collections
 import warnings
+import sys
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
@@ -181,20 +182,28 @@ class Mfmc(UqMethod):
 
     @staticmethod
     def get_rho(n,qoi,qoi_hfm):
+        # print(qoi.u[:n]) #TODO DEBUG
         qoi.u_sum      = np.sum(qoi.u[:n],axis=0)
         qoi.u_sq_sum   = np.sum(qoi.u[:n]**2,axis=0)
         qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n],axis=0)
 
-        qoi.sigma_sq = (qoi.u_sq_sum - (qoi.u_sum**2 / n)) / (n-1)
-        enum  = (qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n)**2
-        denom = (qoi.sigma_sq * qoi_hfm.sigma_sq * (n-1)**2)
+        qoi.sigma_sq_field = (qoi.u_sq_sum - (qoi.u_sum**2 / n)) / (n-1)
+        enum  = ((qoi.u_uhfm_sum - qoi.u_sum*qoi_hfm.u_sum/n) / (n-1.))**2
+        denom = qoi.sigma_sq_field * qoi_hfm.sigma_sq_field
         # this is a fallbck for sigma = 0 or very small
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        qoi.rho_sq = np.where(denom > enum,enum/denom,1.)
+        qoi.rho_sq_field = np.where(denom > enum,enum/denom,1.)
         warnings.filterwarnings("default", category=RuntimeWarning)
 
-        qoi.sigma_sq = qoi.integrate(qoi.sigma_sq)
-        qoi.rho_sq   = qoi.integrate(qoi.rho_sq)
+        qoi.sigma_sq = qoi.integrate(qoi.sigma_sq_field)
+        # TODO: Decide
+        # V1 
+        # qoi.rho_sq   = qoi.integrate(qoi.rho_sq_field)
+        # V2
+        # qoi.rho_sq   = qoi.integrate(enum)/qoi.integrate(denom)
+        # V3
+        sqrtdenom = safe_sqrt(denom)
+        qoi.rho_sq   = qoi.integrate(qoi.rho_sq_field*sqrtdenom)/qoi.integrate(sqrtdenom)
 
 
 
@@ -220,15 +229,27 @@ class Mfmc(UqMethod):
 
     def prepare_next_iteration(self):
         if len(self.iterations) == 1: 
+
+            # create dummy model
+            self.dummy_model = Empty()
+            self.dummy_model.internal_qois = [Empty() for q in self.hfm.internal_qois]
+            for q in self.dummy_model.internal_qois: 
+                q.rho_sq = 0.
+
             for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
+
+                    # TODO: DEBUG 
+                    # if i==2: 
+                       # np.savetxt("csv/"+model.name+".csv",qoi.u)
+
                     if model.is_auxiliary: 
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)
                     qoi.om_rho_sq = 1. - qoi.rho_sq
-                add_str = " (Optimized)" if qoi_hfm is self.hfm.qoi_opt else ""
+                add_str = " (OPTIMIZED!)" if qoi_hfm is self.hfm.qoi_opt else ""
                 p_print("Evaluate QoI " + qoi_hfm.cname + add_str)
                 table = PrettyTable()
                 for model in self.all_models: 
@@ -237,14 +258,49 @@ class Mfmc(UqMethod):
                 table.field_names = ["Model","1-Rho^2","mean work"]
                 print_table(table)
 
-            self.select_models()
-            self.qois_optimize = [m.qoi_opt for m in self.models_opt]
-            q1, q2 = self.qois_optimize[0:2]
-            for q, qn in zip( self.qois_optimize[:-1], self.qois_optimize[1:] ):
-                q.r = safe_sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
-            # remove dummy at the end
-            self.models_opt.pop(-1) 
-            self.qois_optimize.pop(-1) 
+                models_opt, v_opt = self.select_models(i)
+                qois_opt = [m.internal_qois[i] for m in models_opt]
+                q1, q2 = qois_opt[0:2]
+                for q, qn in zip( qois_opt[:-1], qois_opt[1:] ):
+                    q.r = safe_sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
+                # remove dummy at the end
+                models_opt.pop(-1) 
+                qois_opt.pop(-1) 
+
+            
+                # get mlopt and alpha
+                rv = [q.r         for q in qois_opt]
+                wv = [q.work_mean for q in qois_opt]
+                mlopt1 = self.total_work/np.dot(rv, wv)
+                if self.reuse_warmup_samples: 
+                    work_warmup = 0.
+                else: 
+                    work_warmup = np.sum(wv)*self.n_warmup_samples
+
+                for qoi in qois_opt: 
+                    qoi.alpha = safe_sqrt(qoi.rho_sq * qoi_hfm.sigma_sq / qoi.sigma_sq)
+
+                p_print("\nSelected Models and optimal number of samples:")
+                table = PrettyTable()
+                table.field_names = ["Model","M_opt","alpha"]
+                for m, q in zip(models_opt,qois_opt): 
+                    mlopt = mlopt1*q.r
+                    q.mlopt = int(round(mlopt))
+                    mlopt_print = q.mlopt if q.mlopt > 1 else mlopt
+                    table.add_row([m.name,mlopt_print,q.alpha])
+                print_table(table)
+                total_cost = np.dot(wv, [q.mlopt for q in qois_opt])
+                print()
+                p_print("Estimated actual required total work: {}".format(total_cost))
+                p_print("Estimated achieved RMSE: {}".format(safe_sqrt(v_opt)))
+                
+                # make valid for simulation
+                if qoi_hfm.optimize: 
+                    self.models_opt = models_opt
+                    self.qois_optimize = qois_opt
+                    self.work_warmup = work_warmup
+                    self.total_cost = total_cost
+                    self.v_opt = v_opt
 
             # update n samples
             if self.reuse_warmup_samples: 
@@ -253,36 +309,10 @@ class Mfmc(UqMethod):
                 self.sampling.n_previous = self.sampling.n
             for m in self.all_models: 
                 m.samples.n = 0
-            
-            # get mlopt and alpha
-            rv = [q.r         for q in self.qois_optimize]
-            wv = [q.work_mean for q in self.qois_optimize]
-            mlopt1 = self.total_work/np.dot(rv, wv)
-            if self.reuse_warmup_samples: 
-                self.work_warmup = 0.
-            else: 
-                self.work_warmup = np.sum(wv)*self.n_warmup_samples
-
-            for i, qoi_hfm in enumerate(self.hfm.internal_qois): 
-                for model in self.models_opt: 
-                    qoi = model.internal_qois[i]
-                    qoi.alpha = safe_sqrt(qoi.rho_sq * qoi_hfm.sigma_sq / qoi.sigma_sq)
-
-            p_print("\nSelected Models and optimal number of samples:")
-            table = PrettyTable()
-            table.field_names = ["Model","M_opt","alpha"]
             for m in self.models_opt: 
-                q = m.qoi_opt
-                mlopt = mlopt1*q.r
-                q.mlopt = int(round(mlopt))
-                q.samples.n = max(q.mlopt - q.samples.n_previous, 0)
-                mlopt_print = q.mlopt if q.mlopt > 1 else mlopt
-                table.add_row([m.name,mlopt_print,q.alpha])
-            print_table(table)
-            self.total_cost = np.dot(wv, [q.mlopt for q in self.qois_optimize])
-            print()
-            p_print("Estimated actual required total work: {}".format(self.total_cost))
-            p_print("Estimated achieved RMSE: {}".format(safe_sqrt(self.v_opt))) #TODO
+                m.samples.n = max(m.qoi_opt.mlopt - m.samples.n_previous, 0)
+            
+            # sys.exit() # TODO: DEBUG
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
@@ -328,17 +358,15 @@ class Mfmc(UqMethod):
             print_table(table)
            
 
-    def select_models(self): 
-        models = sorted(self.models, key=lambda m: m.qoi_opt.rho_sq, reverse=True)
+    def select_models(self,i_qoi): 
+        models = sorted(self.models, key=lambda m: m.internal_qois[i_qoi].rho_sq, reverse=True)
         sets = []
         self.all_subsets(sets,[models[0]],models[1:])
-        dummy = Empty()
-        dummy.qoi_opt = Empty()
-        dummy.qoi_opt.rho_sq = 0.
         for s in sets:
-            s.append(dummy)
-        self.models_opt = min(sets, key=self.get_v)
-        self.v_opt = self.get_v(self.models_opt)
+            s.append(self.dummy_model)
+        models_opt = min(sets, key=lambda s: self.get_v(s,i_qoi))
+        v_opt = self.get_v(models_opt,i_qoi)
+        return models_opt,v_opt
 
 
     def all_subsets(self,all_lists, prev_list, fut_list):
@@ -349,16 +377,16 @@ class Mfmc(UqMethod):
             all_lists.append(prev_list)
 
 
-    def get_v(self,set_): 
+    def get_v(self,set_,i_qoi): 
         for mp, m, mn in zip(set_[:-2], set_[1:-1], set_[2:]):
-            qp, q, qn = mp.qoi_opt, m.qoi_opt, mn.qoi_opt
+            qp, q, qn = mp.internal_qois[i_qoi], m.internal_qois[i_qoi], mn.internal_qois[i_qoi]
             if (qp.work_mean / q.work_mean) <= (qp.rho_sq - q.rho_sq) / (q.rho_sq - qn.rho_sq):
                 return 1.E100
         v = 0.
         for m, mn in zip(set_[:-1], set_[1:]):
-            q, qn = m.qoi_opt, mn.qoi_opt
+            q, qn = m.internal_qois[i_qoi], mn.internal_qois[i_qoi]
             v += safe_sqrt(q.work_mean * (q.rho_sq - qn.rho_sq))
-        return v**2 * set_[0].qoi_opt.sigma_sq / self.total_work
+        return v**2 * set_[0].internal_qois[i_qoi].sigma_sq / self.total_work
 
 
 

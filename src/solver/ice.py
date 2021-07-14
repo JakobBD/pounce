@@ -22,6 +22,7 @@ class Ice(Solver):
     defaults_ = {
         "prmfile" : "parameter_flexi.ini",
         "mesh_dir" : "mesh",
+        "A_q_ref" : "NODEFAULT",
         "solver_prms" : {
             "N" : "NODEFAULT"
             }
@@ -132,6 +133,16 @@ class Ice(Solver):
         with h5py.File(filename, 'r') as h5f:
                 dset = h5f['BodyForces_Wall_BC'][()]
         vals=np.array(dset)
+        # Hack for error in c_l/c_d computation: rotate by 2*AlphaRefState
+        # vals_tmp = vals[:,:2]
+        # a = 6.*np.pi/180.
+        # vals[:,0] = np.cos(a)*vals_tmp[:,0] + np.sin(a)*vals_tmp[:,1]
+        # vals[:,1] = np.cos(a)*vals_tmp[:,1] - np.sin(a)*vals_tmp[:,0]
+        # # second hack: get lift coefficients from forces
+        # vals *= 2.
+        # if self.name.find("HF") > -1 or self.name.find("3D") > -1: 
+           # vals /= 0.05004
+        # end hacks
         return vals[:,name]
 
     def check_finished(self):
@@ -228,16 +239,11 @@ class IceSortSides(Ice):
         }
 
     def prepare(self):
-        # if globels.sim.current_iter.n >1: 
-            # self.run_commands = []
-            # return
-        self.run_commands = [self.exe_path + " " + self.to_meshfile(0)]
+        self.run_commands = [self.exe_path + " " + self.to_meshfile(i) for i in range(self.samples.n)]
 
     def check_finished(self):
-        # if globels.sim.current_iter.n >1: 
-            # return True
         try: 
-            return self.check_stdout(self.logfile_names[0],2," SORT ICING SIDES TOOL FINISHED!")
+            return all([self.check_stdout(lfn,2," SORT ICING SIDES TOOL FINISHED!") for lfn in self.logfile_names])
         except:
             return False
 
@@ -279,19 +285,18 @@ class IceSwim(Ice):
         # self.statefilename=sorted(glob.glob(self.full_name+"_State_*.h5"))[-1]
         # avgfilename is _Merged_ is that exists and last TimeAvg file else
         self.avgfilename=sorted(glob.glob(self.full_name+"_TimeAvg_*.h5"))[-1]
+        self.prm_file_name = self.full_name+'_StochInput.h5 '
         if self.common_x: 
             arg_str = " --InterpolateX {} {} {} ".format(self.x_min,self.x_max,self.n_pts)
-            self.index_out = 0
         else: 
             arg_str = " "
-            self.index_out = 2
-        self.run_commands = [self.exe_path + arg_str + self.avgfilename]
+        self.run_commands = [self.exe_path + arg_str + self.prm_file_name + self.avgfilename]
 
     def check_finished(self):
         # try: 
             with h5py.File(self.avgfilename, 'r') as h5f:
                     dset = h5f['SwimData'][()]
-            pres =np.array(dset[:,:,self.index_out])
+            pres =np.array(dset[:,:,7]) # assumes avg of cons and pres
             u_inf = np.array(self.refstate)
             cp_temp = (pres-u_inf[4])/(0.5*u_inf[0]*np.sum(u_inf[1:4]**2))
             x_tmp = np.linspace(self.x_min,self.x_max,self.n_pts)

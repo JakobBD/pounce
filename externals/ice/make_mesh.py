@@ -97,7 +97,8 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
    circ_ctr = [1.0, 0., 0.]
    al_wake = 3.*np.pi/180.           # AoA 
    phi_wake =12.*np.pi/180.          # half widening angle: min/max = alpha +- phi
-   n_circ = 52                       # number of ELEMENTS on circle
+   n_circ = 52                       # Ice
+   # n_circ = 48                       # no Ice
    stretch_fac_wake = 1.035 
 
    # ice shape
@@ -172,7 +173,7 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
            y = np.array(h5f['y'])
    X,Y = np.meshgrid(x,y)
 
-   assert len(random_vars) == len(modes)
+   assert len(random_vars) <= len(modes)
 
    # linear combination
    tmp = copy.deepcopy(avg)

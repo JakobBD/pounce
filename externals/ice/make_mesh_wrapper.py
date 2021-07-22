@@ -22,17 +22,9 @@ while True:
 
     stdout_str = make_mesh.make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg)
 
-    hopr_finished_str = "HOPR successfully finished"
-    i_found = stdout_str.find(hopr_finished_str)
-    if i_found < 0: 
-       print(stdout_str) 
-       print("\n\n\n HOPR CRASHED! ABORT!") 
-       break
-
     all_ok_str = """   <  0.0  <  0.1  <  0.2  <  0.3  <  0.4  <  0.5  <  0.6  <  0.7  <  0.8  <  0.9  <  1.0 
      0 |     0 |"""
-    i_found = stdout_str.find(all_ok_str)
-    if i_found > -1: 
+    if stdout_str.find(all_ok_str)> -1 and stdout_str.find("HOPR successfully finished") > -1 : 
         print("All ok. Finish up")
         if n_avg > 5: 
             print("NAvg final: " + str(n_avg))
@@ -41,6 +33,9 @@ while True:
         n_avg *=2
         if n_avg > n_avg_max: 
             print("ERROR - n_avg_max exceeded!")
+            print("HOPR STDOUT:")
+            print()
+            print(stdout_str) 
             sys.exit()
-        print("Negative or very small Jacobians found. Repeat with increased smoothing: NAvg = " + str(n_avg)) 
+        print("HOPR Crashed or negative or very small Jacobians found. Repeat with increased smoothing: NAvg = " + str(n_avg)) 
 

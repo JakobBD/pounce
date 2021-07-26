@@ -190,22 +190,27 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
 
    # only use left (front) part of closed outline 
    x_cut = 0.21
+   n = int(0.04/interp_spacing)
    if segs[0,0] > x_cut: 
        i_use = np.argwhere(segs[:,0]<x_cut)
        il = i_use[0][0]
        iu = i_use[-1][0] 
        # add first and last points inside airfoil
-       xl = [0.25, segs[il,1]]
-       xu = [0.25, segs[iu,1]]
-       segs = np.concatenate(([xl], segs[il:iu+1,:], [xu]))
+       # xl = [0.25, segs[il,1]]
+       # xu = [0.25, segs[iu,1]]
+       xl = np.transpose(np.array([np.linspace(0.25,segs[il,0]+interp_spacing,n), segs[il,1]*np.ones((n,))]))
+       xu = np.transpose(np.array([np.linspace(segs[iu,0]+interp_spacing,0.25,n), segs[iu,1]*np.ones((n,))]))
+       segs = np.concatenate((xl, segs[il:iu+1,:], xu))
    else: 
        i_discard = np.argwhere(segs[:,0]>x_cut)
        il = i_discard[0][0]-1
        iu = i_discard[-1][0]+1
        # add first and last points inside airfoil
-       xl = [0.25, segs[il,1]]
-       xu = [0.25, segs[iu,1]]
-       segs = np.concatenate(([xu], segs[iu:,:], segs[:il+1,:], [xl]))
+       # xl = [0.25, segs[il,1]]
+       # xu = [0.25, segs[iu,1]]
+       xl = np.transpose(np.array([np.linspace(segs[il,0]+interp_spacing,0.25,n), segs[il,1]*np.ones((n,))]))
+       xu = np.transpose(np.array([np.linspace(0.25,segs[iu,0]+interp_spacing,n), segs[iu,1]*np.ones((n,))]))
+       segs = np.concatenate((xu, segs[iu:,:], segs[:il+1,:], xl))
    if segs[0,1] > segs[-1,1]: 
        segs = np.flip(segs,axis=0)
 

@@ -60,7 +60,7 @@ class FlexiBatch(Solver):
         """
 
         p_print("Write HDF5 parameter file for simulation "+self.name)
-        self.prm_file_name = self.full_name+'_StochInput.h5'
+        self.sample_prm_file = self.full_name+'_StochInput.h5'
         self.solver_prms.update({"ProjectName":self.full_name})
 
         # both:
@@ -74,10 +74,10 @@ class FlexiBatch(Solver):
                "nParallelRuns"    : self.n_parallel_runs
                }
 
-        self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
+        self.write_hdf5(self.sample_prm_file,self.solver_prms,prms)
 
         self.run_commands = [self.exe_path + ' ' \
-                             + self.prm_file_name + ' ' + self.prmfile]
+                             + self.sample_prm_file + ' ' + self.prmfile]
 
 
     def write_hdf5(self,file_name,solver_prms,further_prms):
@@ -237,10 +237,10 @@ class FlexiBatchFieldSolutionIterPostProc(FlexiBatchFieldSolution):
 
     def prepare(self):
         # participants[0] is a rather dirty hack
-        self.prm_file_name = self.participants[0].prm_file_name
+        self.sample_prm_file = self.participants[0].sample_prm_file
         run_command = self.exe_path \
                       + " " + self.prmfile \
-                      + " " + self.prm_file_name
+                      + " " + self.sample_prm_file
         self.output_filename = self.full_name+'_Out.h5'
         for p in self.participants:
             filename=sorted(glob.glob(p.full_name+"_State_*.h5"))[-1]
@@ -281,11 +281,11 @@ class FlexiBatchRecordPointsIterPostProc(FlexiBatchRecordPoints):
 
     def prepare(self):
         # participants[0] is a rather dirty hack
-        self.prm_file_name = self.participants[0].prm_file_name
+        self.sample_prm_file = self.participants[0].sample_prm_file
         n_files = len(glob.glob(participants[0].full_name+"_RP_*.h5"))
         run_command = self.exe_path \
                       + " " + self.prmfile \
-                      + " " + self.prm_file_name \
+                      + " " + self.sample_prm_file \
                       + " " + str(n_files)
         self.output_filename = self.full_name+'_Out.h5'
         for p in self.participants:

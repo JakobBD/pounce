@@ -53,7 +53,7 @@ class Ice(Solver):
         """
 
         p_print("Write HDF5 parameter file for simulation "+self.name)
-        self.prm_file_name = self.full_name+'_StochInput.h5'
+        self.sample_prm_file = self.full_name+'_StochInput.h5'
         self.solver_prms.update({"ProjectName":self.full_name})
 
         # both:
@@ -64,10 +64,10 @@ class Ice(Solver):
                }
 
 
-        self.write_hdf5(self.prm_file_name,self.solver_prms,prms)
+        self.write_hdf5(self.sample_prm_file,self.solver_prms,prms)
 
         self.run_commands = [self.exe_path + ' ' \
-                             + self.prm_file_name + ' ' + self.prmfile]
+                             + self.sample_prm_file + ' ' + self.prmfile]
 
 
     def write_hdf5(self,file_name,solver_prms,further_prms):
@@ -129,16 +129,17 @@ class Ice(Solver):
         dirty: gets info not from stdout, but from h5 file
         TODO: rename 
         """
-        filename=sorted(glob.glob(self.full_name+"_BodyForces_*.h5"))[-1]
+        filename=sorted(glob.glob(self.full_name+"_Restart_BodyForces_*.h5"))[-1]
         with h5py.File(filename, 'r') as h5f:
                 dset = h5f['BodyForces_Wall_BC'][()]
         vals=np.array(dset)
+        vals /= self.A_q_ref
         # Hack for error in c_l/c_d computation: rotate by 2*AlphaRefState
         # vals_tmp = vals[:,:2]
         # a = 6.*np.pi/180.
         # vals[:,0] = np.cos(a)*vals_tmp[:,0] + np.sin(a)*vals_tmp[:,1]
         # vals[:,1] = np.cos(a)*vals_tmp[:,1] - np.sin(a)*vals_tmp[:,0]
-        # # second hack: get lift coefficients from forces
+        # second hack: get lift coefficients from forces
         # vals *= 2.
         # if self.name.find("HF") > -1 or self.name.find("3D") > -1: 
            # vals /= 0.05004
@@ -186,7 +187,7 @@ class IceMeshRef(Ice):
             return
         self.run_commands = ["python3 "+self.exe_path+" NONE NONE "
                              +self.mesh_dir+"/"+self.run_name(0)
-                             +" 0_0_0_0_0_0_0 5"]
+                             +" 0 5"]
 
     def check_finished(self):
         if globels.sim.current_iter.n >1: 
@@ -211,7 +212,7 @@ class IceMesh(Ice):
         command_base = "python3 {} {} {}".format(self.exe_path,self.hopr_path,self.prmfile)
         for i_run, node in enumerate(self.samples.nodes): 
             namestr = self.mesh_dir+"/"+self.run_name(i_run)
-            arg_vec = "_".join([str(n) for n in node] + ["0" for i in range(len(node),7)])
+            arg_vec = "_".join([str(n) for n in node])
             self.run_commands.append(" ".join([command_base,namestr,arg_vec]))
 
     def check_finished(self):
@@ -268,6 +269,31 @@ class IceMerge(Ice):
         return self.check_stdout(self.logfile_names[0],2,"Merging DONE:") 
 
 
+class IceRestart(Ice):
+
+    cname = "ice_restart"
+    stages = {"restart"}
+    # defaults_ = {
+        # "prmfile": "dummy_unused"
+        # }
+
+    def prepare(self):
+        # main_stage = [s for s self.other_stages if s.cname == "ice"][0]
+        # self.sample_prm_file = main_stage.sample_prm_file
+        # self.prmfile = main_stage.prmfile
+        self.sample_prm_file = self.full_name+'_StochInput.h5'
+        with h5py.File(self.sample_prm_file,"r+") as h5f:
+            del h5f.attrs["nParallelRuns"]
+            h5f.attrs["nParallelRuns"] = self.n_parallel_runs
+        self.restartfile=sorted(glob.glob(self.full_name+"_TimeAvg_0*.h5"))[-1]
+        self.run_commands = [" ".join([self.exe_path, self.sample_prm_file, 
+                                      self.prmfile, self.restartfile])]
+
+
+    def check_finished(self):
+        return True # TODO
+
+
 class IceSwim(Ice):
 
     cname = "ice_swim"
@@ -285,12 +311,13 @@ class IceSwim(Ice):
         # self.statefilename=sorted(glob.glob(self.full_name+"_State_*.h5"))[-1]
         # avgfilename is _Merged_ is that exists and last TimeAvg file else
         self.avgfilename=sorted(glob.glob(self.full_name+"_TimeAvg_*.h5"))[-1]
-        self.prm_file_name = self.full_name+'_StochInput.h5 '
+        self.sample_prm_file = self.full_name+'_StochInput.h5'
         if self.common_x: 
             arg_str = " --InterpolateX {} {} {} ".format(self.x_min,self.x_max,self.n_pts)
         else: 
             arg_str = " "
-        self.run_commands = [self.exe_path + arg_str + self.prm_file_name + self.avgfilename]
+        self.run_commands = [self.exe_path + arg_str + 
+                             self.sample_prm_file + " " + self.avgfilename]
 
     def check_finished(self):
         # try: 
@@ -358,12 +385,12 @@ class FlexiBatchCp(Internal.QoI,Ice.QoI):
         }
 
     def get_response(self,s=None): 
-        return [p.cp for p in self.participants]
+        return [p.other_stages[5].cp for p in self.participants]
 
     def write_to_file(self): 
         if self.do_write: 
             self.outfilename = "output_" + self.cname + ".csv"
-            xv = self.participants[0].x
+            xv = self.participants[0].other_stages[5].x
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")
                 for x, m, s in zip(xv,self.mean,self.stddev): 

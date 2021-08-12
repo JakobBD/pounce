@@ -857,6 +857,8 @@ def make_mesh(hopr_path,reference_mode,hoprbasefile,name_str,random_vars,n_avg):
        # fn = "figs_mesh/mf.png"
        # plt.savefig(fn,dpi=300)
        # subprocess.run("convert "+fn+" -trim "+fn,shell=True)
+
+       # far field
        for si_str, ax_lim in zip(["ff","mf"],[(-10,12,-11,11),(-0.3,1.3,-0.8,0.8)]):
            fn = "figs_mesh/"+si_str+".png"
            ax.axis(ax_lim)

@@ -73,7 +73,6 @@ class Sc(UqMethod):
         table.field_names = ["QoI","Mean","Standard Deviation"]
         for qoi in self.internal_qois: 
             u_out = qoi.get_response()[0]
-            n = self.samples.n
             qoi.mean = np.dot(np.transpose(u_out),self.samples.weights)
             qoi.stddev = safe_sqrt(np.dot(np.transpose(u_out**2),self.samples.weights) - qoi.mean**2.)
             if isinstance(qoi.mean,(float,np.float)):

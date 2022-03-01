@@ -23,6 +23,10 @@ class Sampling(BaseClass):
         """
         return {}
 
+    @property
+    def n_total_current(self): 
+        return self.n_previous + self.n
+
 
 class MonteCarlo(Sampling):
     """

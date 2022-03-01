@@ -24,7 +24,7 @@ filename_ice = name_str+"_ICE.vtk"
 filename_afl = name_str+"_AFL.vtk"
 
 
-interp_spacing = 5E-4       # determines interpoaltion accuracy, not final spacing
+interp_spacing = 1E-4       # determines interpoaltion accuracy, not final spacing
 
 min_ = np.minimum
 max_ = np.maximum
@@ -184,23 +184,23 @@ meshio.write(filename_ice,mesh,file_format='vtk')
 
 # write mesh 
 
-geom = pygmsh.built_in.Geometry()
+# geom = pygmsh.built_in.Geometry()
 
 
-x_write = x_afl[::5,:]
+# x_write = x_afl#[::5,:]
 
-x_write = np.concatenate((x_write, 0.*x_write[:,0:1]),axis=-1)
+# x_write = np.concatenate((x_write, 0.*x_write[:,0:1]),axis=-1)
 
-poly = geom.add_polygon(x_write)
+# poly = geom.add_polygon(x_write)
 
 
-geom.set_transfinite_lines(poly.lines, 1)
+# geom.set_transfinite_lines(poly.lines, 1)
 
-zunit = [0., 0., 1.]
-top,vol,lat = geom.extrude(poly.surface,translation_axis=zunit,num_layers=1,recombine=True)
+# zunit = [0., 0., 1.]
+# top,vol,lat = geom.extrude(poly.surface,translation_axis=zunit,num_layers=1,recombine=True)
 
-geom.add_physical(vol)
+# geom.add_physical(vol)
 
-mesh = pygmsh.generate_mesh(geom)
+# mesh = pygmsh.generate_mesh(geom)
 
-meshio.write(filename_afl,mesh,file_format='vtk')
+# meshio.write(filename_afl,mesh,file_format='vtk')

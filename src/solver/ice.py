@@ -22,7 +22,7 @@ class Ice(Solver):
     defaults_ = {
         "prmfile" : "parameter_flexi.ini",
         "mesh_dir" : "mesh",
-        "A_q_ref" : "NODEFAULT",
+        # "A_q_ref" : "NODEFAULT",
         "solver_prms" : {
             "N" : "NODEFAULT"
             }
@@ -133,16 +133,17 @@ class Ice(Solver):
         with h5py.File(filename, 'r') as h5f:
                 dset = h5f['BodyForces_Wall_BC'][()]
         vals=np.array(dset)
-        vals /= self.A_q_ref
+        # vals /= self.A_q_ref
         # Hack for error in c_l/c_d computation: rotate by 2*AlphaRefState
         # vals_tmp = vals[:,:2]
         # a = 6.*np.pi/180.
         # vals[:,0] = np.cos(a)*vals_tmp[:,0] + np.sin(a)*vals_tmp[:,1]
         # vals[:,1] = np.cos(a)*vals_tmp[:,1] - np.sin(a)*vals_tmp[:,0]
         # second hack: get lift coefficients from forces
-        # vals *= 2.
+        vals *= 2.
         # if self.name.find("HF") > -1 or self.name.find("3D") > -1: 
-           # vals /= 0.05004
+        if True:
+           vals /= 0.05004
         # end hacks
         return vals[:,name]
 
@@ -390,7 +391,11 @@ class FlexiBatchCp(Internal.QoI,Ice.QoI):
     def write_to_file(self): 
         if self.do_write: 
             self.outfilename = "output_" + self.cname + ".csv"
-            xv = self.participants[0].other_stages[5].x
+            #TODO xv is ad hoc
+            #MLMC
+            xv = self.participants[0].participants[0].other_stages[5].x
+            #MFMC, SC
+            # xv = self.participants[0].other_stages[5].x
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")
                 for x, m, s in zip(xv,self.mean,self.stddev): 

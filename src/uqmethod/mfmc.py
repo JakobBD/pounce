@@ -240,6 +240,7 @@ class Mfmc(UqMethod):
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
+                    qoi.work_mean_static = qoi.work_mean
 
                     # TODO: DEBUG 
                     # if i==2: 
@@ -254,7 +255,7 @@ class Mfmc(UqMethod):
                 table = PrettyTable()
                 for model in self.all_models: 
                     qoi = model.internal_qois[i]
-                    table.add_row([model.name,qoi.om_rho_sq,qoi.work_mean])
+                    table.add_row([model.name,qoi.om_rho_sq,qoi.work_mean_static])
                 table.field_names = ["Model","1-Rho^2","mean work"]
                 print_table(table)
 
@@ -262,7 +263,7 @@ class Mfmc(UqMethod):
                 qois_opt = [m.internal_qois[i] for m in models_opt]
                 q1, q2 = qois_opt[0:2]
                 for q, qn in zip( qois_opt[:-1], qois_opt[1:] ):
-                    q.r = safe_sqrt(q1.work_mean * (q.rho_sq - qn.rho_sq)/(q.work_mean * (1. - q2.rho_sq)))
+                    q.r = safe_sqrt(q1.work_mean_static * (q.rho_sq - qn.rho_sq)/(q.work_mean_static * (1. - q2.rho_sq)))
                 # remove dummy at the end
                 models_opt.pop(-1) 
                 qois_opt.pop(-1) 
@@ -270,7 +271,7 @@ class Mfmc(UqMethod):
             
                 # get mlopt and alpha
                 rv = [q.r         for q in qois_opt]
-                wv = [q.work_mean for q in qois_opt]
+                wv = [q.work_mean_static for q in qois_opt]
                 mlopt1 = self.total_work/np.dot(rv, wv)
                 if self.reuse_warmup_samples: 
                     work_warmup = 0.
@@ -311,8 +312,6 @@ class Mfmc(UqMethod):
                 m.samples.n = 0
             for m in self.models_opt: 
                 m.samples.n = max(m.qoi_opt.mlopt - m.samples.n_previous, 0)
-            
-            # sys.exit() # TODO: DEBUG
         else: 
             for model in self.models_opt: 
                 if model.samples.n == 0: 
@@ -322,6 +321,7 @@ class Mfmc(UqMethod):
                         qoi.u = np.concatenate((qoi.u,qoi.get_response()[0]))
                     else: 
                         qoi.u = qoi.get_response()[0]
+                    qoi.work_mean_static = qoi.work_mean
             n_hfm = self.hfm.samples.n + self.hfm.samples.n_previous
 
             table = PrettyTable()
@@ -380,12 +380,12 @@ class Mfmc(UqMethod):
     def get_v(self,set_,i_qoi): 
         for mp, m, mn in zip(set_[:-2], set_[1:-1], set_[2:]):
             qp, q, qn = mp.internal_qois[i_qoi], m.internal_qois[i_qoi], mn.internal_qois[i_qoi]
-            if (qp.work_mean / q.work_mean) <= (qp.rho_sq - q.rho_sq) / (q.rho_sq - qn.rho_sq):
+            if (qp.work_mean_static / q.work_mean_static) <= (qp.rho_sq - q.rho_sq) / (q.rho_sq - qn.rho_sq):
                 return 1.E100
         v = 0.
         for m, mn in zip(set_[:-1], set_[1:]):
             q, qn = m.internal_qois[i_qoi], mn.internal_qois[i_qoi]
-            v += safe_sqrt(q.work_mean * (q.rho_sq - qn.rho_sq))
+            v += safe_sqrt(q.work_mean_static * (q.rho_sq - qn.rho_sq))
         return v**2 * set_[0].internal_qois[i_qoi].sigma_sq / self.total_work
 
 

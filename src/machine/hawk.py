@@ -126,7 +126,8 @@ class Hawk(Machine):
         with open(batch.jobfile_name,'w+') as jf:
             jf.write(jobfile_string)
         # submit job
-        args=['qsub',batch.jobfile_name]
+        args=['qsub','-W','group_list=iag12850',batch.jobfile_name]
+        # args=['qsub',batch.jobfile_name]
         # args=['qsub','-q','test',batch.jobfile_name]
         if self.remote: 
            args=self.to_ssh(args)

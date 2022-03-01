@@ -219,15 +219,21 @@ class Mlmc(UqMethod):
                     qoi.v_lower = dof*qoi.SigmaSq/chi2.interval(1.-alpha,dof)[1]
                     qoi.v_upper = dof*qoi.SigmaSq/chi2.interval(1.-alpha,dof)[0]
 
-                    w = np.array(qoi.participants[0].w)
-                    if len(qoi.participants)>1:
-                        w += np.array(qoi.participants[1].w)
-                    qoi.w_sum += np.sum(w)
-                    qoi.w_sq_sum += np.sum(w**2)
-                    mean_w = qoi.w_sum/n
-                    var_w  = (qoi.w_sq_sum-(qoi.w_sum**2)/n)/(n-1.)
-                    qoi.w_lower = mean_w - norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
-                    qoi.w_upper = mean_w + norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
+                    # TODO: this is dirty
+                    try: 
+                        w = np.array(qoi.participants[0].w)
+                        if len(qoi.participants)>1:
+                            w += np.array(qoi.participants[1].w)
+                        qoi.w_sum += np.sum(w)
+                        qoi.w_sq_sum += np.sum(w**2)
+                        mean_w = qoi.w_sum/n
+                        var_w  = (qoi.w_sq_sum-(qoi.w_sum**2)/n)/(n-1.)
+                        qoi.w_lower = mean_w - norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
+                        qoi.w_upper = mean_w + norm.interval(1.-alpha)[1]*safe_sqrt(var_w/n)
+                    except: 
+                        qoi.work_mean_static = qoi.work_mean
+                        qoi.w_lower = qoi.work_mean_static
+                        qoi.w_upper = qoi.work_mean_static
 
 
     def internal_simulation_postproc(self): 
@@ -290,85 +296,110 @@ class Mlmc(UqMethod):
 
         self.internal_iteration_postproc()
 
-        table = PrettyTable()
-        table.field_names = ["Level","SigmaSq","mean work","ML_opt",
-                             "finished Samples","new Samples"]
+        self.all_est_total_work = []
+        self.all_est_eps = []
+        for i_qoi, qoi1 in enumerate(self.levels[0].qois): 
+            print()
+            is_opt = qoi1 is self.qois_optimize[0]
+            add_str = " (OPTIMIZED!)" if is_opt else ""
+            p_print("Evaluate QoI " + qoi1.cname + add_str)
+            table = PrettyTable()
+            table.field_names = ["Level","SigmaSq","mean work","ML_opt",
+                                 "finished Samples","new Samples"]
 
-        # build sum over levels of sqrt(sigma^2/w)
-        sum_sigma_w = 0.
-        sum_sigma_w_bound = 0.
-        for qoi in self.qois_optimize:
-            if qoi.samples.n > 0:
-                qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
-            if qoi.samples.n_previous+qoi.samples.n > 0:
-                sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
-                if self.use_ci: 
-                    if self.eps: 
-                        sum_sigma_w_bound += safe_sqrt(qoi.v_lower*qoi.w_lower)
-                    elif self.total_work: 
-                        sum_sigma_w_bound += safe_sqrt(qoi.v_upper*qoi.w_upper)
+            # build sum over levels of sqrt(sigma^2/w)
+            sum_sigma_w = 0.
+            sum_sigma_w_bound = 0.
+            # for qoi in self.qois_optimize:
+            for level in self.levels:
+                qoi = level.qois[i_qoi]
+                if qoi.samples.n > 0:
+                    qoi.sigma_sq = float(qoi.get_derived_quantity("SigmaSq"))
+                if qoi.samples.n_total_current > 1:
+                    sum_sigma_w += safe_sqrt(qoi.sigma_sq*qoi.work_mean)
+                    if self.use_ci: 
+                        if self.eps: 
+                            sum_sigma_w_bound += safe_sqrt(qoi.v_lower*qoi.w_lower)
+                        elif self.total_work: 
+                            sum_sigma_w_bound += safe_sqrt(qoi.v_upper*qoi.w_upper)
 
 
-        for qoi in self.qois_optimize:
-            if self.eps: 
-                qoi.mlopt = (sum_sigma_w
-                             * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
-                             / self.eps**2)
-            elif self.total_work: 
-                qoi.mlopt = (self.total_work
-                             * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
-                             / sum_sigma_w)
+            # for qoi in self.qois_optimize:
+            for level in self.levels:
+                qoi = level.qois[i_qoi]
+                if self.eps: 
+                    qoi.mlopt = (sum_sigma_w
+                                 * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
+                                 / self.eps**2)
+                elif self.total_work: 
+                    qoi.mlopt = (self.total_work
+                                 * safe_sqrt(qoi.sigma_sq/qoi.work_mean)
+                                 / sum_sigma_w)
 
-            qoi.mlopt_rounded = int(round(qoi.mlopt)) if qoi.mlopt > 1 \
-                else qoi.mlopt
-            qoi.samples.n_previous += qoi.samples.n
+                qoi.mlopt_rounded = int(round(qoi.mlopt)) if qoi.mlopt > 1 \
+                    else qoi.mlopt
 
-            n_iter_remain = self.n_max_iter-self.current_iter.n
-            if n_iter_remain > 0: 
-                if self.use_ci: 
-                    if self.eps: 
-                        qoi.ml_lower = (sum_sigma_w_bound
-                                     * safe_sqrt(qoi.v_lower/qoi.w_upper)
-                                     / self.eps**2)
-                    elif self.total_work: 
-                        qoi.ml_lower = (self.total_work
-                                     * safe_sqrt(qoi.v_lower/qoi.w_upper)
-                                     / sum_sigma_w_bound)
-                    if self.n_max_iter == 2:
-                        xi = 0.
+                n_iter_remain = self.n_max_iter-self.current_iter.n
+                if n_iter_remain > 0: 
+                    if self.use_ci: 
+                        if self.eps: 
+                            qoi.ml_lower = (sum_sigma_w_bound
+                                         * safe_sqrt(qoi.v_lower/qoi.w_upper)
+                                         / self.eps**2)
+                        elif self.total_work: 
+                            qoi.ml_lower = (self.total_work
+                                         * safe_sqrt(qoi.v_lower/qoi.w_upper)
+                                         / sum_sigma_w_bound)
+                        if self.n_max_iter == 2:
+                            xi = 0.
+                        else: 
+                            xi = (self.n_max_iter-self.current_iter.n-1.)/(self.n_max_iter-2.)
+                            # xi = 1.
+                        n_total_new = xi*qoi.ml_lower + (1.-xi)*qoi.mlopt
                     else: 
-                        xi = (self.n_max_iter-self.current_iter.n-1.)/(self.n_max_iter-2.)
-                        # xi = 1.
-                    n_total_new = xi*qoi.ml_lower + (1.-xi)*qoi.mlopt
+                        # slowly approach mlopt... heuristic solution
+                        expo = 1./sum(0.15**i for i in range(n_iter_remain))
+                        n_total_new = qoi.mlopt**expo * qoi.samples.n_total_current**(1-expo)
+                    qoi.n_new_samples = max(int(np.ceil(n_total_new))-qoi.samples.n_total_current , 0)
                 else: 
-                    # slowly approach mlopt... heuristic solution
-                    expo = 1./sum(0.15**i for i in range(n_iter_remain))
-                    n_total_new = qoi.mlopt**expo * qoi.samples.n**(1-expo)
-                qoi.samples.n = max(int(np.ceil(n_total_new))-qoi.samples.n_previous , 0)
-            else: 
-                qoi.samples.n = 0
+                    qoi.n_new_samples = 0
 
-            table.add_row([qoi.levelname, qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
-                           qoi.samples.n_previous, qoi.samples.n])
+                table.add_row([qoi.levelname, qoi.sigma_sq, qoi.work_mean, qoi.mlopt_rounded,
+                               qoi.samples.n_total_current, qoi.n_new_samples])
 
-        print_table(table)
+            print_table(table)
 
-        print()
-        if self.eps: 
-            self.est_total_work = sum(
-                [q.work_mean*max(q.mlopt, q.samples.n_previous) \
-                    for q in self.qois_optimize])
-            p_print("Estimated required total work to achieve prescribed "
-                    "eps: %d core-seconds"%(int(self.est_total_work)))
-        elif self.total_work: 
-            self.est_eps = sum(
-                [q.sigma_sq/max(q.mlopt, q.samples.n_previous) \
-                    for q in self.qois_optimize])
-            self.est_eps = np.sqrt(self.est_eps)
-            p_print("Estimated achieved RMSE for given total work: %e" \
-                    %(self.est_eps))
+            print()
+            if self.eps: 
+                est_total_work = sum(
+                    [l.qois[i_qoi].work_mean*max(l.qois[i_qoi].mlopt, l.qois[i_qoi].samples.n_total_current) \
+                        for l in self.levels])
+                p_print("Estimated required total work to achieve prescribed "
+                        "eps: %d core-seconds"%(int(est_total_work)))
+                self.all_est_total_work.append(est_total_work)
+                if is_opt: 
+                   self.est_total_work=est_total_work
+            elif self.total_work: 
+                est_eps = sum(
+                    [l.qois[i_qoi].sigma_sq/max(l.qois[i_qoi].mlopt, l.qois[i_qoi].samples.n_total_current) \
+                        for l in self.levels])
+                est_eps = np.sqrt(est_eps)
+                p_print("Estimated achieved RMSE for given total work: %e" \
+                        %(est_eps))
+                self.all_est_eps.append(est_eps)
+                if is_opt: 
+                   self.est_eps=est_eps
+
+
+        # Set optimized QoI valid
+        for qoi in self.qois_optimize:
+            qoi.samples.n_previous += qoi.samples.n
+            qoi.samples.n = qoi.n_new_samples
+
 
         self.iter_loop_finished = len(self.stages[0].active_batches) == 0
+
+        # sys.exit() # TODO DEBUG
 
 
 

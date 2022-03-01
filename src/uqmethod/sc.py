@@ -85,9 +85,3 @@ class Sc(UqMethod):
         self.mean = self.internal_qois[0].mean
         self.stddev = self.internal_qois[0].stddev
         print_table(table)
-
-
-    @classmethod
-    def default_yml(cls,d):
-        super().default_yml(d)
-        d.all_defaults["sampling"] = cls.SamplingMethod.defaults(with_type=False)

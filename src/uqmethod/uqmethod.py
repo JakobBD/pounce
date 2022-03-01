@@ -22,12 +22,6 @@ class UqMethod(Simulation,BaseClass):
             batch.samples.get()
             p_print("  Level %2s: %6d samples"%(batch.name,batch.samples.n))
 
-    @classmethod
-    def default_yml(cls,d):
-        d.get_machine()
-        solver = d.process_subclass(Solver)
-        d.all_defaults["qois"] = d.get_list_defaults(solver.QoI)
-
     def internal_simulation_postproc(self): 
         pass
 

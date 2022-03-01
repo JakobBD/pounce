@@ -185,23 +185,6 @@ def config_list(name,prms,class_init,*args,sub_list_name=None):
     return classes
 
 
-# def expand_prms_by_sublist(prms,sub_list_name): 
-    # if isinstance(prms,list):
-        # return prms
-    # try:
-        # prms_list=prms[sub_list_name]
-        # same_for_all = copy.deepcopy(prms)
-        # del same_for_all[sub_list_name]
-        # for entry in prms_list: 
-            # entry.update(same_for_all)
-    # except KeyError: 
-        # print(prms)
-        # raise Exception("Revise input prm structure! key '"
-                        # +sub_list_name
-                        # +"' missing in subdict and subdict not defined as list!")
-
-    # return prms_list
-
 def expand_prms_by_sublist(prms,sub_list_name): 
     if isinstance(prms,list):
         return prms
@@ -282,6 +265,7 @@ class GeneralConfig(BaseClass):
         globels.archive_level=self.archive_level
         globels.project_name=self.project_name
         globels.do_pickle=self.do_pickle
+
 
 class Logger(object):
    def __init__(self,filename):

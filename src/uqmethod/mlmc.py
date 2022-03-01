@@ -268,23 +268,6 @@ class Mlmc(UqMethod):
         print_table(table)
 
 
-    @classmethod
-    def default_yml(cls,d):
-        """
-        MLMC specific layout of the default yml file.
-        """
-        super().default_yml(d)
-        d.all_defaults["solver"] = d.expand_to_several(
-            sub = d.all_defaults["solver"], 
-            list_name = "levels", 
-            exclude = ["_type","exe_path"])
-        for i,sub in enumerate(d.all_defaults["qois"]):
-            d.all_defaults["qois"][i] = d.expand_to_several(
-                sub = sub, 
-                list_name = "stages", 
-                keys = ["iteration_postproc","simulation_postproc"], 
-                exclude = ["_type","optimize"])
-
     def prepare_next_iteration(self):
         """
         Compute number of samples for next iteration. 

@@ -1,4 +1,0 @@
-- remove sublevels, have models instead and create interfaces (including first / last sample) 
-- create external and internal part for every stage
-- move common part of config_list to "common" subdict
-

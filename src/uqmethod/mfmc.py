@@ -20,7 +20,6 @@ from helpers import config
 # - get work for model, not for qoi 
 # - fix qoi_optimize vs. all qois 
 # - rename check_all_finished
-# - default yml
 
 
 
@@ -83,7 +82,6 @@ class Mfmc(UqMethod):
         sampling_prms = prms["sampling"] if "sampling" in prms else {}
         for subdict in prms_models: 
             if subdict.get("is_auxiliary"):
-                # TODO: allow different kinds of sampling
                 sampler = MonteCarlo(sampling_prms)
             else: 
                 sampler = Empty()
@@ -182,7 +180,6 @@ class Mfmc(UqMethod):
 
     @staticmethod
     def get_rho(n,qoi,qoi_hfm):
-        # print(qoi.u[:n]) #TODO DEBUG
         qoi.u_sum      = np.sum(qoi.u[:n],axis=0)
         qoi.u_sq_sum   = np.sum(qoi.u[:n]**2,axis=0)
         qoi.u_uhfm_sum = np.sum(qoi.u[:n]*qoi_hfm.u[:n],axis=0)
@@ -206,27 +203,6 @@ class Mfmc(UqMethod):
         qoi.rho_sq   = qoi.integrate(qoi.rho_sq_field*sqrtdenom)/qoi.integrate(sqrtdenom)
 
 
-
-    # @classmethod
-    # def default_yml(cls,d):
-        # """
-        # MLMC specific layout of the default yml file.
-        # """
-        # super().default_yml(d)
-        # d.all_defaults["solver"] = d.expand_to_several(
-            # sub = d.all_defaults["solver"], 
-            # list_name = "levels", 
-            # exclude = ["_type","exe_path"])
-        # for i,sub in enumerate(d.all_defaults["qois"]):
-            # d.all_defaults["qois"][i] = d.expand_to_several(
-                # sub = sub, 
-                # list_name = "stages", 
-                # keys = ["iteration_postproc","simulation_postproc"], 
-                # exclude = ["_type","optimize"])
-
-
-
-
     def prepare_next_iteration(self):
         if len(self.iterations) == 1: 
 
@@ -241,11 +217,6 @@ class Mfmc(UqMethod):
                     qoi = model.internal_qois[i]
                     qoi.u = qoi.get_response()[0]
                     qoi.work_mean_static = qoi.work_mean
-
-                    # TODO: DEBUG 
-                    # if i==2: 
-                       # np.savetxt("csv/"+model.name+".csv",qoi.u)
-
                     if model.is_auxiliary: 
                         continue
                     self.get_rho(self.sampling.n,qoi,qoi_hfm)

@@ -5,9 +5,8 @@ if sys.version_info[0] < 3:
     sys.exit()
 
 # local imports
-from helpers import config,default_yml
+from helpers import config
 from helpers.printtools import *
-
 
 # parse commmand line arguments
 
@@ -15,18 +14,14 @@ from helpers.printtools import *
 usage="""
 
 Allowed usage:
-python3 main.py parameter.yml
-python3 main.py -r
-python3 main.py -r parameter.yml
-python3 main.py --help>
+python3 pounce.py parameter.yml
+python3 pounce.py -r
+python3 pounce.py -r parameter.yml
 """
 n_args=len(sys.argv)
 
 if n_args < 2:
     raise Exception(usage)
-
-if n_args == 2 and sys.argv[1] in ['-h','--help']:
-    default_yml.print_default_yml_file()
 
 print_header()
 
@@ -47,7 +42,6 @@ elif restart_mode and n_args == 3 and is_prm_file:
     simulation = config.restart(prmfile=sys.argv[-1])
 else:
     raise Exception(usage)
-
 
 # run simulation
 simulation.run()

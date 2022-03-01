@@ -1,0 +1,57 @@
+general:
+  project_name: cavity
+
+uq_method:
+  _type: mlmc
+  n_max_iter: 3
+  eps: 0.1
+
+sampling:
+  reset_seed: false
+
+solver:
+  _type: flexi_batch
+  prmfile: 'parameter_flexi.ini'
+  exe_path: ./flexibatch
+  levels:
+  - n_warmup_samples : 100
+    cores_per_sample: 24
+    solver_prms:
+      N: 2
+      MeshFile: mesh_1.h5
+
+  - n_warmup_samples : 20
+    cores_per_sample: 24
+    solver_prms:
+      N: 4
+      MeshFile: mesh_1.h5
+
+stoch_vars:
+- _type: uniform
+  bounds: [1.,2.]
+  name: RefState
+  i_occurrence: 1
+  i_pos: 1
+- _type: normal
+  mean: 1.
+  standard_deviation: 0.1
+  name: b
+  i_occurrence: 1
+  i_pos: 0
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: field_solution
+  stages: 
+    iteration_postproc:
+      exe_path:  ./mlmc_estimatesigma
+      prmfile: 'parameter_estimatesigma.ini'
+    simulation_postproc:
+      exe_path:  ./mlmc_combinelevels
+      prmfile: ''
+  optimize: True
+
+

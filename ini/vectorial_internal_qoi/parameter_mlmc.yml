@@ -1,0 +1,45 @@
+general:
+  project_name: keil
+  stdout_log_file: stdout_log.dat
+  main_stages:
+  - name: main
+  - name: replica
+
+uq_method:
+  _type: mlmc
+  total_work: 100.
+  use_ci: True
+  ci_conf_tot: 0.95
+  n_max_iter: 4
+
+sampling:
+  fixed_seed: true
+
+solver:
+  _type: internal
+  n_warmup_samples : 10
+  levels:
+  #- name: hf
+  - n_pts: 4
+  - n_pts: 8
+  - n_pts: 16
+  - n_pts: 32
+  #- name: lf4
+    #n_pts: 4
+
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  parallelization: none
+
+qois:
+- _type: standard
+- _type: double
+  do_write: True
+  optimize: True
+
+

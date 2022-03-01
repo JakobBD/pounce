@@ -1,0 +1,294 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter A
+  \item \spxentry{active\_batches}\spxextra{simulation.simulation.Stage attribute}, \hyperpage{11}
+  \item \spxentry{add\_string()}\spxextra{helpers.printtools.TableRow method}, \hyperpage{3}
+  \item \spxentry{allocate\_resources()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{allocate\_resources()}\spxextra{machine.local.Local method}, \hyperpage{6}
+  \item \spxentry{archive()}\spxextra{in module helpers.globels}, \hyperpage{3}
+  \item \spxentry{archive\_loc()}\spxextra{in module helpers.globels}, \hyperpage{3}
+
+  \indexspace
+  \bigletter B
+  \item \spxentry{BaseClass}\spxextra{class in helpers.baseclass}, \hyperpage{1}
+  \item \spxentry{Batch}\spxextra{class in solver.solver}, \hyperpage{15}
+  \item \spxentry{Bcolors}\spxextra{class in helpers.printtools}, \hyperpage{3}
+  \item \spxentry{BLACK}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{BLUE}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{blue()}\spxextra{in module helpers.printtools}, \hyperpage{3}
+  \item \spxentry{BOLD}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+
+  \indexspace
+  \bigletter C
+  \item \spxentry{check\_all\_finished()}\spxextra{simulation.simulation.Stage method}, 
+		\hyperpage{12}
+  \item \spxentry{check\_errorfile()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{check\_finished()}\spxextra{solver.flexi.Flexi method}, \hyperpage{13}
+  \item \spxentry{check\_finished()}\spxextra{solver.solver.Batch method}, \hyperpage{15}
+  \item \spxentry{check\_valid()}\spxextra{machine.cray.Option method}, \hyperpage{6}
+  \item \spxentry{clean()}\spxextra{helpers.default\_yml.DefaultFile method}, \hyperpage{2}
+  \item \spxentry{clean\_()}\spxextra{helpers.default\_yml.DefaultFile method}, \hyperpage{2}
+  \item \spxentry{Collocation}\spxextra{class in sampling.sampling}, \hyperpage{9}
+  \item \spxentry{config()}\spxextra{in module helpers.config}, \hyperpage{2}
+  \item \spxentry{config\_list()}\spxextra{in module helpers.config}, \hyperpage{2}
+  \item \spxentry{copy\_to\_globels()}\spxextra{helpers.config.GeneralConfig method}, \hyperpage{2}
+  \item \spxentry{Cray}\spxextra{class in machine.cray}, \hyperpage{5}
+  \item \spxentry{create()}\spxextra{helpers.baseclass.BaseClass class method}, \hyperpage{1}
+  \item \spxentry{create\_by\_stage()}\spxextra{solver.solver.QoI class method}, \hyperpage{15}
+  \item \spxentry{CYAN}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{cyan()}\spxextra{in module helpers.printtools}, \hyperpage{3}
+
+  \indexspace
+  \bigletter D
+  \item \spxentry{default\_yml()}\spxextra{uqmethod.mlmc.Mlmc class method}, \hyperpage{19}
+  \item \spxentry{default\_yml()}\spxextra{uqmethod.sc.Sc class method}, \hyperpage{20}
+  \item \spxentry{default\_yml()}\spxextra{uqmethod.uqmethod.UqMethod class method}, \hyperpage{20}
+  \item \spxentry{DefaultFile}\spxextra{class in helpers.default\_yml}, \hyperpage{2}
+  \item \spxentry{defaults()}\spxextra{helpers.baseclass.BaseClass class method}, \hyperpage{1}
+  \item \spxentry{defaults\_}\spxextra{helpers.config.GeneralConfig attribute}, \hyperpage{2}
+  \item \spxentry{defaults\_}\spxextra{machine.cray.Cray attribute}, \hyperpage{5}
+  \item \spxentry{defaults\_}\spxextra{machine.local.Local attribute}, \hyperpage{6}
+  \item \spxentry{defaults\_}\spxextra{sampling.sampling.Collocation attribute}, \hyperpage{9}
+  \item \spxentry{defaults\_}\spxextra{solver.flexi.Flexi attribute}, \hyperpage{14}
+  \item \spxentry{defaults\_}\spxextra{solver.flexi.Flexi.QoI attribute}, \hyperpage{13}
+  \item \spxentry{defaults\_}\spxextra{solver.flexi.RecordPoints attribute}, \hyperpage{14}
+  \item \spxentry{defaults\_}\spxextra{solver.internal.Internal attribute}, \hyperpage{14}
+  \item \spxentry{defaults\_}\spxextra{solver.solver.Batch attribute}, \hyperpage{15}
+  \item \spxentry{defaults\_}\spxextra{solver.solver.Solver attribute}, \hyperpage{15}
+  \item \spxentry{defaults\_}\spxextra{stochvar.stochvar.Normal attribute}, \hyperpage{17}
+  \item \spxentry{defaults\_}\spxextra{stochvar.stochvar.Uniform attribute}, \hyperpage{17}
+  \item \spxentry{defaults\_}\spxextra{uqmethod.mlmc.Mlmc attribute}, \hyperpage{19}
+  \item \spxentry{defaults\_add}\spxextra{machine.local.Local attribute}, \hyperpage{6}
+  \item \spxentry{defaults\_add}\spxextra{solver.flexi.Flexi attribute}, \hyperpage{14}
+  \item \spxentry{defaults\_add}\spxextra{uqmethod.mlmc.Mlmc attribute}, \hyperpage{19}
+  \item \spxentry{defaults\_class()}\spxextra{helpers.baseclass.BaseClass class method}, 
+		\hyperpage{1}
+  \item \spxentry{draw\_samples()}\spxextra{stochvar.stochvar.Normal method}, \hyperpage{17}
+  \item \spxentry{draw\_samples()}\spxextra{stochvar.stochvar.Uniform method}, \hyperpage{17}
+
+  \indexspace
+  \bigletter E
+  \item \spxentry{Empty}\spxextra{class in helpers.tools}, \hyperpage{4}
+  \item \spxentry{ENDC}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{errfile\_names}\spxextra{solver.solver.Batch attribute}, \hyperpage{15}
+  \item \spxentry{expand\_to\_several()}\spxextra{helpers.default\_yml.DefaultFile method}, 
+		\hyperpage{2}
+
+  \indexspace
+  \bigletter F
+  \item \spxentry{FieldSolution}\spxextra{class in solver.flexi}, \hyperpage{13}
+  \item \spxentry{fill()}\spxextra{simulation.simulation.Stage method}, \hyperpage{12}
+  \item \spxentry{Flexi}\spxextra{class in solver.flexi}, \hyperpage{13}
+  \item \spxentry{Flexi.QoI}\spxextra{class in solver.flexi}, \hyperpage{13}
+
+  \indexspace
+  \bigletter G
+  \item \spxentry{GeneralConfig}\spxextra{class in helpers.config}, \hyperpage{2}
+  \item \spxentry{get()}\spxextra{sampling.sampling.Collocation method}, \hyperpage{9}
+  \item \spxentry{get()}\spxextra{sampling.sampling.MonteCarlo method}, \hyperpage{9}
+  \item \spxentry{get()}\spxextra{sampling.sampling.Sampling method}, \hyperpage{9}
+  \item \spxentry{get\_best\_option()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{get\_derived\_quantity()}\spxextra{solver.flexi.Flexi.QoI method}, \hyperpage{13}
+  \item \spxentry{get\_derived\_quantity()}\spxextra{solver.internal.Internal.QoI method}, 
+		\hyperpage{14}
+  \item \spxentry{get\_list\_defaults()}\spxextra{helpers.default\_yml.DefaultFile method}, 
+		\hyperpage{2}
+  \item \spxentry{get\_machine()}\spxextra{helpers.default\_yml.DefaultFile method}, \hyperpage{2}
+  \item \spxentry{get\_package\_properties()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{get\_queue()}\spxextra{in module machine.cray}, \hyperpage{6}
+  \item \spxentry{get\_samples()}\spxextra{uqmethod.uqmethod.UqMethod method}, \hyperpage{20}
+  \item \spxentry{get\_work\_mean()}\spxextra{solver.flexi.Flexi.QoI method}, \hyperpage{13}
+  \item \spxentry{get\_work\_mean()}\spxextra{solver.internal.Internal.QoI method}, \hyperpage{14}
+  \item \spxentry{GREEN}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{green()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+
+  \indexspace
+  \bigletter H
+  \item \spxentry{h5write()}\spxextra{solver.flexi.Flexi method}, \hyperpage{14}
+  \item \spxentry{h5write()}\spxextra{solver.internal.Internal method}, \hyperpage{14}
+  \item \spxentry{helpers}\spxextra{module}, \hyperpage{4}
+  \item \spxentry{helpers.baseclass}\spxextra{module}, \hyperpage{1}
+  \item \spxentry{helpers.config}\spxextra{module}, \hyperpage{2}
+  \item \spxentry{helpers.default\_yml}\spxextra{module}, \hyperpage{2}
+  \item \spxentry{helpers.globels}\spxextra{module}, \hyperpage{3}
+  \item \spxentry{helpers.printtools}\spxextra{module}, \hyperpage{3}
+  \item \spxentry{helpers.tools}\spxextra{module}, \hyperpage{4}
+
+  \indexspace
+  \bigletter I
+  \item \spxentry{indent\_in()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{indent\_out()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{InputPrmError}, \hyperpage{1}, \hyperpage{4}
+  \item \spxentry{inquire()}\spxextra{helpers.default\_yml.DefaultFile method}, \hyperpage{2}
+  \item \spxentry{inquire\_subclass()}\spxextra{helpers.default\_yml.DefaultFile method}, 
+		\hyperpage{2}
+  \item \spxentry{Integral}\spxextra{class in solver.internal}, \hyperpage{14}
+  \item \spxentry{Internal}\spxextra{class in solver.internal}, \hyperpage{14}
+  \item \spxentry{Internal.QoI}\spxextra{class in solver.internal}, \hyperpage{14}
+  \item \spxentry{isvalidlist()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{Iteration}\spxextra{class in simulation.simulation}, \hyperpage{11}
+  \item \spxentry{iteration()}\spxextra{in module helpers.globels}, \hyperpage{3}
+
+  \indexspace
+  \bigletter L
+  \item \spxentry{Local}\spxextra{class in machine.local}, \hyperpage{6}
+  \item \spxentry{logfile\_names}\spxextra{solver.solver.Batch attribute}, \hyperpage{15}
+  \item \spxentry{long\_queue()}\spxextra{in module machine.cray}, \hyperpage{6}
+
+  \indexspace
+  \bigletter M
+  \item \spxentry{Machine}\spxextra{class in machine.machine}, \hyperpage{6}
+  \item \spxentry{machine}\spxextra{module}, \hyperpage{7}
+  \item \spxentry{machine.cray}\spxextra{module}, \hyperpage{5}
+  \item \spxentry{machine.local}\spxextra{module}, \hyperpage{6}
+  \item \spxentry{machine.machine}\spxextra{module}, \hyperpage{6}
+  \item \spxentry{Mlmc}\spxextra{class in uqmethod.mlmc}, \hyperpage{19}
+  \item \spxentry{MonteCarlo}\spxextra{class in sampling.sampling}, \hyperpage{9}
+  \item \spxentry{multi\_queue()}\spxextra{in module machine.cray}, \hyperpage{6}
+
+  \indexspace
+  \bigletter N
+  \item \spxentry{n\_runs}\spxextra{solver.solver.Batch attribute}, \hyperpage{15}
+  \item \spxentry{name()}\spxextra{helpers.baseclass.BaseClass class method}, \hyperpage{1}
+  \item \spxentry{Normal}\spxextra{class in stochvar.stochvar}, \hyperpage{17}
+
+  \indexspace
+  \bigletter O
+  \item \spxentry{Option}\spxextra{class in machine.cray}, \hyperpage{6}
+
+  \indexspace
+  \bigletter P
+  \item \spxentry{p\_print()}\spxextra{helpers.printtools.StdOutTable method}, \hyperpage{3}
+  \item \spxentry{p\_print()}\spxextra{helpers.printtools.TableRow method}, \hyperpage{3}
+  \item \spxentry{p\_print()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{parse\_time\_to\_seconds()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{prepare()}\spxextra{solver.flexi.Flexi method}, \hyperpage{14}
+  \item \spxentry{prepare()}\spxextra{solver.internal.Internal method}, \hyperpage{14}
+  \item \spxentry{prepare()}\spxextra{solver.solver.Batch method}, \hyperpage{15}
+  \item \spxentry{prepare\_iteration\_postproc()}\spxextra{solver.flexi.FieldSolution method}, 
+		\hyperpage{13}
+  \item \spxentry{prepare\_iteration\_postproc()}\spxextra{solver.flexi.RecordPoints method}, 
+		\hyperpage{14}
+  \item \spxentry{prepare\_iteration\_postproc()}\spxextra{solver.internal.Integral method}, 
+		\hyperpage{14}
+  \item \spxentry{prepare\_next\_iteration()}\spxextra{uqmethod.mlmc.Mlmc method}, \hyperpage{19}
+  \item \spxentry{prepare\_next\_iteration()}\spxextra{uqmethod.sc.Sc method}, \hyperpage{20}
+  \item \spxentry{prepare\_set()}\spxextra{simulation.simulation.Stage method}, \hyperpage{12}
+  \item \spxentry{prepare\_simulation\_postproc()}\spxextra{solver.flexi.FieldSolution method}, 
+		\hyperpage{13}
+  \item \spxentry{prepare\_simulation\_postproc()}\spxextra{solver.flexi.RecordPoints method}, 
+		\hyperpage{14}
+  \item \spxentry{prepare\_simulation\_postproc()}\spxextra{solver.internal.Integral method}, 
+		\hyperpage{14}
+  \item \spxentry{print\_()}\spxextra{helpers.default\_yml.DefaultFile method}, \hyperpage{2}
+  \item \spxentry{print\_default\_yml\_file()}\spxextra{in module helpers.default\_yml}, 
+		\hyperpage{2}
+  \item \spxentry{print\_header()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{print\_major\_section()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{print\_row\_by\_name()}\spxextra{helpers.printtools.StdOutTable method}, 
+		\hyperpage{3}
+  \item \spxentry{print\_step()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{process()}\spxextra{simulation.simulation.Stage method}, \hyperpage{12}
+  \item \spxentry{process\_simulation\_postproc()}\spxextra{simulation.simulation.Simulation method}, 
+		\hyperpage{11}
+  \item \spxentry{process\_subclass()}\spxextra{helpers.default\_yml.DefaultFile method}, 
+		\hyperpage{2}
+  \item \spxentry{PURPLE}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+
+  \indexspace
+  \bigletter Q
+  \item \spxentry{QoI}\spxextra{class in solver.solver}, \hyperpage{15}
+
+  \indexspace
+  \bigletter R
+  \item \spxentry{rating()}\spxextra{machine.cray.Option method}, \hyperpage{6}
+  \item \spxentry{read\_prms()}\spxextra{helpers.baseclass.BaseClass method}, \hyperpage{1}
+  \item \spxentry{read\_qstat()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{RecordPoints}\spxextra{class in solver.flexi}, \hyperpage{14}
+  \item \spxentry{RED}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{red()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{restart()}\spxextra{in module helpers.config}, \hyperpage{2}
+  \item \spxentry{run()}\spxextra{simulation.simulation.Simulation method}, \hyperpage{11}
+  \item \spxentry{run\_batches()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+  \item \spxentry{run\_batches()}\spxextra{machine.local.Local method}, \hyperpage{6}
+  \item \spxentry{run\_id()}\spxextra{solver.solver.Batch method}, \hyperpage{15}
+  \item \spxentry{run\_iteration()}\spxextra{simulation.simulation.Simulation method}, 
+		\hyperpage{11}
+  \item \spxentry{run\_step()}\spxextra{in module helpers.globels}, \hyperpage{3}
+
+  \indexspace
+  \bigletter S
+  \item \spxentry{safe\_sqrt()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{Sampling}\spxextra{class in sampling.sampling}, \hyperpage{9}
+  \item \spxentry{sampling}\spxextra{module}, \hyperpage{10}
+  \item \spxentry{sampling.sampling}\spxextra{module}, \hyperpage{9}
+  \item \spxentry{sampling\_prms()}\spxextra{sampling.sampling.Collocation method}, \hyperpage{9}
+  \item \spxentry{sampling\_prms()}\spxextra{sampling.sampling.MonteCarlo method}, \hyperpage{9}
+  \item \spxentry{sampling\_prms()}\spxextra{sampling.sampling.Sampling method}, \hyperpage{9}
+  \item \spxentry{SamplingMethod}\spxextra{uqmethod.mlmc.Mlmc attribute}, \hyperpage{19}
+  \item \spxentry{SamplingMethod}\spxextra{uqmethod.sc.Sc attribute}, \hyperpage{20}
+  \item \spxentry{Sc}\spxextra{class in uqmethod.sc}, \hyperpage{20}
+  \item \spxentry{sec\_to\_list()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{set\_descriptions()}\spxextra{helpers.printtools.StdOutTable method}, 
+		\hyperpage{3}
+  \item \spxentry{setup()}\spxextra{uqmethod.mlmc.Mlmc method}, \hyperpage{19}
+  \item \spxentry{setup()}\spxextra{uqmethod.sc.Sc method}, \hyperpage{20}
+  \item \spxentry{setup\_level()}\spxextra{uqmethod.mlmc.Mlmc method}, \hyperpage{19}
+  \item \spxentry{setup\_qoi()}\spxextra{uqmethod.mlmc.Mlmc method}, \hyperpage{20}
+  \item \spxentry{Simulation}\spxextra{class in simulation.simulation}, \hyperpage{11}
+  \item \spxentry{simulation}\spxextra{module}, \hyperpage{12}
+  \item \spxentry{simulation.simulation}\spxextra{module}, \hyperpage{11}
+  \item \spxentry{small\_queue()}\spxextra{in module machine.cray}, \hyperpage{6}
+  \item \spxentry{Solver}\spxextra{class in solver.solver}, \hyperpage{15}
+  \item \spxentry{solver}\spxextra{module}, \hyperpage{15}
+  \item \spxentry{solver.flexi}\spxextra{module}, \hyperpage{13}
+  \item \spxentry{solver.internal}\spxextra{module}, \hyperpage{14}
+  \item \spxentry{solver.solver}\spxextra{module}, \hyperpage{15}
+  \item \spxentry{Stage}\spxextra{class in simulation.simulation}, \hyperpage{11}
+  \item \spxentry{start()}\spxextra{simulation.simulation.Iteration method}, \hyperpage{11}
+  \item \spxentry{StdOutTable}\spxextra{class in helpers.printtools}, \hyperpage{3}
+  \item \spxentry{StochVar}\spxextra{class in stochvar.stochvar}, \hyperpage{17}
+  \item \spxentry{stochvar}\spxextra{module}, \hyperpage{17}
+  \item \spxentry{stochvar.stochvar}\spxextra{module}, \hyperpage{17}
+  \item \spxentry{subclass()}\spxextra{helpers.baseclass.BaseClass class method}, \hyperpage{1}
+  \item \spxentry{submit\_job()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{TableRow}\spxextra{class in helpers.printtools}, \hyperpage{3}
+  \item \spxentry{time\_to\_str()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{time\_to\_str2()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+  \item \spxentry{time\_to\_str2()}\spxextra{in module helpers.tools}, \hyperpage{4}
+  \item \spxentry{to\_ssh()}\spxextra{machine.cray.Cray method}, \hyperpage{5}
+
+  \indexspace
+  \bigletter U
+  \item \spxentry{UNDERLINE}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{unfinished\_batches}\spxextra{simulation.simulation.Stage attribute}, 
+		\hyperpage{12}
+  \item \spxentry{Uniform}\spxextra{class in stochvar.stochvar}, \hyperpage{17}
+  \item \spxentry{update()}\spxextra{helpers.printtools.StdOutTable method}, \hyperpage{3}
+  \item \spxentry{update\_step()}\spxextra{in module helpers.globels}, \hyperpage{3}
+  \item \spxentry{UqMethod}\spxextra{class in uqmethod.uqmethod}, \hyperpage{20}
+  \item \spxentry{uqmethod}\spxextra{module}, \hyperpage{20}
+  \item \spxentry{uqmethod.mlmc}\spxextra{module}, \hyperpage{19}
+  \item \spxentry{uqmethod.sc}\spxextra{module}, \hyperpage{20}
+  \item \spxentry{uqmethod.uqmethod}\spxextra{module}, \hyperpage{20}
+
+  \indexspace
+  \bigletter W
+  \item \spxentry{wait\_finished()}\spxextra{machine.cray.Cray method}, \hyperpage{6}
+  \item \spxentry{WHITE}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{write\_hdf5()}\spxextra{solver.flexi.Flexi method}, \hyperpage{14}
+  \item \spxentry{write\_hdf5()}\spxextra{solver.internal.Internal method}, \hyperpage{15}
+
+  \indexspace
+  \bigletter Y
+  \item \spxentry{YELLOW}\spxextra{helpers.printtools.Bcolors attribute}, \hyperpage{3}
+  \item \spxentry{yellow()}\spxextra{in module helpers.printtools}, \hyperpage{4}
+
+\end{sphinxtheindex}

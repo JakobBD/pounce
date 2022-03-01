@@ -1,20 +1,29 @@
 from helpers.baseclass import BaseClass
+from simulation.simulation import Simulation
+from helpers.printtools import *
+from helpers.tools import *
+from solver.solver import Solver
 
 
-class UqMethod(BaseClass):
+class UqMethod(Simulation,BaseClass):
+    """
+    Parent class for different uq methods
+    Inherits from Simulation, since it is also the driver class for 
+    the whole simulation.
+    """
 
-    subclasses={}
-    stoch_var_defaults={}
-    level_defaults={}
-    qoi_defaults={}
+    def get_samples(self,batches):
+        """
+        The sampling method is determined during setup, so this is 
+        just a simple wrapper.
+        """
+        p_print("Number of current samples for this iteration:")
+        for batch in self.stages[0].active_batches:
+            batch.samples.get()
+            p_print("  Level %2s: %6d samples"%(batch.name,batch.samples.n))
 
-    def __init__(self,input_prm_dict):
-        super().__init__(input_prm_dict)
-        self.do_continue = True
-
-    def setup_batches(self):
+    def internal_simulation_postproc(self): 
         pass
-
 
 
 

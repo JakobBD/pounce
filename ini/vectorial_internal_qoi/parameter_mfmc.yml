@@ -1,0 +1,63 @@
+general:
+  project_name: keil
+  do_pickle: False
+  main_stages:
+  - name: main
+  - name: replica
+
+uq_method:
+  _type: mfmc
+  total_work: 100
+  n_warmup_samples : 10
+  reuse_warmup_samples : False
+  update_alpha : False
+
+sampling:
+  reset_seed: false
+
+models:
+  fidelities:
+  #- name: hf
+    #_type: internal
+  - name: hf
+    _type: internal
+    n_pts: 32
+  - name: lf16
+    _type: internal
+    n_pts: 16
+  - name: lf8
+    _type: internal
+    n_pts: 8
+  - name: lf4
+    _type: internal
+    n_pts: 4
+  #- name: lf2
+    #_type: internal
+    #n_pts: 2
+  #- name: lf8_aux
+    #_type: internal
+    #is_auxiliary: True
+    #n_pts: 8
+  #- name: kriging
+    #_type: kriging
+    #n_samples_input: 10
+    #i_model_input: 4
+
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: standard
+- _type: double
+  do_write: True
+  optimize: True
+
+

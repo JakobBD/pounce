@@ -1,0 +1,51 @@
+general:
+  project_name: keil
+  main_stages:
+  - name: main
+  - name: replica
+
+uq_method:
+  _type: mlmc
+  n_max_iter: 3
+  eps: 0.005
+
+sampling:
+  reset_seed: false
+
+solver:
+  _type: cfdfv
+  prmfile: 'parameter_cfdfv.ini'
+  exe_path: ~/CFDFV/bin/cfdfv
+  #stages: 
+    #- {}
+    #- {}
+  levels:
+  - n_warmup_samples : 5
+    cores_per_sample: 24
+    solver_prms:
+      MeshFile: keil_coarse
+
+  - n_warmup_samples : 3
+    cores_per_sample: 24
+    solver_prms:
+      MeshFile: keil_intermediate
+
+stoch_vars:
+- _type: uniform
+  bounds: [3.,5.]
+  name: Alpha
+  i_occurrence: [1, 2]
+
+
+machines:
+- name: default 
+  _type: local
+  mpi: false
+
+qois:
+- _type: cl
+  optimize: True
+- _type: cd
+  optimize: False
+
+

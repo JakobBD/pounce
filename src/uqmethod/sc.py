@@ -1,66 +1,87 @@
-import chaospy as cp
+from prettytable import PrettyTable
 import numpy as np
 
 from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
+from sampling.sampling import Collocation
+from solver.solver import Solver,register_batch_series
+from machine.machine import Machine
+from stochvar.stochvar import StochVar
+from helpers import config
+from helpers import globels
 
-@UqMethod.register_subclass('sc')
 class Sc(UqMethod):
+    """
+    Stochastic Collocation (non-adaptive)
+    """
 
-    subclass_defaults={
-        "sparse_grid" : "NODEFAULT"
-        }
+    cname = "sc"
 
-    level_defaults={
-        "poly_deg": "NODEFAULT",
-        'solver_prms' : {}
-        }
+    SamplingMethod = Collocation
 
-    def __init__(self,input_prm_dict):
+    def __init__(self, input_prm_dict):
         super().__init__(input_prm_dict)
-        self.has_simulation_postproc=False
-        self.n_max_iter=1
+        self.has_simulation_postproc = False
+        self.n_max_iter = 1
 
-    def setup_batches(self,qois):
-        for i_level,level in enumerate(self.levels):
-            level.name=str(i_level+1)
-            level.samples=Empty()
-            level.samples.n_previous = 0
-            level.qois=[copy.deepcopy(qoi) for qoi in qois]
-            for qoi in level.qois:
-                qoi.participants=[level]
-                qoi.name="postproc_"+level.name
-                qoi.avg_walltime=level.avg_walltime_postproc
-                qoi.prepare=qoi.prepare_iter_postproc
-        self.solver_batches=self.levels
-        self.postproc_batches = \
-            [qoi for level in self.levels for qoi in level.qois]
+    def setup(self, prms):
+        """
+        Only one batch is needed (called solver)
+        """
 
-    def get_nodes_and_weights(self):
-        distributions=[var.distribution for var in self.stoch_vars]
-        for level in self.levels:
-            nodes,level.samples.weights = \
-                cp.generate_quadrature(level.poly_deg,
-                                       cp.J(*distributions),
-                                       rule='G',
-                                       sparse=self.sparse_grid)
-            level.samples.nodes=np.transpose(nodes)
-            level.samples.n = len(level.samples.nodes)
-        p_print("Number of current samples for this iteration:")
-        for level in self.levels:
-            p_print("  Level %2s: %6d samples"%(level.name,level.samples.n))
+        SolverLoc = Solver.subclass(prms["solver"]["_type"])
+
+        # initialize StochVars
+        self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
+                                             SolverLoc)
+        
+        self.samples = Collocation(prms["sampling"])
+        self.samples.stoch_vars = self.stoch_vars
+
+        for i_stage, stage in enumerate(self.stages): 
+            solver = Solver.create_by_stage_from_list(prms["solver"],i_stage,
+                                                         stage.name,self,stage.__class__)
+            solver.name = "sc"
+            solver.samples = self.samples
+            stage.batches = [solver]
+
+        register_batch_series(self.stages) 
+
+        postproc = config.config_pp_mach(prms,self,"postproc")
+        self.stages.append(postproc)
 
 
-    def prm_dict_add(self,level):
-        return({
-            'Weights'          : level.samples.weights,
-            'Distributions'    : [i._type        for i in self.stoch_vars],
-            'DistributionProps': [i.parameters   for i in self.stoch_vars],
-            "polyDeg"          : level.poly_deg
-            })
+        self.internal_qois = []
+        for sub_dict in prms["qois"]: 
+            qoi = SolverLoc.QoI.create_by_stage(sub_dict,"iteration_postproc",self)
+            qoi.participants = self.stages[-2].batches
+            if qoi.internal: 
+                self.internal_qois.append(qoi)
+            else: 
+                self.stages[-1].batches.append(qoi)
 
-    def get_new_n_samples(self,solver):
-        raise Exception("the GetNewNSamples routine should not be called for"
-                        " stochastic collocation")
+    def prepare_next_iteration(self):
+        """
+        There is only one "iteration", so no next 
+        one needs to be prepared.
+        """
+        self.internal_iteration_postproc()
 
+    def internal_iteration_postproc(self): 
+        table = PrettyTable()
+        table.field_names = ["QoI","Mean","Standard Deviation"]
+        for qoi in self.internal_qois: 
+            u_out = qoi.get_response()[0]
+            qoi.mean = np.dot(np.transpose(u_out),self.samples.weights)
+            qoi.stddev = safe_sqrt(np.dot(np.transpose(u_out**2),self.samples.weights) - qoi.mean**2.)
+            if isinstance(qoi.mean,(float,np.float)):
+                table.add_row([qoi.cname,qoi.mean,qoi.stddev])
+            else:
+                table.add_row([qoi.cname + " (Int.)",
+                               qoi.integrate(qoi.mean),
+                               safe_sqrt(qoi.integrate(qoi.stddev**2))])
+            qoi.write_to_file()
+        self.mean = self.internal_qois[0].mean
+        self.stddev = self.internal_qois[0].stddev
+        print_table(table)

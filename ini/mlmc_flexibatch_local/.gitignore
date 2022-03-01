@@ -1,0 +1,6 @@
+*
+!.gitignore
+!parameter.yml
+!mesh_1.h5
+!parameter_flexi.ini
+!parameter_estimatesigma.ini

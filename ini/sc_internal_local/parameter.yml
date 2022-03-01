@@ -1,40 +1,34 @@
 general:
-  output_level: debug #options: none, standard, debug
+  project_name: integ
 
 uq_method:
   _type: sc
+
+sampling:
+  poly_deg : 5
   sparse_grid: True
 
-levels:
-- poly_deg : 5
+solver:
   cores_per_sample: 24
   solver_prms:
      nPoints: 64
+  _type: internal
+  exe_path: ../../externals/integration/solver.py
 
 stoch_vars:
 - _type: uniform
   bounds: [1.,2.]
-  name: RefState
-  i_occurrence: 1
-  i_pos: 1
 
 - _type: normal
   mean: 1.
   standard_deviation: 0.1
-  name: b
-  i_occurrence: 1
-  i_pos: 0
 
 machine:
   _type: local
   mpi: false
 
-solver:
-  _type: internal
-  project_name: integ
-  exe_path: ../../externals/integration/solver.py
+#solver:
 
 qois:
 - _type: integral
-  exe_paths:
-    iteration_postproc: ../../externals/integration/postproc_sc.py
+  exe_path: ../../externals/integration/postproc_sc.py

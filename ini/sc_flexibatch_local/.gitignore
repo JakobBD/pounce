@@ -1,0 +1,5 @@
+*
+!.gitignore
+!parameter.yml
+!mesh_1.h5
+!parameter_flexi.ini

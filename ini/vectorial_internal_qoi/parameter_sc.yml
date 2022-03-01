@@ -1,0 +1,29 @@
+general:
+  project_name: integ
+  main_stages:
+  - name: main
+  - name: replica
+
+uq_method:
+  _type: sc
+
+sampling:
+  poly_deg : 5
+  sparse_grid: False
+
+solver:
+  n_pts: 1000
+  _type: internal
+
+stoch_vars:
+- _type: uniform
+  bounds: [-0.5,1.] # exact sol: mean (2./(3.*pi)) ; stddev = sqrt(0.5 - mean^2)
+
+machine:
+  _type: local
+  mpi: false
+
+qois:
+- _type: standard
+- _type: double
+  do_write: True

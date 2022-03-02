@@ -8,7 +8,6 @@ from helpers.printtools import *
 from helpers.tools import *
 from helpers import config
 from helpers import globels
-# from uqmethod.uqmethod import UqMethod
 
 
 class Batch(BaseClass):
@@ -97,13 +96,21 @@ class Batch(BaseClass):
 
 def register_batch_series(stages): 
     """
+    A stage contains several batches (such as for different MFMC models), 
+    but it may alos be necessary to access the batch belong to the same model
+    in different stages (if, for example, the output of a previous stage 
+    serves as input to the current one). A list of stages for each model is therefore
+    stored in each batch. 
+
     to be called before postproc is appended
     """
-    l = [s.batches for s in stages]
-    l = [list(i) for i in zip(*l)]
-    for i_stage, stage in enumerate(stages): 
-        for bl,b in zip(l,stage.batches):
-            b.other_stages = bl
+    batches_per_stage = [s.batches for s in stages]
+    # transpose
+    batches_per_model = [list(i) for i in zip(*batches_per_stage)]
+
+    for stage in stages: 
+        for other_stages_of_model, batch in zip(batches_per_model,stage.batches):
+            batch.other_stages = other_stages_of_model
 
 
 class Solver(Batch):

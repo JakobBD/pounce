@@ -231,7 +231,7 @@ def count_recursive(prms,sub_list_name,counter,length=None):
     return counter, length
         
 
-def config_pp_mach(prms,sim,stage_name):
+def config_postproc_stage(prms,sim,stage_name):
     if "machine_postproc" in prms: 
         MachineLoc = Machine.subclass("local")
         sub_dict = prms["machine_postproc"]

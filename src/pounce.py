@@ -1,12 +1,19 @@
-# global imports
+#!/usr/bin/env python3
+
+"""POUNCE main program.
+   Parses arguments, calls config to set up class structure,
+   runs UQ simulation. 
+"""
+
 import sys
 if sys.version_info[0] < 3:
     print('\nPounce only works with Python 3!\n')
     sys.exit()
 
-# local imports
 from helpers import config
 from helpers.printtools import *
+
+
 
 # parse commmand line arguments
 
@@ -28,6 +35,7 @@ print_header()
 is_prm_file = sys.argv[-1].endswith(('yml','yaml'))
 restart_mode = sys.argv[1] in ['-r','--restart']
 
+# configure simulation, set up class structure
 if n_args == 2 and is_prm_file:
     # standard use, fresh start
     print_major_section("Start parameter readin and configuration")

@@ -1,10 +1,15 @@
 # POUNCE
 
-TODO short overview and purpose
+POUNCE (Propagation Of UNCErtainties) is a framework fully automatized runs of non-intrusive forward UQ simulations. 
+It is designed for efficiency on HPC clusters. It is written in object-oriented Python. 
+For details about the scheduling approach, please refer to the reference given below.
 
-POUNCE is suited to be customized by users and tailored to their needs. Users are advised to familiarize themselves with the source code prior to use. Extending the code and adding an API for your own baseline solver and cluster is therefore comparatively simple due to the light-weight nature  and modular design of POUNCE.
+POUNCE is suited to be customized by users and tailored to their needs. Users are advised to familiarize themselves with the source code prior to use. 
+Extending the code and adding an API for your own baseline solver and cluster/scheduler is therefore comparatively simple due to the light-weight nature  and modular design of POUNCE.
 
-## Reference
+POUNCE therefore hopes to head-start for your own UQ implementation.
+
+## Reference / Please cite
 
 TODO (Reference Paper Also contains design paradigms)
 

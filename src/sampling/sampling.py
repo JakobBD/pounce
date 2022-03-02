@@ -61,7 +61,7 @@ class MonteCarlo(Sampling):
 
 class Collocation(Sampling):
     """
-    Sampling at collocation nodes based on ChaosPy routines
+    Sampling at Gaussian collocation nodes based on ChaosPy routines
     Smolyak sparse grid is possible
     """
          

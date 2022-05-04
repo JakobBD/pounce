@@ -393,8 +393,8 @@ class Mfmc(UqMethod):
                                    safe_sqrt(qoi_hfm.integrate(qoi_hfm.var))])
 
             # copy end result to attributed of main simulation
-            self.mean   = self.hfm.qoi_opt.mean
-            self.stddev = self.hfm.qoi_opt.stddev
+            self.mean   = self.hfm.internal_qois[0].mean
+            self.stddev = self.hfm.internal_qois[0].stddev
 
             # print to stdout
             print_table(table)

@@ -65,8 +65,9 @@ def restart(prmfile=None):
     with open('pounce.pickle', 'rb') as f:
         sim = pickle.load(f)
     if prmfile:
-        raise Exception("Modifying parameters at restart is not yet "
-                        "implemented")
+        raise Exception("Restart with changed parameter file not yet implemented."
+                        " Please use the apply_changes function in helpers/config.py"
+                        " to manually apply changes to the simulation setup.")
 
     n_finished_iter = len(sim.iterations) \
                     - (0 if sim.current_iter.finished else 1)

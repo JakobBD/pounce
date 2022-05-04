@@ -1,5 +1,5 @@
 general:
-  project_name: keil
+  project_name: mfmc
   do_pickle: False
   main_stages:
   - name: main
@@ -13,7 +13,7 @@ uq_method:
   update_alpha : False
 
 sampling:
-  reset_seed: false
+  fixed_seed: true
 
 models:
   fidelities:
@@ -52,7 +52,7 @@ stoch_vars:
 
 machine:
   _type: local
-  mpi: false
+  parallelization: none
 
 qois:
 - _type: standard

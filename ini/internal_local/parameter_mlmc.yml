@@ -1,5 +1,5 @@
 general:
-  project_name: keil
+  project_name: mlmc
   stdout_log_file: stdout_log.dat
   main_stages:
   - name: main

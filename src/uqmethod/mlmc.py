@@ -324,7 +324,7 @@ class Mlmc(UqMethod):
             qoi.stddev = safe_sqrt(qoi.variance)
 
             # update stdout
-            if isinstance(qoi.mean,(float,np.float)):
+            if isinstance(qoi.mean,float):
                 table.add_row([qoi.cname,qoi.mean,qoi.stddev])
             else:
                 table.add_row([qoi.cname + " (Int.)",

@@ -96,7 +96,7 @@ class Sc(UqMethod):
             qoi.stddev = safe_sqrt(np.dot(np.transpose(u_out**2),self.samples.weights) - qoi.mean**2.)
 
             # update stdout
-            if isinstance(qoi.mean,(float,np.float)):
+            if isinstance(qoi.mean,float):
                 # scalar QoI
                 table.add_row([qoi.cname,qoi.mean,qoi.stddev])
             else:

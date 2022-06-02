@@ -385,7 +385,7 @@ class Mfmc(UqMethod):
                 qoi_hfm.write_to_file()
 
                 # prepare print to stdout
-                if isinstance(qoi_hfm.mean,(float,np.float)):
+                if isinstance(qoi_hfm.mean,float):
                     table.add_row([qoi_hfm.cname,qoi_hfm.mean,qoi_hfm.stddev])
                 else:
                     table.add_row([qoi_hfm.cname + " (Int.)",

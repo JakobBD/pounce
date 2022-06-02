@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!python3
 """
 This is a wrapper for the minimal solver to demonstrate I/O via individual input files and Stdout. 
 This is a fallback option for the batch version, if the latter cannot be generated or requires too much implementational effort

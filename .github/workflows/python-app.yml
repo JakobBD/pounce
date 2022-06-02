@@ -33,6 +33,7 @@ jobs:
         #pip install -r requirements.txt
         #cd ..
     - name: Install external dependencies
+      uses: mpi4py/setup-mpi@v1
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -r externals/demonstrators/requirements.txt

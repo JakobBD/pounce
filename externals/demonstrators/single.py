@@ -8,7 +8,11 @@ python3 single.py parameters.ini
 """
 
 import sys
-import numpy as np
+try: 
+    import numpy as np
+except:
+    print('\n'.join(sys.path))
+    Exception()
 import configparser
 
 from solver import solver

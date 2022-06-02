@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 """
 This is a minimal solver to demonstrate the batch strategy of pounce, where several sample evaluations are grouped into a common program execution with a common I/O, which evaluates the samples both sequentially and in parallel.
 I/O is done completely with h5py.

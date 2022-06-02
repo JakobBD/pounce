@@ -101,7 +101,7 @@ class DemonstratorSingle(Solver):
                 prms.write(pf)
             self.prmfiles.append(prmfile)
 
-            self.run_commands.append(self.exe_path + ' ' + prmfile)
+            self.run_commands.append('python3 ' + self.exe_path + ' ' + prmfile)
 
 
     def get_qty_from_stdout(self,name): 

@@ -1,0 +1,34 @@
+general:
+  project_name: integ
+  main_stages:
+  - name: main
+
+uq_method:
+  _type: sc
+
+sampling:
+  poly_deg : 5
+  sparse_grid: False
+
+solver:
+  _type: demonstrator_single
+  # paths are given relative to a directory one level below the repository here. 
+  exe_path: ../externals/demonstrators/single.py
+  prmfile: ../ini/demonstrator_single_local/parameter.ini
+  cores_per_sample: 1
+  solver_prms: 
+    ModelName: Integration
+    nPoints: 1000
+
+stoch_vars:
+- _type: uniform
+  bounds: [-0.5,1.] # exact sol: mean (2./(3.*pi)) ; stddev = sqrt(0.5 - mean^2)
+  name: StochPrm
+
+machine:
+  _type: local
+  parallelization: gnu
+  n_max_cores: 2
+
+qois:
+- _type: standard

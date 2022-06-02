@@ -1,0 +1,43 @@
+general:
+  project_name: mlmc
+  stdout_log_file: stdout_log.dat
+  main_stages:
+  - name: main
+
+uq_method:
+  _type: mlmc
+  total_work: 2.
+  use_ci: False
+  n_max_iter: 2
+
+sampling:
+  fixed_seed: true
+
+solver:
+  _type: demonstrator_single
+  # paths are given relative to a directory one level below the repository here. 
+  exe_path: ../externals/demonstrators/single.py
+  prmfile: ../ini/demonstrator_single_local/parameter.ini
+  cores_per_sample: 1
+  n_warmup_samples : 5
+  levels:
+    - solver_prms: 
+        ModelName: Integration
+        nPoints: 16
+    - solver_prms: 
+        ModelName: Integration
+        nPoints: 32
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+  name: StochPrm
+
+machine:
+  _type: local
+  parallelization: gnu
+  n_max_cores: 2
+
+qois:
+- _type: standard
+  optimize: True

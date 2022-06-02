@@ -17,7 +17,7 @@ class Internal(Solver):
     Different analytical or other cheap models (such as 1D integration) 
     can be chosen by editing the function f.
 
-    Currently, a 1D integration is carried out when n_pts is given as a parameteri (in function f_ml), 
+    Currently, a 1D integration is carried out when n_pts is given as a parameteri (in function f_analytical), 
     which can be used for MLMC and MFMC (or of course also for SC)
 
     If n_pts is not given, an analytical function is chosen, 
@@ -34,7 +34,7 @@ class Internal(Solver):
     defaults_ = {
         "solver_prms" : "dummy_unused",   # not needed, as no external commands are run
         "exe_path" : "dummy_unused",      # not needed, as no external commands are run
-        "n_pts" : None                    # use function f_mf if n_pts is None, else use f_ml
+        "n_pts" : None                    # use function f_analytical if n_pts is None, else use f_analytical
             }
 
 
@@ -66,7 +66,7 @@ class Internal(Solver):
         # Attributes are initialized from input prms and defaults in BaseClass init: 
         super().__init__(*args,**kwargs)
         # choose between numerical integration and analytical function
-        self.f = self.f_ml if self.n_pts else self.f_mf
+        self.f = self.f_analytical if self.n_pts else self.f_analytical
 
 
     def prepare(self):
@@ -96,7 +96,7 @@ class Internal(Solver):
         return True 
 
 
-    def f_mf(self,xi):
+    def f_analytical(self,xi):
         """
         If n_pts is not given, this analytical function of the ranom input vector is chosen, 
         with a high-fidelity model and three low-fidelity models, which are accessed by
@@ -128,7 +128,7 @@ class Internal(Solver):
         return f, w_artificial/10000.
 
 
-    def f_ml(self,xi):
+    def f_analytical(self,xi):
         """
         First order numerical integration of y=pi*cos(pi*x) from -1 to xi 
         Exact solution is int y = sin(pi*xi)

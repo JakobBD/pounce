@@ -2,10 +2,8 @@ chaospy
 h5py
 inflection
 matplotlib
-meshio
 numpy
 parse
 prettytable
-pygmsh
 PyYAML
 scipy

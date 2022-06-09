@@ -1,0 +1,47 @@
+general:
+  project_name: mfmc
+  do_pickle: False
+  main_stages:
+  - name: main
+
+uq_method:
+  _type: mfmc
+  total_work: 0.2
+  n_warmup_samples : 5
+  reuse_warmup_samples : False
+  update_alpha : False
+
+sampling:
+  fixed_seed: true
+
+models:
+  _type: demonstrator_batch
+  # paths are given relative to a directory one level below the repository here. 
+  exe_path: ../externals/demonstrators/batch.py
+  cores_per_sample: 1
+  fidelities:
+  - name: HF
+    solver_prms: 
+      ModelName: hf
+  - name: LF1
+    solver_prms: 
+      ModelName: lf1
+  - name: LF2
+    solver_prms: 
+      ModelName: lf2
+  - name: LF3
+    solver_prms: 
+      ModelName: lf3
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  parallelization: mpi
+  n_max_cores: 2
+
+qois:
+- _type: standard
+  optimize: True

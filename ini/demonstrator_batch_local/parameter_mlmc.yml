@@ -1,0 +1,41 @@
+general:
+  project_name: mlmc
+  stdout_log_file: stdout_log.dat
+  main_stages:
+  - name: main
+
+uq_method:
+  _type: mlmc
+  total_work: 2.
+  use_ci: False
+  n_max_iter: 2
+
+sampling:
+  fixed_seed: true
+
+solver:
+  _type: demonstrator_batch
+  # paths are given relative to a directory one level below the repository here. 
+  exe_path: ../externals/demonstrators/batch.py
+  cores_per_sample: 1
+  n_warmup_samples : 5
+  levels:
+    - solver_prms: 
+        ModelName: Integration
+        nPoints: 16
+    - solver_prms: 
+        ModelName: Integration
+        nPoints: 32
+
+stoch_vars:
+- _type: uniform
+  bounds: [-1.,1.]
+
+machine:
+  _type: local
+  parallelization: mpi
+  n_max_cores: 2
+
+qois:
+- _type: standard
+  optimize: True

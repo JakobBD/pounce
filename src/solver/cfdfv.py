@@ -58,16 +58,6 @@ class Cfdfv(Solver):
                 u_out.append(u_tmp)
             return u_out
 
-        def get_derived_quantity(self,quantity_name):
-            """ 
-            Readin sigma_sq or avg_walltime for MLMC.
-            """
-            qty = getattr(self,quantity_name,"not found")
-            if qty == "not found": 
-                raise Exception("Quantity " + quantity_name + " not found!")
-            else: 
-                return qty
-
 
     def find_ind(self,lines,name,i_occurrence=[1]):
             i_found = 0

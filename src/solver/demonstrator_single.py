@@ -133,7 +133,7 @@ class DemonstratorSingle(Solver):
 
 
 
-class CfdfvCl(DemonstratorSingle.QoI):
+class Standard(DemonstratorSingle.QoI):
 
     cname = "standard"
 

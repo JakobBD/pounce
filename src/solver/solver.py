@@ -171,6 +171,16 @@ class QoI(Batch):
         return w
 
 
+    def get_derived_quantity(self,quantity_name):
+        """ 
+        Readin sigma_sq or avg_walltime for MLMC.
+        """
+        qty = getattr(self,quantity_name,"not found")
+        if qty == "not found": 
+            raise Exception("Quantity " + quantity_name + " not found!")
+        else: 
+            return qty
+
 
 from . import *
 

@@ -11,10 +11,9 @@ sampling:
   sparse_grid: False
 
 solver:
-  _type: demonstrator_single
+  _type: demonstrator_batch
   # paths are given relative to a directory one level below the repository here. 
-  exe_path: ../externals/demonstrators/single.py
-  prmfile: ../ini/demonstrator_single_local/parameter.ini
+  exe_path: ../externals/demonstrators/batch.py
   cores_per_sample: 1
   solver_prms: 
     ModelName: Integration
@@ -23,11 +22,10 @@ solver:
 stoch_vars:
 - _type: uniform
   bounds: [-0.5,1.] # exact sol: mean (2./(3.*pi)) ; stddev = sqrt(0.5 - mean^2)
-  name: StochPrm
 
 machine:
   _type: local
-  parallelization: gnu
+  parallelization: mpi
   n_max_cores: 2
 
 qois:

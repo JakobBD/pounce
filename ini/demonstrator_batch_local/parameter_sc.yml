@@ -7,7 +7,7 @@ uq_method:
   _type: sc
 
 sampling:
-  poly_deg : 6
+  poly_deg : 5
   sparse_grid: False
 
 solver:

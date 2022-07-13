@@ -1,17 +1,40 @@
 # POUNCE
 
 POUNCE (Propagation Of UNCErtainties) is a framework fully automatized runs of non-intrusive forward UQ simulations. 
-It is designed for efficiency on HPC clusters. It is written in object-oriented Python. 
-For details about the scheduling approach, please refer to the reference given below.
+It is designed for efficiency on HPC clusters.
 
-POUNCE is suited to be customized by users and tailored to their needs. Users are advised to familiarize themselves with the source code prior to use. 
-Extending the code and adding an API for your own baseline solver and cluster/scheduler is therefore comparatively simple due to the light-weight nature  and modular design of POUNCE.
-
+Extending the code and adding an API for your own baseline solver and cluster/scheduler is comparatively simple due to the light-weight nature and modular design of POUNCE.
 POUNCE therefore hopes to head-start for your own UQ implementation.
+
+## Requirements
+
+Required Python packages are given in [src/requirements.txt](src/requirements.txt).
+
+## Quick start / basic run
+
+Runs are configured using a YAML input file.
+
+For a test run, go to `ini/internal_local` and run 
+
+```
+python3 ../../src/pounce.py parameter_mlmc.py
+```
+
+## License 
+
+FLEXI is Copyright (C) 2022, Prof. Claus-Dieter Munz and is 
+released under the terms of the
+GNU General Public License v3.0. For the full license terms see
+the included license file [license](LICENSE.md).
 
 ## Reference / Please cite
 
-TODO (Reference Paper Also contains design paradigms)
+References will be added shortly. In the meantime, please cite
+
+A. Beck, J. Dürrwächter, T. Kuhn, F. Meyer, C.-D. Munz, C. Rohde.\
+“hp-multilevel Monte Carlo methods for uncertainty quantification of compressible Navier–Stokes equations”. \
+SIAM J. Sci. Comput. (Aug. 2020). \
+DOI: https://doi.org/10.1137/18M1210575 \
 
 ## Basic code design
 

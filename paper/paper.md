@@ -14,9 +14,9 @@ authors:
   - name: Thomas Kuhn
     affiliation: 1
   - name: Fabian Meyer
-    affiliation: 1
+    affiliation: 2
   - name: Andrea Beck
-    affiliation: "1, 2"
+    affiliation: "1, 3"
   - name: Claus-Dieter Munz
     affiliation: 1
 affiliations:
@@ -43,11 +43,11 @@ The framework is designed to generate simulation input for each single model eva
 
 Uncertainty Quantification has become a central tool over the last years to increase reliability in numerical simulations across a wide range of scientific fields. It captures simulation input data as a potential source of error. 
 
-There are already several UQ tool kits, such as The Dakota toolbox [@Dakota] as the most prominent, or others such as the UQ toolkit [@DebusscherePCE2004; @DebusschereUQTk2017], UQpy [@Olivier2020], PyMLMC [@PyMLMCSukys2017], ChaosPy [@ChaosPyFeinberg2015], UQLab [@Marelli2014], and UQit [@Rezaeiravesh2021b]. These existing packages often include a large variety of UQ methods, but generally do not provide an integrated framework for fully automatized UQ runs. Some provide basic scheduling capabilities, which entail, however, several performance bottlenecks, as outlined below. PoUnce closes this gap and provides the following capabilities which are not provided by other packages:
+There are already several UQ software packages, such as The Dakota toolbox [@Dakota] as the most prominent, or others such as the UQ toolkit [@DebusscherePCE2004; @DebusschereUQTk2017], UQpy [@Olivier2020], PyMLMC [@PyMLMCSukys2017], ChaosPy [@ChaosPyFeinberg2015], UQLab [@Marelli2014], and UQit [@Rezaeiravesh2021b]. These existing packages often include a large variety of UQ methods, but generally do not provide an integrated framework for fully automatized UQ runs. Some provide basic scheduling capabilities, which entail, however, several performance bottlenecks, as outlined below. PoUnce closes this gap and provides the following capabilities which are not provided by other packages:
 
 - **Integration and automatization:** A large-scale UQ simulation involves many individual steps, which are usually carried out separately by hand: Stochastic input generation for sample simulations, determining the required HPC resources, interaction with a HPC scheduler, extracting post-processed quantities of interest from the sample simulations and stochastic evaluation. In some methods, these steps even have to be carried out several times in an iterative loop. Contrary to other packages, PoUnce fully automatizes these runs, such that they can be executed with one single command. 
 - **Efficiency on HPC clusters:** Non-intrusive UQ simulations consist of large numbers of smaller sample simulations. This is particularly the case in Multilevel and Multifidelity Monte Carlo simulations, where the cost between the computationally least and most expensive sample simulations can differ by many orders of magnitude. HPC clusters are not designed for this kind of applications, which entails performance bottlenecks, if no measures are taken to prevent them. This includes I/O bottlenecks due to very large numbers of relatively small files, as well as sub-optimal job-internal scheduling and idle times. PoUnce overcomes these issues by grouping large numbers of sample simulations into a common program execution with a common file I/O. Furthermore, in the interaction with the HPC scheduler, separate large-scale compute jobs are used for sample simulations of similar size, and post-processing is performed outside of these large compute jobs. This makes internal scheduling much more efficient and reduces idle times. Details can be found in the code documentation. 
-- **Potential for extension**: The modularity of PoUnce together with its very compact source code lower the threshold to extend the code and adapt it to every users' individual needs. This includes adding adapters to new source codes, adapting interaction with new HPC clusters, and adding new UQ methods. Since users base UQ simulations on their own baseline codes and use different clusters, this modularity and extensibility is vital for PoUnce's applicability.
+- **Potential for extension**: The modularity of PoUnce together with its very compact source code lowers the threshold to extend the code and adapt it to every users' individual needs. This includes adding adapters to new source codes, adapting interaction with new HPC clusters, and adding new UQ methods. Since users base UQ simulations on their own baseline codes and use different clusters, this modularity and extensibility is vital for PoUnce's applicability.
 
 # UQ methods
 

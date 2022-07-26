@@ -22,10 +22,13 @@ authors:
 affiliations:
  - name: Institute of Aerodynamics and Gas Dynamics, University of Stuttgart, Germany
    index: 1
- - name: The Laboratory of Fluid Dynamics and Technical Flows, Otto von Guericke University Magdeburg, Germany
+ - name: Institute of Applied Analysis and Numerical Simulation, University of Stuttgart, Germany
    index: 2
-date: 11 July 2022
+ - name: The Laboratory of Fluid Dynamics and Technical Flows, Otto von Guericke University Magdeburg, Germany
+   index: 3
+date: 26 July 2022
 bibliography: paper.bib
+---
 
 # Summary
 

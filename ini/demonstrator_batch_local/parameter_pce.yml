@@ -6,7 +6,7 @@ general:
   - name: main
 
 uq_method:
-  _type: sc                      # UQ method to be used
+  _type: pce                      # UQ method to be used
 
 sampling:
   poly_deg : 5                   # PCE polynomial degree; also determines order of integration

@@ -4,21 +4,21 @@ import numpy as np
 from .uqmethod import UqMethod
 from helpers.printtools import *
 from helpers.tools import *
-from sampling.sampling import Collocation
+from sampling.sampling import GaussianQuadrature
 from solver.solver import Solver,register_batch_series
 from machine.machine import Machine
 from stochvar.stochvar import StochVar
 from helpers import config
 from helpers import globels
 
-class Sc(UqMethod):
+class PCE(UqMethod):
     """
-    Stochastic Collocation (non-adaptive)
+    Stochastic GaussianQuadrature (non-adaptive)
     """
 
-    cname = "sc"
+    cname = "pce"
 
-    SamplingMethod = Collocation
+    SamplingMethod = GaussianQuadrature
 
     def __init__(self, input_prm_dict):
         """
@@ -33,7 +33,7 @@ class Sc(UqMethod):
 
     def setup(self, prms):
         """
-        Called from config for all the SC-specific parts of the setup.
+        Called from config for all the PCE-specific parts of the setup.
 
         Only one batch is needed (called solver)
         """
@@ -44,13 +44,13 @@ class Sc(UqMethod):
         self.stoch_vars = config.config_list("stoch_vars", prms, StochVar.create,
                                              SolverLoc)
         
-        self.samples = Collocation(prms["sampling"])
+        self.samples = GaussianQuadrature(prms["sampling"])
         self.samples.stoch_vars = self.stoch_vars
 
         for i_stage, stage in enumerate(self.stages): 
             solver = Solver.create_by_stage_from_list(prms["solver"],i_stage,
                                                          stage.name,self,stage.__class__)
-            solver.name = "sc"
+            solver.name = "pce"
             solver.samples = self.samples
             stage.batches = [solver]
 

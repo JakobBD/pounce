@@ -15,7 +15,7 @@ general:
     machine: parallel
 
 uq_method:
-  _type: sc
+  _type: pce
 
 sampling:
   poly_deg : 4

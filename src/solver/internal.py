@@ -18,7 +18,7 @@ class Internal(Solver):
     can be chosen by editing the function f.
 
     Currently, a 1D integration is carried out when n_pts is given as a parameteri (in function f_analytical), 
-    which can be used for MLMC and MFMC (or of course also for SC)
+    which can be used for MLMC and MFMC (or of course also for PCE)
 
     If n_pts is not given, an analytical function is chosen, 
     with a high-fidelity model and three low-fidelity models, which are accessed by

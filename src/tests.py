@@ -33,8 +33,8 @@ def test_internal_mfmc():
     tol = 1.E-7
     general_tst(prmfile,mean_ref,stddev_ref,tol)
 
-def test_internal_sc():
-    prmfile    = "../ini/internal_local/parameter_sc.yml"
+def test_internal_pce():
+    prmfile    = "../ini/internal_local/parameter_pce.yml"
     mean_ref   = 0.2101817993546256
     stddev_ref = 0.6743135688310626
     tol = 1.E-7
@@ -55,8 +55,8 @@ def test_demonstrator_single_mfmc():
     tol = 1.E-7
     general_tst(prmfile,mean_ref,stddev_ref,tol)
 
-def test_demonstrator_single_sc():
-    prmfile    = "../ini/demonstrator_single_local/parameter_sc.yml"
+def test_demonstrator_single_pce():
+    prmfile    = "../ini/demonstrator_single_local/parameter_pce.yml"
     mean_ref   = 0.2101817993546256
     stddev_ref = 0.6743135688310626
     tol = 1.E-7

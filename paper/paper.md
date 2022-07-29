@@ -36,7 +36,7 @@ PoUnce (Propagation of Uncertainties) is a Python framework for fully automatize
 
 In UQ, some input parameters are not known precisely, but are uncertain with a given random distribution. In non-intrusive UQ methods, a standard simulation model is evaluated many times with different input parameter values and the model outputs are post-processed to obtain information about the output quantity of interest (QoI). In Multilevel Monte Carlo [@Heinrich2001; @Giles2008] and Multifidelity Monte Carlo [@Peherstorfer2016; @Peherstorfer2018] methods, different models with vastly different cost and fidelity are combined. The number of evaluations with each model is usually determined adaptively and iteratively at simulation runtime.
 
-Pounce enables UQ simulations with a computational cost that requires high performance computing (HPC) clusters. It serves as a connecting piece between UQ methods, simulation codes, and cluster software. 
+PoUnce enables UQ simulations with a computational cost that requires high performance computing (HPC) clusters. It serves as a connecting piece between UQ methods, simulation codes, and cluster software. 
 The framework is designed to generate simulation input for each single model evaluation, schedule and run all model evaluations on the cluster, and post-process their results. It can be easily adapted to individual needs, such as new means of interaction with different baseline simulation codes. 
 
 Three UQ methods are currently implemented: The multilevel Monte Carlo method, the multifidelity Monte Carlo method, and the non-intrusive polynomial chaos method.

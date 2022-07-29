@@ -1,0 +1,233 @@
+# This is an ini file for a complex iced airfoil performance calculation. Only some parameters which are not included in
+# the demonstrator parameter files. In particular, these are the parameters for using several 'stages' for pre- and 
+# post-processing
+# In this case, pounce is executed on a small one-node job on the Hawk cluster at HLRS. Pre- and post-processing 
+# routines are carried out within this same job, so no additional job request needs to be submitted (hence those stages
+# are 'local'). For the main simulation stage, large scale jobs are submitted.
+
+general:
+  project_name: IceMfmcTS
+  stdout_log_file: log_stdout.dat
+  main_stages:        # This list specifies for each stage the machine it is run on (listed below)
+                      # Names of the stages have to match names given in subclasses in the solver specification
+  - name: meshref     # The 'default' machine is default.
+  - name: mesh
+    machine: gnu
+  - name: sortsides
+    machine: gnu
+  - name: main
+    machine: mpi_hawk
+  - name: merge
+  - name: swim
+  - name: restart
+    machine: parallel
+
+uq_method:
+  _type: mfmc
+  total_work: 3600000000
+  n_warmup_samples: 10
+  reuse_warmup_samples: True
+  update_alpha: True
+
+sampling:
+  fixed_seed : True
+  seed_offset: 50   # can be used to generate different sample sets even with fixed_seed
+
+models:
+  _type: ice
+  mesh_dir: mesh
+  fidelities:
+  - name: HF
+    solver_prms:
+      N: 5          # change DG polynomial degree for each model
+  - name: LF3DN3
+    solver_prms:
+      N: 3
+  - name: LF3DN1
+    solver_prms:
+      N: 1
+  - name: LF2DN5
+    solver_prms:
+      N: 5
+  - name: LF2DN3
+    solver_prms:
+      N: 3
+  - name: LF2DN1
+    solver_prms:
+      N: 1
+  stages:           # here parameters can be given for individual stages; as with the fidelities list, 
+                    # parameters specified outside this list are passed to all stages.
+                    # The order of the stages is specified above in 'general'
+  - exe_path: make_mesh.py
+  - exe_path: make_mesh_wrapper.py
+    hopr_path: /zhome/academic/HLRS/iag/iagduerr/code/hopr_ice/build/bin/hopr
+    cores_per_sample: 1
+    fidelities:     # since some parameters are specific for stage _and_ model, the according lists are nested
+    - prmfile: parameter_hopr.ini
+    - prmfile: parameter_hopr.ini
+    - prmfile: parameter_hopr.ini
+    - prmfile: parameter_hopr_2d.ini
+    - prmfile: parameter_hopr_2d.ini
+    - prmfile: parameter_hopr_2d.ini
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_sorticingsides
+  - fidelities:
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 8192
+      cores_per_sample_max: 32768
+      n_elems: 189888
+      est_work: 200000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn3/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 2048
+      cores_per_sample_max: 8192
+      n_elems: 189888
+      est_work: 60000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn1/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 256
+      cores_per_sample_max: 1024
+      n_elems: 189888
+      est_work: 6000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn5/bin/flexibatch
+      prmfile: parameter_flexi_2d.ini
+      cores_per_sample_min: 128
+      cores_per_sample_max: 512
+      n_elems: 15824
+      est_work: 10000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn3/bin/flexibatch
+      prmfile: parameter_flexi_2d.ini
+      cores_per_sample_min: 32
+      cores_per_sample_max: 256
+      n_elems: 15824
+      est_work: 2000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn1/bin/flexibatch
+      prmfile: parameter_flexi_2d.ini
+      cores_per_sample_min: 16
+      cores_per_sample_max: 64
+      n_elems: 15824
+      est_work: 300000.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_mergetimeaverages
+    start_time: 5.5
+    end_time: 11.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/swim
+    refstate: [1.,1.,0.,0.,7.93650793651]
+    n_pts: 2000
+  - cores_per_sample: 128
+    fidelities:
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+      prmfile: parameter_flexi_restart.ini
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn3/bin/flexibatch
+      prmfile: parameter_flexi_restart.ini
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn1/bin/flexibatch
+      prmfile: parameter_flexi_restart.ini
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn5/bin/flexibatch
+      prmfile: parameter_flexi_restart_2d.ini
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn3/bin/flexibatch
+      prmfile: parameter_flexi_restart_2d.ini
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_2dn1/bin/flexibatch
+      prmfile: parameter_flexi_restart_2d.ini
+
+
+
+machines:                      # list of machines; specifies the used subclass, parallelization type, and other possible parameters
+- name: default
+  _type: local
+  parallelization: none
+- name: parallel
+  _type: local
+  parallelization: mpi
+  n_max_cores: 128 
+- name: gnu
+  _type: local
+  parallelization: gnu
+  n_max_cores: 128 
+- name: mpi_hawk
+  _type: hawk
+  parallelization: mpi
+  n_max_nodes: 1024
+  max_total_work: 15000000000
+  remote: False       # set 'remote' true, if pounce is not run on the cluster, but a different machine. It needs to be run from 
+                      # the simulation folder which is mounted using for examples sshfs. The commands on the cluster are then 
+                      # executed using ssh. Password-free access needs to be activated for this.
+
+qois:
+- _type: cl_batch
+- _type: cd_batch
+- _type: cp
+  do_write: True      # writes mean and variance of a (vetor-valued) QoI to a csv file 
+  optimize: True
+
+stoch_vars:
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+#- _type: uniform
+  #bounds: [-0.8660254037844386,0.8660254037844386]

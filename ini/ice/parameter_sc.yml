@@ -1,0 +1,84 @@
+general:
+  project_name: IceSC
+  stdout_log_file: log_stdout.dat
+  main_stages:
+  - name: meshref
+  - name: mesh
+    machine: gnu
+  - name: sortsides
+    machine: gnu
+  - name: main
+    machine: mpi_hawk
+  - name: merge
+  - name: swim
+  - name: restart
+    machine: parallel
+
+uq_method:
+  _type: sc
+
+sampling:
+  poly_deg : 4
+  sparse_grid: False
+
+solver:
+  _type: ice
+  mesh_dir: mesh
+  solver_prms:
+    N: 5
+  stages: 
+  - exe_path: make_mesh.py
+  - exe_path: make_mesh_wrapper.py
+    hopr_path: /zhome/academic/HLRS/iag/iagduerr/code/hopr_ice/build/bin/hopr
+    cores_per_sample: 1
+    prmfile: parameter_hopr.ini
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_sorticingsides
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+    prmfile: parameter_flexi.ini
+    cores_per_sample_min: 8192
+    cores_per_sample_max: 32768
+    n_elems: 189888
+    est_work: 160000000.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_mergetimeaverages
+    start_time: 5.5
+    end_time: 11.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/swim
+    refstate: [1.,1.,0.,0.,7.93650793651]
+    n_pts: 2000
+  - cores_per_sample: 128
+    exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+    prmfile: parameter_flexi_restart.ini
+
+
+machines:
+- name: default
+  _type: local
+  parallelization: none
+- name: parallel
+  _type: local
+  parallelization: mpi
+  n_max_cores: 128 
+- name: gnu
+  _type: local
+  parallelization: gnu
+  n_max_cores: 128 
+- name: mpi_hawk
+  _type: hawk
+  parallelization: mpi
+  n_max_nodes: 1024
+  max_total_work: 15000000000
+  remote: False
+
+qois:
+- _type: cl_batch
+- _type: cd_batch
+- _type: cp
+  do_write: True
+
+stoch_vars:
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+#- _type: uniform
+  #bounds: [-0.8660254037844386,0.8660254037844386]

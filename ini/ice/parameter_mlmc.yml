@@ -1,0 +1,177 @@
+general:
+  project_name: IceMlmc
+  stdout_log_file: log_stdout.dat
+  main_stages:
+  - name: meshref
+  - name: mesh
+    machine: gnu
+  - name: sortsides
+    machine: gnu
+  - name: main
+    machine: mpi_hawk
+  - name: merge
+  - name: swim
+  - name: restart
+    machine: parallel
+
+uq_method:
+  _type: mlmc
+  total_work: 3600000000
+  n_max_iter: 3
+  use_ci: True
+
+sampling:
+  fixed_seed : True
+  seed_offset: 50
+
+solver:
+  _type: ice
+  n_warmup_samples: 10
+  mesh_dir: mesh
+  levels:
+  - solver_prms:
+      N: 1
+  - solver_prms:
+      N: 3
+  - solver_prms:
+      N: 5
+  stages: 
+  - exe_path: make_mesh.py
+  - exe_path: make_mesh_wrapper.py
+    hopr_path: /zhome/academic/HLRS/iag/iagduerr/code/hopr_ice/build/bin/hopr
+    cores_per_sample: 1
+    prmfile: parameter_hopr.ini
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_sorticingsides
+  - levels:
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn1/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 256
+      cores_per_sample_max: 1024
+      n_elems: 189888
+      est_work: 6000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn3/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 2048
+      cores_per_sample_max: 8192
+      n_elems: 189888
+      est_work: 60000000.
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+      prmfile: parameter_flexi.ini
+      cores_per_sample_min: 8192
+      cores_per_sample_max: 32768
+      n_elems: 189888
+      est_work: 200000000.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/posti_mergetimeaverages
+    start_time: 5.5
+    end_time: 11.
+  - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_nompi/bin/swim
+    refstate: [1.,1.,0.,0.,7.93650793651]
+    n_pts: 2000
+  - cores_per_sample: 128
+    prmfile: parameter_flexi_restart.ini
+    levels:
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn1/bin/flexibatch
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn3/bin/flexibatch
+    - exe_path: /zhome/academic/HLRS/iag/iagduerr/code/flexi_pounce/build_3dn5/bin/flexibatch
+
+
+
+machines:
+- name: default
+  _type: local
+  parallelization: none
+- name: parallel
+  _type: local
+  parallelization: mpi
+  n_max_cores: 128 
+- name: gnu
+  _type: local
+  parallelization: gnu
+  n_max_cores: 128 
+- name: mpi_hawk
+  _type: hawk
+  parallelization: mpi
+  n_max_nodes: 1024
+  max_total_work: 15000000000
+  remote: False
+
+qois:
+- _type: cl_batch
+- _type: cd_batch
+- _type: cp
+  do_write: True
+  optimize: True
+
+stoch_vars:
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+- _type: uniform
+  bounds: [-0.75,0.75]
+#- _type: uniform
+  #bounds: [-0.8660254037844386,0.8660254037844386]

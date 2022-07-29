@@ -1,41 +1,52 @@
 general:
-  project_name: mlmc
-  stdout_log_file: stdout_log.dat
-  main_stages:
+  project_name: mlmc             # used as a prefix for most generated files
+  stdout_log_file: stdout_log.dat # stdout can be written/copied to a log file with this specified name
+  main_stages:                   # list of stages, which are externally run pre- and post-processing steps as well as the main 
+                                 # simulation. Possible names of stages have to be specified in the specific solver subclass. 
+                                 # See the 'ice' ini files for a multi-stage example.
   - name: main
 
 uq_method:
-  _type: mlmc
-  total_work: 2.
+  _type: mlmc                    # UQ method to be used
+  total_work: 2.                 # computaitonal budget. The unit is core-seconds
   use_ci: False
-  n_max_iter: 2
+  n_max_iter: 2                  # number of iterations with which optimal sample number is approached; standard MLMC is 2
+                                 # (pilot samples + rest of samples); choose 3 or 4 to approach optimal sample number more 
+                                 # carefully and update optimal sample number estimates based on the additional samples 
 
 sampling:
-  fixed_seed: true
+  fixed_seed: true               # set seed for pseudo-random number generator; this way, the same samples will be drawn every run.
 
-solver:
+solver:                          # solver and list of levels. Each parameter given outside the 'levels' list is used for every
+                                 # level; individual parameters are given inside this list.
+                                 # Be careful: In MFMC, the list is called 'models' and the 'levels' are called 'fidelities'
   _type: demonstrator_batch
-  # paths are given relative to a directory one level below the repository here. 
   exe_path: ../externals/demonstrators/batch.py
-  cores_per_sample: 1
-  n_warmup_samples : 5
+                                 # path of the external solver executable; 
+                                 # given relative to a directory one level below the repository here. 
+  cores_per_sample: 1            # number of parallel cores for a single sample
+  n_warmup_samples : 5           # number of pilot samples is given in solver, so that it can be given individually for each level
   levels:
-    - solver_prms: 
-        ModelName: Integration
-        nPoints: 16
+    - solver_prms:               # list of parameters passed to the solver
+        ModelName: Integration   # model name used for file name prefixes; for this specific solver, it also determines its behaviour
+        nPoints: 16              # number of points for numerical integration
     - solver_prms: 
         ModelName: Integration
         nPoints: 32
 
-stoch_vars:
-- _type: uniform
-  bounds: [-1.,1.]
+stoch_vars:                      # list of uncertain parameters 
+- _type: uniform                 # random distribution
+  bounds: [-1.,1.]               # bounds of uniform distribution
 
-machine:
-  _type: local
-  parallelization: mpi
-  n_max_cores: 2
+machine:                         # list of machines that simulations are run on; several machines can be used within one
+                                 # simulation; if only one is given, no list is used.
+  _type: local                   # machine subclass; local means no scheduler is needed.
+  parallelization: mpi           # how to run several samples in parallel; options: none (run all in sequential), mpi (run all in
+                                 # one batch with a modified solver), gnu: parallel runs based on GNU parallel
+  n_max_cores: 2                 # maximum number of parallel cores available on the machine for this simulation
 
-qois:
-- _type: standard
-  optimize: True
+qois:                            # quantities of interest; several can be evaluated in one simulation; defined along with the 
+                                 # solver in the file of the accroding subclass
+- _type: standard                # QoI name to specify the according subclass
+  optimize: True                 # base optimal sample numbers on this QoI 
+                                 # (must be true for exactly one)

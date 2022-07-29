@@ -1,28 +1,36 @@
 general:
-  project_name: mfmc
-  do_pickle: False
-  main_stages:
+  project_name: mfmc             # used as a prefix for most generated files
+  do_pickle: False               # save the state of the simulation after each step in pickle files in a subfolder for restarts
+  main_stages:                   # list of stages, which are externally run pre- and post-processing steps as well as the main 
+                                 # simulation. Possible names of stages have to be specified in the specific solver subclass. 
+                                 # See the 'ice' ini files for a multi-stage example.
   - name: main
 
 uq_method:
-  _type: mfmc
-  total_work: 0.2
-  n_warmup_samples : 5
-  reuse_warmup_samples : False
-  update_alpha : False
+  _type: mfmc                    # UQ method to be used
+  total_work: 0.2                # computaitonal budget. The unit is core-seconds
+  n_warmup_samples : 5           # number of pilot samples with every model
+  reuse_warmup_samples : False   # include the pilot samples (which are used for optimal sample number and control variate 
+                                 # coefficient estimation) in the sample set used for the eventual estimator. This is not done by 
+                                 # Peherstorfer et al., as it may introduce a bias, but in practice it often increases 
+                                 # computational efficiency. 
+  update_alpha : False           # estimate control variate coefficients based on the 
 
 sampling:
-  fixed_seed: true
+  fixed_seed: true               # set seed for pseudo-random number generator; this way, the same samples will be drawn every run.
 
-models:
-  _type: demonstrator_batch
-  # paths are given relative to a directory one level below the repository here. 
+models:                          # list of models/solvers used. Each parameter given outside the 'fidelities' list is used for every
+                                 # model; individual parameters are given inside this list.
+                                 # Be careful: In MLMC, the list is called 'solver' and the 'fidelities' are called 'levels'
+  _type: demonstrator_batch      # determines the solver subclass to be used
   exe_path: ../externals/demonstrators/batch.py
-  cores_per_sample: 1
+                                 # path of the external solver executable; 
+                                 # given relative to a directory one level below the repository here. 
+  cores_per_sample: 1            # number of parallel cores for a single sample
   fidelities:
-  - name: HF
-    solver_prms: 
-      ModelName: hf
+  - name: HF                     # model name used for stdout
+    solver_prms:                 # list of parameters passed to the solver
+      ModelName: hf              # model name used for file name prefixes; for this specific solver, it also determines its behaviour
   - name: LF1
     solver_prms: 
       ModelName: lf1
@@ -33,15 +41,19 @@ models:
     solver_prms: 
       ModelName: lf3
 
-stoch_vars:
-- _type: uniform
-  bounds: [-1.,1.]
+stoch_vars:                      # list of uncertain parameters 
+- _type: uniform                 # random distribution
+  bounds: [-1.,1.]               # bounds of uniform distribution
 
-machine:
-  _type: local
-  parallelization: mpi
-  n_max_cores: 2
+machine:                         # list of machines that simulations are run on; several machines can be used within one
+                                 # simulation; if only one is given, no list is used.
+  _type: local                   # machine subclass; local means no scheduler is needed.
+  parallelization: mpi           # how to run several samples in parallel; options: none (run all in sequential), mpi (run all in
+                                 # one batch with a modified solver), gnu: parallel runs based on GNU parallel
+  n_max_cores: 2                 # maximum number of parallel cores available on the machine for this simulation
 
-qois:
-- _type: standard
-  optimize: True
+qois:                            # quantities of interest; several can be evaluated in one simulation; defined along with the 
+                                 # solver in the file of the accroding subclass
+- _type: standard                # QoI name to specify the according subclass
+  optimize: True                 # base optimal control variate coefficients and sample numbers on this QoI 
+                                 # (must be true for exactly one)

@@ -59,7 +59,7 @@ class MonteCarlo(Sampling):
         return {"nPreviousRuns":self.n_previous}
 
 
-class Collocation(Sampling):
+class GaussianQuadrature(Sampling):
     """
     Sampling at Gaussian collocation nodes based on ChaosPy routines
     Smolyak sparse grid is possible

@@ -4,7 +4,7 @@ general:
   - name: main
 
 uq_method:
-  _type: sc
+  _type: pce
 
 sampling:
   poly_deg : 5

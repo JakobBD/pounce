@@ -394,7 +394,7 @@ class FlexiBatchCp(Internal.QoI,Ice.QoI):
             #TODO xv is ad hoc
             #MLMC
             xv = self.participants[0].participants[0].other_stages[5].x
-            #MFMC, SC
+            #MFMC, PCE
             # xv = self.participants[0].other_stages[5].x
             with open(self.outfilename,"w") as f: 
                 f.write("mean stddev")

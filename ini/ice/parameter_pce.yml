@@ -1,5 +1,5 @@
 general:
-  project_name: IceSC
+  project_name: IcePCE
   stdout_log_file: log_stdout.dat
   main_stages:
   - name: meshref

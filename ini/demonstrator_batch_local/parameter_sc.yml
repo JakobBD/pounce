@@ -1,32 +1,40 @@
 general:
-  project_name: integ
-  main_stages:
+  project_name: integ            # used as a prefix for most generated files
+  main_stages:                   # list of stages, which are externally run pre- and post-processing steps as well as the main 
+                                 # simulation. Possible names of stages have to be specified in the specific solver subclass. 
+                                 # See the 'ice' ini files for a multi-stage example.
   - name: main
 
 uq_method:
-  _type: sc
+  _type: sc                      # UQ method to be used
 
 sampling:
-  poly_deg : 5
-  sparse_grid: False
+  poly_deg : 5                   # PCE polynomial degree; also determines order of integration
+  sparse_grid: False             # use Smolyak sparse grids (with a non-nested quadrature)
 
-solver:
-  _type: demonstrator_batch
-  # paths are given relative to a directory one level below the repository here. 
+solver:                          # specifies and configures the baseline solver; In contrast to MLMC/MFMC there is no list of
+                                 # different models here
+  _type: demonstrator_batch      # specifies the solver subclass to be used
   exe_path: ../externals/demonstrators/batch.py
-  cores_per_sample: 1
-  solver_prms: 
-    ModelName: Integration
-    nPoints: 1000
+                                 # path of the external solver executable; 
+                                 # given relative to a directory one level below the repository here. 
+  cores_per_sample: 1            # number of parallel cores for a single sample
+  solver_prms:                   # list of parameters passed to the solver
+    ModelName: Integration       # model name used for file name prefixes; for this specific solver, it also determines its behaviour
+    nPoints: 1000                # number of points for numerical integration
 
-stoch_vars:
-- _type: uniform
-  bounds: [-0.5,1.] # exact sol: mean (2./(3.*pi)) ; stddev = sqrt(0.5 - mean^2)
+stoch_vars:                      # list of uncertain parameters 
+- _type: uniform                 # random distribution
+  bounds: [-0.5,1.]              # bounds of uniform distribution; In this example, the exact solution is:
+                                 # mean = (2./(3.*pi)) ; stddev = sqrt(0.5 - mean^2)
 
-machine:
-  _type: local
-  parallelization: mpi
-  n_max_cores: 2
+machine:                         # list of machines that simulations are run on; several machines can be used within one
+                                 # simulation; if only one is given, no list is used.
+  _type: local                   # machine subclass; local means no scheduler is needed.
+  parallelization: mpi           # how to run several samples in parallel; options: none (run all in sequential), mpi (run all in
+                                 # one batch with a modified solver), gnu: parallel runs based on GNU parallel
+  n_max_cores: 2                 # maximum number of parallel cores available on the machine for this simulation
 
-qois:
-- _type: standard
+qois:                            # quantities of interest; several can be evaluated in one simulation; defined along with the 
+                                 # solver in the file of the accroding subclass
+- _type: standard                # QoI name to specify the according subclass

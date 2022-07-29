@@ -68,6 +68,8 @@ def write_output():
 #---------------------------------------------------------------------------------------------------
 # Read input from HDF5 file. For simplicity, parallel HDF5 is not used here. 
 # Instead, data is read by MPI root and communicated to other procs. 
+# This could/should be done differently in a real solver, but does not affect 
+# the PoUnce implementation.
 
 if global_root:
     with h5py.File(input_file_name, 'r') as h5f: 
@@ -93,10 +95,10 @@ n_samples    = comm.bcast(n_samples,    root=0)
 n_parallel   = comm.bcast(n_parallel,   root=0)
 
 
-# One sample evaluation can run in parallel, although in this dummy solver, 
-# this means in practice that only the first process of this simulation does anything.
-# If the number of ranks is not a multiple of the number of parallel sample evaluations, 
-# The first few sample evaluations get one rank more than the last.
+# One sample evaluation can run in parallel (resulting in nested parallelism), although in this 
+# dummy solver, this means in practice that only the first process of this simulation does 
+# anything. If the number of ranks is not a multiple of the number of parallel sample evaluations, 
+# the first few sample evaluations get one rank more than the last.
 n_parallel_current = n_parallel
 simu_size = size // n_parallel
 n_remain = size - n_parallel*simu_size

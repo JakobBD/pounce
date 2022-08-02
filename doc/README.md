@@ -4,7 +4,7 @@ This code documentation is compiled locally using pandoc by running
 ```
 make
 ```
-Alternatively, it can be displayed with some limitations in GitHub. 
+Alternatively, it can be displayed in GitHub (with some limitations). 
 
 ## Contents
 

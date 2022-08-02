@@ -2,7 +2,7 @@
 
 There is a considerable number of existing UQ software packages, such as the Dakota toolbox [@Dakota] as the most prominent, or others such as the UQ toolkit [@DebusscherePCE2004; @DebusschereUQTk2017], UQpy [@Olivier2020], PyMLMC [@PyMLMCSukys2017], ChaosPy [@ChaosPyFeinberg2015], UQLab [@Marelli2014], and UQit [@Rezaeiravesh2021b]. Of those that indlue scheduling, most are based on a similar scheduling strategy, which is also depicted in the left-hand part of \autoref{fig:pounce_scheduling}: The framework and thus the whole UQ simulation is carried out within one job. From the framework, external black box codes are executed for sample evaluation. Each sample (i.e. each external program execution) is assigned a number of processors (usually defined once for all samples of that model), such that samples are run partly sequentially and partly in parallel. Since the external codes are treated as a black box, each sample has its own independent file I/O (for clarity, file I/O is omitted in the figure).
 
-![Conventional (left) and PoUnce (right) scheduling strategies. In PoUnce, compute node use time (gray boxes) is optimized by avoiding overhead during placement of program executions (yellow boxes) and by moving stochastic evaluation (blue boxes) out of the compute jobs.\label{fig:pounce_scheduling}](fig/scheduling.pdf)
+![Conventional (left) and PoUnce (right) scheduling strategies. In PoUnce, compute node use time (gray boxes) is optimized by avoiding overhead during placement of program executions (yellow boxes) and by moving stochastic evaluation (blue boxes) out of the compute jobs.\label{fig:pounce_scheduling}](fig/scheduling.png)
 
 
 This strategy entails several performance bottlenecks: 

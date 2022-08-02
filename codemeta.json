@@ -1,0 +1,51 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "0000-0001-8961-5340",
+      "@type": "Person",
+      "email": "jakob.duerrwaechter@iag.uni-stuttgart.de",
+      "name": "Jakob Duerrwaechter",
+      "affiliation": "University of Stuttgart"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "thomas.kuhn@iag.uni-stuttgart.de",
+      "name": "Thomas Kuhn",
+      "affiliation": "University of Stuttgart"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "fabian.meyer@mathematik.uni-stuttgart.de",
+      "name": "Fabian Meyer",
+      "affiliation": "University of Stuttgart"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "beck@iag.uni-stuttgart.de",
+      "name": "Andrea Beck",
+      "affiliation": "University of Stuttgart"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "munz@iag.uni-stuttgart.de",
+      "name": "Claus-Dieter Munz",
+      "affiliation": "University of Stuttgart"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/JakobBD/pounce",
+  "datePublished": "2022-07-29",
+  "dateModified": "2022-07-29",
+  "dateCreated": "2022-07-29",
+  "description": "A Python framework for fully automatized runs of non-intrusive forward uncertainty quantification (UQ) simulations on high performance computers",
+  "keywords": "uncertainty quantification, high performance computing, Python",
+  "license": "GPL v3.0",
+  "title": "PoUnce",
+  "version": ""
+}

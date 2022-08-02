@@ -48,7 +48,7 @@ DOI: https://doi.org/10.1137/18M1210575 \
 
 ## Documentation
 
-Further documentation can be found in the `doc` folder. The guide can be compiled by simply running
+Further documentation can be found in the `doc` folder. The guide can be compiled using pandoc by running
 
 ```
 make

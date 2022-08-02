@@ -14,7 +14,7 @@ python3 ../../src/pounce.py parameter_mlmc.py
 
 Example YAML parameter files are located in the ini directory, where the structure is demonstrated. 
 
-Files in the demonstrator_XY directories can be run out of the box and are included in the github action regression tests.
+Files in the demonstrator_XY directories can be run out of the box and are included in the GitHub action regression tests.
 The ice directory conatains a complex application case, which needs additional parameter files and adapted codes.
 
 Files in the demonstrator_batch_local directory are commented. 

@@ -15,8 +15,6 @@ header-includes:
 
 ---
 
-\hypertarget{introduction}{}
-
 # Introduction
 
 PoUnce (Propagation of Uncertainties) is a Python framework for fully automatized runs of non-intrusive forward uncertainty quantification (UQ) simulations on high performance computers.
@@ -28,5 +26,5 @@ The framework is designed to generate simulation input for each single model eva
 
 ## About this guide 
 
-Users of PoUnce probably have to familiarize themselvers with at least parts of the source code, since they need to adapt it to their own baseline solver and possibly their own cluster.
+Users of PoUnce probably have to familiarize themselves with at least parts of the source code, since they need to adapt it to their own baseline solver and possibly their own cluster.
 This guide is therefore a mixed user and developer guide. Apart from basic usage, some high level design principles of the code are given. 

@@ -36,7 +36,8 @@ class Mfmc(UqMethod):
         "total_work" : "NODEFAULT",           # computational budget
         "n_warmup_samples": "NODEFAULT",      # pilot sample size
         "reuse_warmup_samples": False,        # reuse pilot simulations for estimators
-        "update_alpha": False                 # update CV coefficients
+        "update_alpha": False,                # update CV coefficients
+        "print_histograms" : False            # print histograms of all internal QoIs and levels to png
         }
 
     defaults_add = { 
@@ -383,6 +384,12 @@ class Mfmc(UqMethod):
                 # Optionally write result to file (if implemented for this QoI)
                 # Especially useful for field-valued QoIs
                 qoi_hfm.write_to_file()
+
+                # print histograms to file
+                if self.print_histograms: 
+                    for m in self.models_opt:
+                        q = m.internal_qois[i]
+                        q.print_histogram()
 
                 # prepare print to stdout
                 if isinstance(qoi_hfm.mean,float):

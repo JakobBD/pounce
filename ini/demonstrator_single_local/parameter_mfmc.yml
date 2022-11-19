@@ -10,6 +10,7 @@ uq_method:
   n_warmup_samples : 5
   reuse_warmup_samples : False
   update_alpha : False
+  print_histograms: True
 
 sampling:
   fixed_seed: true

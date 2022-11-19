@@ -2,6 +2,7 @@ import sys,os
 import inspect
 import copy
 import types
+from matplotlib import pyplot as plt
 
 from helpers.baseclass import BaseClass
 from helpers.printtools import *
@@ -180,6 +181,27 @@ class QoI(Batch):
             raise Exception("Quantity " + quantity_name + " not found!")
         else: 
             return qty
+
+    def store_current_output_to_all_output(self,u_out):
+        if not hasattr(self,'u'): 
+            self.u = u_out
+        else: 
+            self.u = [np.concatenate((u_prev,u)) for u_prev, u in zip(self.u, u_out)] 
+
+    def print_histogram(self):
+        plt.figure()
+        if isinstance(self.u,list):
+            umin = min([np.min(u) for u in self.u])
+            umax = max([np.max(u) for u in self.u])
+            plt.hist(self.u, range=(umin,umax), label = [p.name for p in self.participants])
+            plt.legend()
+        else: 
+            plt.hist(self.u)
+        plt.title(self.name)
+        os.makedirs("histograms", exist_ok = True)
+        filename = "histograms/"+self.name+".png".replace(" ", "_")
+        plt.savefig(filename)
+            
 
 
 from . import *

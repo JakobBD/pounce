@@ -9,6 +9,7 @@ uq_method:
   total_work: 2.
   use_ci: False
   n_max_iter: 2
+  print_histograms: True
 
 sampling:
   fixed_seed: true

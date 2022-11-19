@@ -31,7 +31,8 @@ class Mlmc(UqMethod):
         "use_ci" : False,             # use confidence inerval-based calculation of sample size per iteration
                                       # alternative is a heuristic approach
         "ci_conf_tot" : 0.95,         # confidence level for sample size calculation in each level
-        "dof_adj" : False             # use DOF-adjusted confidence intervals (strongly discouraged!!)
+        "dof_adj" : False,            # use DOF-adjusted confidence intervals (strongly discouraged!!)
+        "print_histograms" : False    # print histograms of all internal QoIs and levels to png
         }
 
     defaults_add = { 
@@ -225,6 +226,8 @@ class Mlmc(UqMethod):
                 continue
             for qoi in level.internal_qois: 
                 u_out = qoi.get_response()
+                if self.print_histograms: 
+                    qoi.store_current_output_to_all_output(u_out)
                 if len(u_out) == 2: 
                     u_fine, u_coarse = u_out
                 else: 
@@ -341,6 +344,11 @@ class Mlmc(UqMethod):
 
         # stdout
         print_table(table)
+
+        if self.print_histograms: 
+            for level in self.levels: 
+                for qoi in level.internal_qois: 
+                    qoi.print_histogram()
 
 
 

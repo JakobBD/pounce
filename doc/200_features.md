@@ -28,6 +28,10 @@ PoUnce includes the interaction with cluster software. In particular, this means
 
 Different parts of a simulation can be run on different machines. For example, the main simulation can be run on a cluster and post-processing on a local machine.
 
-## Extension
+## Random distributions
 
-Due to its strictly modular design, the framework can be easily extended by new options for these modules, if, for example, a new HPC cluster is present. 
+PoUnce allows an infinite number of independent random input parameters, whose distributions can be chosen individually. Currently, normal and uniform distributions are featured.
+
+## Extension
+ 
+Due to its strictly modular design, the framework can be easily extended by new options for each of these modules, if, for example, a new HPC cluster is present. 

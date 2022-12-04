@@ -31,5 +31,5 @@ Here are some possible ways to extend or improve PoUnce
 
 - Report what is hard to understand when reading into the source code
 - Flatten some of the inheritance schemes, for example by integrating the [Simulation](src/simulation/simulation.py) class into [UqMethod](src/uqmethod/uqmethod.py).
-- Break up some long routines, such as in [mfmc.py](src/uqmethod/mfmc.py) or [hawk.py](src/machines/hawk.py).
+- Break up some long routines, such as in [mfmc.py](src/uqmethod/mfmc.py) or [hawk.py](src/machine/hawk.py).
 - Enable linting and maybe add to integration actions

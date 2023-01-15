@@ -14,7 +14,7 @@ uq_method:
                                  # coefficient estimation) in the sample set used for the eventual estimator. This is not done by 
                                  # Peherstorfer et al., as it may introduce a bias, but in practice it often increases 
                                  # computational efficiency. 
-  update_alpha : False           # estimate control variate coefficients based on the 
+  update_alpha : False           # estimate control variate coefficients based on the samples of both iterations
 
 sampling:
   fixed_seed: true               # set seed for pseudo-random number generator; this way, the same samples will be drawn every run.

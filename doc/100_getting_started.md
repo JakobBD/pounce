@@ -28,6 +28,33 @@ In addition, the file `parameter_mfmc.yml` in the ice subdirectory has comments 
 
 All parameters with their defaults are also listed in each class in the code.
 
+Each parameter file contains the sections given in the following table. Most sections contain the "type" parameter which chooses the subclass to be used, and further parameters specifying its setup. 
+
+| section           | description                                           |
+|------------------:|-------------------------------------------------------|
+| `general`         | General settings like the project name and whether    |
+|                   | or not to save intermediate states of PoUnce.         |
+| `uq_method`       | UQ method to be used and general parameters about     |
+|                   | its configuration (such as the computational budget). | 
+| `sampling`        | Configuration of the sampling method, such as         |
+|                   | polynomial degree for polynomial chaos expansion or   |
+|                   | fixed seed of the random number generator for Monte   |
+|                   | Carlo.                                                |
+| `solver`/`models` | Setup of the baseline solver(s); In some methods with | 
+|                   | different levels/fidelities. The section is called    |
+|                   | `models` in Multifidelity Monte Carlo to rreflect     |
+|                   | that several different baseline solvers can be        |
+|                   | combined here.                                        |
+| `stoch_vars`      | A list of the used uncertain parameters including     |
+|                   | their distribution type and defining parameters       |
+| `machine`         | Choice and setup of the machine that the run is       |
+|                   | performed on, such as a cluster or a local machine.   |
+|                   | Several machines can be listed and assigned to        |
+|                   | several parts of the simulation.                      |
+| `qois`            | A list of the quantities of interest (QoIs) which are |
+|                   | evaluated. Several QoIs can be evaluated in one run.  | 
+
+
 ## Tests
 
 The current pipeline contains 9 regression tests covering different functionalities of the code.
@@ -51,3 +78,16 @@ python3 ../../src/pounce.py -r
 The restart capability is especially important due to the intermittent queuing times in the present scheduling strategy, which is outlined below.
 
 There is a routine in the file helpers/config.py, which can be used to modify parameters in a restart. To do this, the user needs to be familiar with the data structure within PoUnce, and therefore the source code. Restarting from a modified parameter file is a possible future extension, but not yet implemented.
+
+## Command line tool 
+
+PoUnce can be made a command line tool. This makes working with it more convenient, but is optional.
+This feature can be enables with the command 
+```
+make cmdline 
+```
+run from the main PoUnce directory. PoUnce can then be run from every folder without specifying the path to the python file and without the leading `python3`. An example command thus becomes
+```
+pounce parameter_mlmc.yml
+```
+

@@ -50,7 +50,7 @@ DOI: https://doi.org/10.1137/18M1210575 \
 
 ## Documentation
 
-Further [documentation](doc/000_documentation.md) can be found in the `doc` folder. The guide can be compiled using pandoc by running
+Further [documentation](doc/) can be found in the `doc` folder. The guide can be compiled using pandoc by running
 
 ```
 make

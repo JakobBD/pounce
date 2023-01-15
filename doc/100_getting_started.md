@@ -30,29 +30,16 @@ All parameters with their defaults are also listed in each class in the code.
 
 Each parameter file contains the sections given in the following table. Most sections contain the "type" parameter which chooses the subclass to be used, and further parameters specifying its setup. 
 
-| section           | description                                           |
-|------------------:|-------------------------------------------------------|
-| `general`         | General settings like the project name and whether    |
-|                   | or not to save intermediate states of PoUnce.         |
-| `uq_method`       | UQ method to be used and general parameters about     |
-|                   | its configuration (such as the computational budget). | 
-| `sampling`        | Configuration of the sampling method, such as         |
-|                   | polynomial degree for polynomial chaos expansion or   |
-|                   | fixed seed of the random number generator for Monte   |
-|                   | Carlo.                                                |
-| `solver`/`models` | Setup of the baseline solver(s); In some methods with | 
-|                   | different levels/fidelities. The section is called    |
-|                   | `models` in Multifidelity Monte Carlo to rreflect     |
-|                   | that several different baseline solvers can be        |
-|                   | combined here.                                        |
-| `stoch_vars`      | A list of the used uncertain parameters including     |
-|                   | their distribution type and defining parameters       |
-| `machine`         | Choice and setup of the machine that the run is       |
-|                   | performed on, such as a cluster or a local machine.   |
-|                   | Several machines can be listed and assigned to        |
-|                   | several parts of the simulation.                      |
-| `qois`            | A list of the quantities of interest (QoIs) which are |
-|                   | evaluated. Several QoIs can be evaluated in one run.  | 
+| section           | description |
+|------------------:|---------------------------------------------------------------|
+| `general`         | General settings like the project name and whether or not to save intermediate states of PoUnce. |
+| `uq_method`       | UQ method to be used and general parameters about its configuration (such as the computational budget). | 
+| `sampling`        | Configuration of the sampling method, such as polynomial degree for polynomial chaos expansion or fixed seed of the random number generator for Monte Carlo. |
+| `solver`/`models` | Setup of the baseline solver(s); In some methods with different levels/fidelities. The section is called `models` in Multifidelity Monte Carlo to rreflect that several different baseline solvers can be combined here. |
+| `stoch_vars`      | A list of the used uncertain parameters including their distribution type and defining parameters |
+| `machine`         | Choice and setup of the machine that the run is performed on, such as a cluster or a local machine. Several machines can be listed and assigned to several parts of the simulation. |
+| `qois`            | A list of the quantities of interest (QoIs) which are evaluated. Several QoIs can be evaluated in one run. | 
+
 
 
 ## Tests

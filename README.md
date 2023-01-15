@@ -17,8 +17,10 @@ Runs are configured using a YAML input file. Example input files are located in 
 For a test run, go to `ini/internal_local` and run 
 
 ```
-python3 ../../src/pounce.py parameter_mlmc.py
+python3 ../../src/pounce.py parameter_mlmc.yml
 ```
+
+Run progress and results should be printed to stdout, ending with a QoI table and the sentence "PoUnce Finished". Further, results should be written to the file `output_double.csv`.
 
 ## Contributors
 
@@ -48,7 +50,7 @@ DOI: https://doi.org/10.1137/18M1210575 \
 
 ## Documentation
 
-Further documentation can be found in the `doc` folder. The guide can be compiled using pandoc by running
+Further [documentation](doc/000_documentation.md) can be found in the `doc` folder. The guide can be compiled using pandoc by running
 
 ```
 make
